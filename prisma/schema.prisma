@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SiteSettings {
+  id        String   @id @default("main")
+  data      Json     @default("{}")
+  updatedAt DateTime @updatedAt
+}
+
+model TimelineItem {
+  id        String   @id @default(uuid())
+  time      String
+  labelEn   String
+  labelAr   String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Guest {
+  id          String   @id @default(uuid())
+  firstName   String
+  familyName  String
+  phone       String?
+  side        String   @default("groom") // "bride" | "groom"
+  relation    String   @default("friend")
+  groupCode   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([groupCode])
+  @@index([side])
+}
+
+model GuestGroup {
+  id          String       @id @default(uuid())
+  groupCode   String       @unique
+  maxGuests   Int          @default(2)
+  token       String       @unique @default(uuid())
+  side        String       @default("groom")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  rsvpResponse RsvpResponse?
+
+  @@index([token])
+}
+
+model RsvpResponse {
+  id              String   @id @default(uuid())
+  groupId         String   @unique
+  group           GuestGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  attending       Boolean
+  numberAttending Int      @default(0)
+  guestNames      Json     @default("[]") // string[]
+  language        String   @default("en")
+  submittedAt     DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([groupId])
+}
