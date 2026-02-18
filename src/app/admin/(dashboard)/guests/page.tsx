@@ -48,8 +48,8 @@ export default function GuestsPage() {
       fetch('/api/groups').then((r) => r.json()),
       fetch('/api/guests').then((r) => r.json()),
     ]);
-    setGroups(groupRes);
-    setGuests(guestRes);
+    if (Array.isArray(groupRes)) setGroups(groupRes);
+    if (Array.isArray(guestRes)) setGuests(guestRes);
     setLoading(false);
   };
 

@@ -28,7 +28,9 @@ export default function RsvpTracking() {
   useEffect(() => {
     fetch('/api/groups')
       .then((r) => r.json())
-      .then(setGroups)
+      .then((data) => {
+        if (Array.isArray(data)) setGroups(data);
+      })
       .finally(() => setLoading(false));
   }, []);
 

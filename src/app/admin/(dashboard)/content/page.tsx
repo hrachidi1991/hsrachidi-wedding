@@ -16,11 +16,16 @@ export default function ContentEditor() {
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [activeTab, setActiveTab] = useState('hero');
 
   useEffect(() => {
-    fetch('/api/settings').then((r) => r.json()).then(setSettings);
-    fetch('/api/timeline').then((r) => r.json()).then(setTimeline);
+    fetch('/api/settings').then((r) => r.json()).then((data) => {
+      if (data && !data.error) setSettings(data);
+    });
+    fetch('/api/timeline').then((r) => r.json()).then((data) => {
+      if (Array.isArray(data)) setTimeline(data);
+    });
   }, []);
 
   const update = useCallback((key: keyof SiteContent, value: any) => {
@@ -30,15 +35,23 @@ export default function ContentEditor() {
   const saveSettings = async () => {
     if (!settings) return;
     setSaving(true);
+    setSaveError('');
     try {
-      await fetch('/api/settings', {
+      const res = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch {}
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setSaveError(data.error || `Save failed (${res.status})`);
+      }
+    } catch {
+      setSaveError('Connection error');
+    }
     setSaving(false);
   };
 
@@ -49,6 +62,9 @@ export default function ContentEditor() {
     if (res.ok) {
       const { url } = await res.json();
       update(key, url);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setSaveError(data.error || `Upload failed (${res.status})`);
     }
   };
 
@@ -101,15 +117,18 @@ export default function ContentEditor() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Content & Settings</h1>
-        <button
-          onClick={saveSettings}
-          disabled={saving}
-          className={`px-5 py-2 rounded-lg text-sm font-medium transition ${
-            saved ? 'bg-green-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'
-          } disabled:opacity-50`}
-        >
-          {saved ? '✓ Saved' : saving ? 'Saving...' : 'Save All'}
-        </button>
+        <div className="flex items-center gap-3">
+          {saveError && <p className="text-sm text-red-600">{saveError}</p>}
+          <button
+            onClick={saveSettings}
+            disabled={saving}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition ${
+              saved ? 'bg-green-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'
+            } disabled:opacity-50`}
+          >
+            {saved ? '✓ Saved' : saving ? 'Saving...' : 'Save All'}
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
