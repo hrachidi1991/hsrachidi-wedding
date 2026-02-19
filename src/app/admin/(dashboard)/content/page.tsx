@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { upload } from '@vercel/blob/client';
 import type { SiteContent } from '@/lib/settings';
 
 interface TimelineItem {
@@ -56,15 +57,14 @@ export default function ContentEditor() {
   };
 
   const uploadFile = async (file: File, key: keyof SiteContent) => {
-    const fd = new FormData();
-    fd.append('file', file);
-    const res = await fetch('/api/upload', { method: 'POST', body: fd });
-    if (res.ok) {
-      const { url } = await res.json();
-      update(key, url);
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setSaveError(data.error || `Upload failed (${res.status})`);
+    try {
+      const blob = await upload(file.name, file, {
+        access: 'public',
+        handleUploadUrl: '/api/upload',
+      });
+      update(key, blob.url);
+    } catch (e: any) {
+      setSaveError(e.message || 'Upload failed');
     }
   };
 
