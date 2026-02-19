@@ -771,10 +771,14 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
               disabled={sealBreaking}
               aria-label="Open envelope"
             >
-              <svg width="40" height="40" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="24" cy="30" r="10" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" fill="none" />
-                <circle cx="36" cy="30" r="10" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" fill="none" />
-                <path d="M30 16 L34 22 L30 28 L26 22 Z" fill="rgba(255,255,255,0.25)" />
+              <svg width="48" height="48" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Two interlocking rings */}
+                <circle cx="23" cy="32" r="11" stroke="rgba(90,70,30,0.5)" strokeWidth="2.5" fill="none" />
+                <circle cx="23" cy="32" r="11" stroke="rgba(255,255,255,0.2)" strokeWidth="1" fill="none" />
+                <circle cx="37" cy="32" r="11" stroke="rgba(90,70,30,0.5)" strokeWidth="2.5" fill="none" />
+                <circle cx="37" cy="32" r="11" stroke="rgba(255,255,255,0.2)" strokeWidth="1" fill="none" />
+                {/* Diamond gem on top */}
+                <path d="M30 12 L35 19 L30 26 L25 19 Z" fill="rgba(90,70,30,0.4)" stroke="rgba(255,255,255,0.15)" strokeWidth="0.8" />
               </svg>
             </button>
           </div>
@@ -784,7 +788,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
             <div className="envelope-hint">
               <p
                 className={`text-xs uppercase tracking-[0.3em] ${isRtl ? 'font-arabic' : 'font-body'}`}
-                style={{ color: 'rgba(255,253,247,0.7)' }}
+                style={{ color: 'rgba(255,253,247,0.5)' }}
               >
                 {t(locale, 'tapToOpen')}
               </p>
