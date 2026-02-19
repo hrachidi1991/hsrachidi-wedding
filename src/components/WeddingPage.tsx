@@ -123,23 +123,23 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
       } catch {}
     }
 
-    // t=500ms: Card slides out, flaps fold back, music starts
+    // t=300ms: Flaps slide apart, card starts emerging, music starts
     setTimeout(() => {
       setCardRevealing(true);
       setFlapsOpening(true);
       if (currentMusicSrc && audioRef.current) {
         audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
       }
-    }, 500);
+    }, 300);
 
-    // t=2800ms: Animation complete → enable scrolling + interaction
+    // t=3500ms: Animation complete → enable scrolling + interaction
     setTimeout(() => {
       setEnvelopeOpened(true);
       setShowContent(true);
       setTimeout(() => {
         scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
-    }, 2800);
+    }, 3500);
   }, [settings, currentMusicSrc]);
 
   const toggleAudio = () => {
@@ -771,14 +771,16 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
               disabled={sealBreaking}
               aria-label="Open envelope"
             >
-              <svg width="48" height="48" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Two interlocking rings */}
-                <circle cx="23" cy="32" r="11" stroke="rgba(90,70,30,0.5)" strokeWidth="2.5" fill="none" />
-                <circle cx="23" cy="32" r="11" stroke="rgba(255,255,255,0.2)" strokeWidth="1" fill="none" />
-                <circle cx="37" cy="32" r="11" stroke="rgba(90,70,30,0.5)" strokeWidth="2.5" fill="none" />
-                <circle cx="37" cy="32" r="11" stroke="rgba(255,255,255,0.2)" strokeWidth="1" fill="none" />
-                {/* Diamond gem on top */}
-                <path d="M30 12 L35 19 L30 26 L25 19 Z" fill="rgba(90,70,30,0.4)" stroke="rgba(255,255,255,0.15)" strokeWidth="0.8" />
+              <svg width="52" height="52" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Three crown dots */}
+                <circle cx="25" cy="17" r="2" fill="rgba(80,60,25,0.55)" />
+                <circle cx="30" cy="14" r="2.2" fill="rgba(80,60,25,0.55)" />
+                <circle cx="35" cy="17" r="2" fill="rgba(80,60,25,0.55)" />
+                {/* Two interlocking rings — embossed look */}
+                <circle cx="23" cy="33" r="11" stroke="rgba(80,60,25,0.55)" strokeWidth="2.8" fill="none" />
+                <circle cx="23" cy="33" r="12.2" stroke="rgba(255,255,255,0.1)" strokeWidth="0.6" fill="none" />
+                <circle cx="37" cy="33" r="11" stroke="rgba(80,60,25,0.55)" strokeWidth="2.8" fill="none" />
+                <circle cx="37" cy="33" r="12.2" stroke="rgba(255,255,255,0.1)" strokeWidth="0.6" fill="none" />
               </svg>
             </button>
           </div>
