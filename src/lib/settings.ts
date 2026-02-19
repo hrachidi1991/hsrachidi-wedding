@@ -43,6 +43,7 @@ export interface SiteContent {
   rsvpDeadlineEn: string;
   rsvpDeadlineAr: string;
   rsvpBg: string;
+  whatsappUrl: string;
 
   // Envelope
   envelopeImage: string;
@@ -51,6 +52,7 @@ export interface SiteContent {
 
   // Music
   musicFile: string;
+  musicFileAr: string;
 
   // General
   primaryColor: string;
@@ -92,14 +94,16 @@ export const defaultSettings: SiteContent = {
   rsvpDeadlineEn: 'May 1, 2026',
   rsvpDeadlineAr: '١ مايو ٢٠٢٦',
   rsvpBg: '',
+  whatsappUrl: 'https://wa.me/96181538385',
 
   envelopeImage: '',
   sealImage: '',
   sfxEnabled: true,
 
   musicFile: '',
+  musicFileAr: '',
 
-  primaryColor: '#C9A96E',
+  primaryColor: '#7a8b69',
 };
 
 export async function getSettings(): Promise<SiteContent> {

@@ -13,6 +13,7 @@ export const translations = {
     minutes: 'Minutes',
     seconds: 'Seconds',
     countdownTo: 'Counting down to our special day',
+    theGreatDay: 'The Big Day',
     // Invitation
     bismillah: 'بِسْمِ ٱللَّٰهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ',
     quranVerse: '﴿ وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً ۚ إِنَّ فِي ذَٰلِكَ لَآيَاتٍ لِّقَوْمٍ يَتَفَكَّرُونَ ﴾',
@@ -39,6 +40,7 @@ export const translations = {
     rsvpSuccess: 'Thank you! Your RSVP has been recorded.',
     rsvpUpdated: 'Your RSVP has been updated.',
     rsvpError: 'Something went wrong. Please try again.',
+    whatsappRsvp: 'To update your reservation, kindly reach us on WhatsApp',
     guest: 'Guest',
     // Audio
     mute: 'Mute',
@@ -58,6 +60,7 @@ export const translations = {
     minutes: 'دقائق',
     seconds: 'ثواني',
     countdownTo: 'العد التنازلي ليومنا المميز',
+    theGreatDay: 'اليوم الكبير',
     bismillah: 'بِسْمِ ٱللَّٰهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ',
     quranVerse: '﴿ وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً ۚ إِنَّ فِي ذَٰلِكَ لَآيَاتٍ لِّقَوْمٍ يَتَفَكَّرُونَ ﴾',
     sadaqAllah: 'صدق الله العظيم',
@@ -79,6 +82,7 @@ export const translations = {
     rsvpSuccess: 'شكراً لك! تم تسجيل ردك.',
     rsvpUpdated: 'تم تحديث ردك.',
     rsvpError: 'حدث خطأ. يرجى المحاولة مرة أخرى.',
+    whatsappRsvp: 'لتعديل حجزكم، يرجى التواصل معنا عبر واتساب',
     guest: 'ضيف',
     mute: 'كتم الصوت',
     unmute: 'تشغيل الصوت',

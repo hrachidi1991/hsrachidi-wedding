@@ -158,7 +158,7 @@ export default function ContentEditor() {
               <Field label="Bride Name (AR)" value={settings.brideNameAr} onChange={(v) => update('brideNameAr', v)} dir="rtl" />
             </div>
             <Field label="Wedding Date Display" value={settings.weddingDate} onChange={(v) => update('weddingDate', v)} />
-            <FileUpload label="Hero Background Image" current={settings.heroImage} onUpload={(f) => uploadFile(f, 'heroImage')} />
+            <FileUpload label="Hero Background Image" current={settings.heroImage} onUpload={(f) => uploadFile(f, 'heroImage')} onRemove={() => update('heroImage', '')} />
           </div>
         )}
 
@@ -166,8 +166,8 @@ export default function ContentEditor() {
         {activeTab === 'envelope' && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold mb-2">Envelope Section</h2>
-            <FileUpload label="Envelope Image" current={settings.envelopeImage} onUpload={(f) => uploadFile(f, 'envelopeImage')} />
-            <FileUpload label="Wax Seal Image" current={settings.sealImage} onUpload={(f) => uploadFile(f, 'sealImage')} />
+            <FileUpload label="Envelope Image" current={settings.envelopeImage} onUpload={(f) => uploadFile(f, 'envelopeImage')} onRemove={() => update('envelopeImage', '')} />
+            <FileUpload label="Wax Seal Image" current={settings.sealImage} onUpload={(f) => uploadFile(f, 'sealImage')} onRemove={() => update('sealImage', '')} />
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -185,7 +185,7 @@ export default function ContentEditor() {
           <div className="space-y-4">
             <h2 className="text-lg font-semibold mb-2">Countdown Section</h2>
             <Field label="Countdown Target (ISO datetime)" value={settings.countdownDate} onChange={(v) => update('countdownDate', v)} type="datetime-local" />
-            <FileUpload label="Countdown Background" current={settings.countdownBg} onUpload={(f) => uploadFile(f, 'countdownBg')} />
+            <FileUpload label="Countdown Background" current={settings.countdownBg} onUpload={(f) => uploadFile(f, 'countdownBg')} onRemove={() => update('countdownBg', '')} />
           </div>
         )}
 
@@ -195,7 +195,7 @@ export default function ContentEditor() {
             <h2 className="text-lg font-semibold mb-2">Invitation Section</h2>
             <TextArea label="Invitation Text (EN)" value={settings.invitationTextEn} onChange={(v) => update('invitationTextEn', v)} rows={6} />
             <TextArea label="Invitation Text (AR)" value={settings.invitationTextAr} onChange={(v) => update('invitationTextAr', v)} rows={6} dir="rtl" />
-            <FileUpload label="Invitation Background" current={settings.invitationBg} onUpload={(f) => uploadFile(f, 'invitationBg')} />
+            <FileUpload label="Invitation Background" current={settings.invitationBg} onUpload={(f) => uploadFile(f, 'invitationBg')} onRemove={() => update('invitationBg', '')} />
           </div>
         )}
 
@@ -212,7 +212,7 @@ export default function ContentEditor() {
               <Field label="Address (AR)" value={settings.venueAddressAr} onChange={(v) => update('venueAddressAr', v)} dir="rtl" />
             </div>
             <Field label="Google Maps URL" value={settings.googleMapsUrl} onChange={(v) => update('googleMapsUrl', v)} />
-            <FileUpload label="Location Background" current={settings.locationBg} onUpload={(f) => uploadFile(f, 'locationBg')} />
+            <FileUpload label="Location Background" current={settings.locationBg} onUpload={(f) => uploadFile(f, 'locationBg')} onRemove={() => update('locationBg', '')} />
           </div>
         )}
 
@@ -225,7 +225,7 @@ export default function ContentEditor() {
                 + Add Item
               </button>
             </div>
-            <FileUpload label="Timeline Background" current={settings.timelineBg} onUpload={(f) => uploadFile(f, 'timelineBg')} />
+            <FileUpload label="Timeline Background" current={settings.timelineBg} onUpload={(f) => uploadFile(f, 'timelineBg')} onRemove={() => update('timelineBg', '')} />
             <div className="space-y-3 mt-4">
               {timeline.map((item, i) => (
                 <div key={item.id || i} className="flex gap-3 items-start bg-gray-50 rounded-lg p-3">
@@ -289,7 +289,7 @@ export default function ContentEditor() {
             <Field label="Provider Name" value={settings.giftProviderName} onChange={(v) => update('giftProviderName', v)} />
             <Field label="Account ID" value={settings.giftAccountId} onChange={(v) => update('giftAccountId', v)} />
             <Field label="Phone Number" value={settings.giftPhone} onChange={(v) => update('giftPhone', v)} />
-            <FileUpload label="Gift Section Background" current={settings.giftBg} onUpload={(f) => uploadFile(f, 'giftBg')} />
+            <FileUpload label="Gift Section Background" current={settings.giftBg} onUpload={(f) => uploadFile(f, 'giftBg')} onRemove={() => update('giftBg', '')} />
           </div>
         )}
 
@@ -299,18 +299,28 @@ export default function ContentEditor() {
             <h2 className="text-lg font-semibold mb-2">RSVP Section</h2>
             <Field label="Deadline (EN)" value={settings.rsvpDeadlineEn} onChange={(v) => update('rsvpDeadlineEn', v)} />
             <Field label="Deadline (AR)" value={settings.rsvpDeadlineAr} onChange={(v) => update('rsvpDeadlineAr', v)} dir="rtl" />
-            <FileUpload label="RSVP Background" current={settings.rsvpBg} onUpload={(f) => uploadFile(f, 'rsvpBg')} />
+            <Field label="WhatsApp Link (e.g. https://wa.me/96181538385)" value={settings.whatsappUrl} onChange={(v) => update('whatsappUrl', v)} />
+            <FileUpload label="RSVP Background" current={settings.rsvpBg} onUpload={(f) => uploadFile(f, 'rsvpBg')} onRemove={() => update('rsvpBg', '')} />
           </div>
         )}
 
         {/* MUSIC */}
         {activeTab === 'music' && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <h2 className="text-lg font-semibold mb-2">Background Music</h2>
-            <FileUpload label="Music File (MP3)" current={settings.musicFile} onUpload={(f) => uploadFile(f, 'musicFile')} accept="audio/*" />
-            {settings.musicFile && (
-              <audio controls src={settings.musicFile} className="w-full mt-2" />
-            )}
+            <div className="space-y-2">
+              <FileUpload label="English Music File (MP3)" current={settings.musicFile} onUpload={(f) => uploadFile(f, 'musicFile')} onRemove={() => update('musicFile', '')} accept="audio/*" />
+              {settings.musicFile && (
+                <audio controls src={settings.musicFile} className="w-full mt-2" />
+              )}
+            </div>
+            <div className="space-y-2">
+              <FileUpload label="Arabic Music File (MP3)" current={settings.musicFileAr} onUpload={(f) => uploadFile(f, 'musicFileAr')} onRemove={() => update('musicFileAr', '')} accept="audio/*" />
+              {settings.musicFileAr && (
+                <audio controls src={settings.musicFileAr} className="w-full mt-2" />
+              )}
+            </div>
+            <p className="text-xs text-gray-400">The English track plays by default. When guests switch to Arabic, the Arabic track will play instead.</p>
           </div>
         )}
       </div>
@@ -349,7 +359,7 @@ function TextArea({ label, value, onChange, rows = 4, dir }: { label: string; va
   );
 }
 
-function FileUpload({ label, current, onUpload, accept = 'image/*' }: { label: string; current: string; onUpload: (f: File) => void; accept?: string }) {
+function FileUpload({ label, current, onUpload, onRemove, accept = 'image/*' }: { label: string; current: string; onUpload: (f: File) => void; onRemove?: () => void; accept?: string }) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
@@ -361,7 +371,18 @@ function FileUpload({ label, current, onUpload, accept = 'image/*' }: { label: s
           className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
         />
         {current && (
-          <span className="text-xs text-gray-400 truncate max-w-[200px]">{current}</span>
+          <>
+            <span className="text-xs text-gray-400 truncate max-w-[200px]">{current}</span>
+            {onRemove && (
+              <button
+                type="button"
+                onClick={onRemove}
+                className="text-xs text-red-500 hover:text-red-700 whitespace-nowrap"
+              >
+                Remove
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>

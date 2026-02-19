@@ -16,7 +16,8 @@
       "Bash(npm ls:*)",
       "Bash(where:*)",
       "Bash(nvm list:*)",
-      "Bash(fnm list:*)"
+      "Bash(fnm list:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

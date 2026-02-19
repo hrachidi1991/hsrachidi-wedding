@@ -19,7 +19,8 @@ export async function PUT(request: NextRequest) {
     const data = await request.json();
     const updated = await updateSettings(data);
     return NextResponse.json(updated);
-  } catch {
-    return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
+  } catch (e: any) {
+    console.error('Settings update error:', e);
+    return NextResponse.json({ error: e.message || 'Failed to update settings' }, { status: 500 });
   }
 }

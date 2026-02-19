@@ -68,6 +68,7 @@ const config: Config = {
         'float': 'float 6s ease-in-out infinite',
         'shimmer': 'shimmer 2s ease-in-out infinite',
         'seal-break': 'sealBreak 0.8s ease-out forwards',
+        'seal-break-gold': 'sealBreakGold 700ms ease-out forwards',
         'envelope-open': 'envelopeOpen 1.2s ease-out forwards',
         'slide-up': 'slideUp 0.6s ease-out forwards',
         'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
@@ -102,6 +103,11 @@ const config: Config = {
           '0%': { transform: 'scale(1) rotate(0deg)', opacity: '1' },
           '50%': { transform: 'scale(1.3) rotate(15deg)', opacity: '0.8' },
           '100%': { transform: 'scale(0) rotate(45deg)', opacity: '0' },
+        },
+        sealBreakGold: {
+          '0%': { transform: 'scale(1)', opacity: '1' },
+          '30%': { transform: 'scale(1.25)', opacity: '1' },
+          '100%': { transform: 'scale(0)', opacity: '0' },
         },
         envelopeOpen: {
           '0%': { transform: 'rotateX(0deg)' },
