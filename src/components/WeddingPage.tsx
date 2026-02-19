@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
 import type { SiteContent } from '@/lib/settings';
 import type { Locale } from '@/lib/i18n';
 import { t } from '@/lib/i18n';
@@ -27,6 +27,66 @@ interface Props {
   timelineItems: TimelineItem[];
   rsvpData: RsvpData | null;
 }
+
+// ─── Decorative Floral SVGs ─────────────────────────────────────
+// Corner bouquet: lavender sprigs, wheat spike, gypsophila, sage leaves
+// Origin at top-left corner; mirror with CSS transform for other corners
+const FloralCorner = ({ className = '', style }: { className?: string; style?: CSSProperties }) => (
+  <svg className={className} style={style} viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M5 5 C20 25,40 50,55 70 C50 60,35 42,8 12Z" fill="#8b9c7b" opacity="0.4"/>
+    <path d="M8 2 C30 20,55 45,75 65 C68 55,48 35,12 5Z" fill="#7a8b69" opacity="0.35"/>
+    <path d="M2 8 C18 30,35 55,50 80 C44 68,28 45,5 15Z" fill="#95a685" opacity="0.3"/>
+    <path d="M10 10 C30 30,55 55,75 85 C80 95,85 105,88 115" stroke="#7a8b69" strokeWidth="1" opacity="0.4" fill="none"/>
+    <ellipse cx="88" cy="112" rx="4" ry="6" fill="#b8a9d4" opacity="0.6" transform="rotate(40 88 112)"/>
+    <ellipse cx="84" cy="103" rx="3.5" ry="5.5" fill="#a594c9" opacity="0.55" transform="rotate(45 84 103)"/>
+    <ellipse cx="79" cy="94" rx="3.5" ry="5" fill="#c4b5e0" opacity="0.5" transform="rotate(38 79 94)"/>
+    <ellipse cx="73" cy="86" rx="3" ry="4.5" fill="#b8a9d4" opacity="0.48" transform="rotate(42 73 86)"/>
+    <path d="M8 12 C25 35,45 60,58 88 C62 98,65 108,66 118" stroke="#7a8b69" strokeWidth="0.8" opacity="0.35" fill="none"/>
+    <ellipse cx="66" cy="115" rx="3.5" ry="5.5" fill="#c4b5e0" opacity="0.5" transform="rotate(48 66 115)"/>
+    <ellipse cx="62" cy="106" rx="3" ry="5" fill="#b8a9d4" opacity="0.45" transform="rotate(44 62 106)"/>
+    <ellipse cx="58" cy="98" rx="3" ry="4.5" fill="#a594c9" opacity="0.42" transform="rotate(42 58 98)"/>
+    <path d="M12 8 C35 25,65 45,95 60 C105 65,115 68,125 70" stroke="#c9a857" strokeWidth="1" opacity="0.4" fill="none"/>
+    <ellipse cx="122" cy="69" rx="3" ry="6.5" fill="#d4b96a" opacity="0.45" transform="rotate(72 122 69)"/>
+    <ellipse cx="113" cy="66" rx="2.8" ry="6" fill="#c9a857" opacity="0.42" transform="rotate(68 113 66)"/>
+    <ellipse cx="104" cy="62" rx="2.5" ry="5.5" fill="#d4b96a" opacity="0.38" transform="rotate(72 104 62)"/>
+    <ellipse cx="96" cy="58" rx="2.5" ry="5" fill="#c9a857" opacity="0.35" transform="rotate(68 96 58)"/>
+    <line x1="124" y1="66" x2="130" y2="60" stroke="#c9a857" strokeWidth="0.5" opacity="0.3"/>
+    <line x1="115" y1="62" x2="120" y2="56" stroke="#c9a857" strokeWidth="0.5" opacity="0.3"/>
+    <path d="M15 15 C35 30,50 35,65 38" stroke="#a3b18a" strokeWidth="0.4" opacity="0.25" fill="none"/>
+    <path d="M15 15 C30 35,38 48,42 58" stroke="#a3b18a" strokeWidth="0.4" opacity="0.25" fill="none"/>
+    <circle cx="65" cy="38" r="2" fill="#f0ece4" opacity="0.55"/>
+    <circle cx="60" cy="42" r="1.5" fill="#e8e0d4" opacity="0.5"/>
+    <circle cx="42" cy="58" r="1.8" fill="#f0ece4" opacity="0.5"/>
+    <circle cx="47" cy="52" r="1.3" fill="#f5f0e8" opacity="0.45"/>
+    <circle cx="55" cy="46" r="1.5" fill="#e8e0d4" opacity="0.45"/>
+    <circle cx="70" cy="35" r="1.2" fill="#f5f0e8" opacity="0.4"/>
+    <circle cx="38" cy="55" r="1.2" fill="#f0ece4" opacity="0.4"/>
+  </svg>
+);
+
+// Horizontal floral divider: centered arrangement of lavender, wheat, gypsophila
+const FloralDivider = ({ className = '' }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 200 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="100" cy="12" rx="3.5" ry="5.5" fill="#b8a9d4" opacity="0.55"/>
+    <ellipse cx="94" cy="18" rx="3" ry="4.5" fill="#a594c9" opacity="0.48" transform="rotate(-15 94 18)"/>
+    <ellipse cx="106" cy="18" rx="3" ry="4.5" fill="#c4b5e0" opacity="0.48" transform="rotate(15 106 18)"/>
+    <line x1="100" y1="38" x2="100" y2="10" stroke="#7a8b69" strokeWidth="0.8" opacity="0.35"/>
+    <path d="M100 25 Q78 24,55 28" stroke="#7a8b69" strokeWidth="0.7" opacity="0.3" fill="none"/>
+    <ellipse cx="62" cy="26" rx="2.5" ry="5" fill="#d4b96a" opacity="0.4" transform="rotate(-30 62 26)"/>
+    <ellipse cx="55" cy="28" rx="2" ry="4" fill="#c9a857" opacity="0.35" transform="rotate(-35 55 28)"/>
+    <path d="M82 24 Q77 18,74 24 Q79 27,82 24Z" fill="#8b9c7b" opacity="0.3"/>
+    <circle cx="48" cy="26" r="1.3" fill="#f0ece4" opacity="0.5"/>
+    <circle cx="44" cy="30" r="1" fill="#e8e0d4" opacity="0.4"/>
+    <path d="M100 25 Q122 24,145 28" stroke="#7a8b69" strokeWidth="0.7" opacity="0.3" fill="none"/>
+    <ellipse cx="138" cy="26" rx="2.5" ry="5" fill="#d4b96a" opacity="0.4" transform="rotate(30 138 26)"/>
+    <ellipse cx="145" cy="28" rx="2" ry="4" fill="#c9a857" opacity="0.35" transform="rotate(35 145 28)"/>
+    <path d="M118 24 Q123 18,126 24 Q121 27,118 24Z" fill="#8b9c7b" opacity="0.3"/>
+    <circle cx="152" cy="26" r="1.3" fill="#f0ece4" opacity="0.5"/>
+    <circle cx="156" cy="30" r="1" fill="#e8e0d4" opacity="0.4"/>
+    <line x1="0" y1="25" x2="42" y2="25" stroke="#7a8b69" strokeWidth="0.5" opacity="0.2"/>
+    <line x1="158" y1="25" x2="200" y2="25" stroke="#7a8b69" strokeWidth="0.5" opacity="0.2"/>
+  </svg>
+);
 
 export default function WeddingPage({ settings, timelineItems, rsvpData }: Props) {
   const [locale, setLocale] = useState<Locale>('en');
@@ -297,6 +357,9 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
               <div className="section-overlay" />
             </>
           )}
+          {/* Floral corner decorations */}
+          <FloralCorner className="absolute top-0 left-0 w-24 sm:w-32 md:w-44 pointer-events-none z-[2] opacity-60 sm:opacity-70" />
+          <FloralCorner className="absolute bottom-0 right-0 w-24 sm:w-32 md:w-44 pointer-events-none z-[2] opacity-60 sm:opacity-70" style={{ transform: 'scale(-1,-1)' }} />
           <div className={`section-content transition-all duration-1000 ${sectionVisible(2) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <p className={`text-xs sm:text-sm uppercase tracking-[0.15em] sm:tracking-[0.3em] text-sage-600 mb-4 sm:mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
               {t(locale, 'weddingOf')}
@@ -312,7 +375,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
               </span>
             </h1>
 
-            <div className="divider-gold-wide" />
+            <FloralDivider className="w-40 sm:w-52 md:w-64 mx-auto my-4 sm:my-6" />
 
             <p className={`text-lg text-charcoal-600 ${isRtl ? 'font-arabic' : 'font-body italic'}`}>
               {t(locale, 'areGettingMarried')}
@@ -361,7 +424,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
 
               return (
                 <>
-                  <div className="divider-gold-wide" />
+                  <FloralDivider className="w-32 sm:w-44 md:w-56 mx-auto my-3 sm:my-5" />
 
                   {/* Day of week */}
                   <p className={`text-xs sm:text-sm uppercase tracking-[0.3em] text-charcoal-400 mb-3 ${isRtl ? 'font-arabic' : 'font-body'}`}>
@@ -448,13 +511,16 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
               <div className="section-overlay" />
             </>
           )}
+          {/* Floral corner decorations */}
+          <FloralCorner className="absolute top-0 right-0 w-24 sm:w-32 md:w-44 pointer-events-none z-[2] opacity-60 sm:opacity-70" style={{ transform: 'scaleX(-1)' }} />
+          <FloralCorner className="absolute bottom-0 left-0 w-24 sm:w-32 md:w-44 pointer-events-none z-[2] opacity-60 sm:opacity-70" style={{ transform: 'scaleY(-1)' }} />
           <div className={`section-content max-w-2xl transition-all duration-1000 delay-200 ${sectionVisible(4) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             {/* Bismillah */}
             <p className="font-arabicDisplay text-xl sm:text-2xl md:text-3xl text-sage-700 mb-4 sm:mb-6" dir="rtl">
               {t(locale, 'bismillah')}
             </p>
 
-            <div className="divider-gold" />
+            <FloralDivider className="w-32 sm:w-44 md:w-56 mx-auto my-3 sm:my-5" />
 
             {/* Quran Verse */}
             <div className="my-8 px-4">
