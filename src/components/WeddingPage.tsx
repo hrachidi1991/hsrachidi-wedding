@@ -33,6 +33,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
   const [envelopeOpened, setEnvelopeOpened] = useState(false);
   const [sealBreaking, setSealBreaking] = useState(false);
   const [flapsOpening, setFlapsOpening] = useState(false);
+  const [cardRevealing, setCardRevealing] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -122,23 +123,23 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
       } catch {}
     }
 
-    // t=700ms: Seal animation finishes → open flaps + start music
+    // t=500ms: Card slides out, flaps fold back, music starts
     setTimeout(() => {
+      setCardRevealing(true);
       setFlapsOpening(true);
-      // Start music
       if (currentMusicSrc && audioRef.current) {
         audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
       }
-    }, 700);
+    }, 500);
 
-    // t=2000ms: Flaps done → reveal content
+    // t=2800ms: Animation complete → enable scrolling + interaction
     setTimeout(() => {
       setEnvelopeOpened(true);
       setShowContent(true);
       setTimeout(() => {
         scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
-    }, 2000);
+    }, 2800);
   }, [settings, currentMusicSrc]);
 
   const toggleAudio = () => {
@@ -189,105 +190,42 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
   const sectionVisible = (idx: number) => visibleSections.has(idx);
 
   // ═══════════════════════════════════════════════════
-  // SECTION 1 — DIGITAL ENVELOPE (Entry Gate)
-  // ═══════════════════════════════════════════════════
-  if (!showContent) {
-    return (
-      <div dir={isRtl ? 'rtl' : 'ltr'}>
-        {/* Audio element */}
-        {currentMusicSrc && (
-          <audio ref={audioRef} src={currentMusicSrc} loop preload="auto" />
-        )}
-
-        {/* Language toggle */}
-        <button onClick={toggleLocale} className="lang-toggle" style={{ zIndex: 60 }}>
-          {t(locale, 'switchLang')}
-        </button>
-
-        {/* Full-viewport envelope */}
-        <div className="envelope-viewport">
-          {/* Four flaps */}
-          <div className={`envelope-flap-base envelope-flap-left ${flapsOpening ? 'flap-opening' : ''}`} />
-          <div className={`envelope-flap-base envelope-flap-right ${flapsOpening ? 'flap-opening' : ''}`} />
-          <div className={`envelope-flap-base envelope-flap-top ${flapsOpening ? 'flap-opening' : ''}`} />
-          <div className={`envelope-flap-base envelope-flap-bottom ${flapsOpening ? 'flap-opening' : ''}`} />
-
-          {/* Gold wax seal — centered */}
-          <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
-            {!sealBreaking ? (
-              <button
-                onClick={handleOpenEnvelope}
-                className="gold-seal"
-                aria-label="Open invitation"
-              >
-                {/* Wedding rings + diamond SVG */}
-                <svg width="55%" height="55%" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {/* Left ring */}
-                  <circle cx="22" cy="32" r="12" stroke="rgba(255,253,240,0.45)" strokeWidth="2.5" fill="none" />
-                  {/* Right ring */}
-                  <circle cx="38" cy="32" r="12" stroke="rgba(255,253,240,0.45)" strokeWidth="2.5" fill="none" />
-                  {/* Diamond */}
-                  <polygon points="30,8 34,16 30,20 26,16" fill="rgba(255,253,240,0.35)" stroke="rgba(255,253,240,0.45)" strokeWidth="1.5" />
-                </svg>
-              </button>
-            ) : (
-              <div className="gold-seal seal-breaking-gold">
-                <svg width="55%" height="55%" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="22" cy="32" r="12" stroke="rgba(255,253,240,0.45)" strokeWidth="2.5" fill="none" />
-                  <circle cx="38" cy="32" r="12" stroke="rgba(255,253,240,0.45)" strokeWidth="2.5" fill="none" />
-                  <polygon points="30,8 34,16 30,20 26,16" fill="rgba(255,253,240,0.35)" stroke="rgba(255,253,240,0.45)" strokeWidth="1.5" />
-                </svg>
-              </div>
-            )}
-          </div>
-
-          {/* Tap to open hint */}
-          {!sealBreaking && (
-            <div className="envelope-hint">
-              <p className={`text-sm text-cream-200 animate-pulse-soft ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                {t(locale, 'tapToOpen')}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // ═══════════════════════════════════════════════════
-  // MAIN WEDDING SECTIONS
+  // RENDER — Envelope overlay + content card behind it
   // ═══════════════════════════════════════════════════
   return (
     <div dir={isRtl ? 'rtl' : 'ltr'}>
       {/* Audio */}
-      {settings.musicFile && (
-        <audio ref={audioRef} src={settings.musicFile} loop preload="auto" />
+      {currentMusicSrc && (
+        <audio ref={audioRef} src={currentMusicSrc} loop preload="auto" />
       )}
 
       {/* Language toggle */}
-      <button onClick={toggleLocale} className="lang-toggle">
+      <button onClick={toggleLocale} className="lang-toggle" style={{ zIndex: 60 }}>
         {t(locale, 'switchLang')}
       </button>
 
-      {/* Audio toggle */}
-      <button onClick={toggleAudio} className="audio-btn" aria-label={isPlaying ? 'Mute' : 'Unmute'}>
-        {isPlaying ? (
-          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-sage-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-          </svg>
-        ) : (
-          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-charcoal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-            <line x1="23" y1="9" x2="17" y2="15" />
-            <line x1="17" y1="9" x2="23" y2="15" />
-          </svg>
-        )}
-      </button>
+      {/* Audio toggle — only after envelope opened */}
+      {showContent && (
+        <button onClick={toggleAudio} className="audio-btn" aria-label={isPlaying ? 'Mute' : 'Unmute'}>
+          {isPlaying ? (
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-sage-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-charcoal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <line x1="23" y1="9" x2="17" y2="15" />
+              <line x1="17" y1="9" x2="23" y2="15" />
+            </svg>
+          )}
+        </button>
+      )}
 
-      {/* Scroll container */}
-      <div ref={scrollRef} className="scroll-container">
+      {/* Content card — slides out from behind envelope */}
+      <div className={`envelope-card${!cardRevealing && !showContent ? ' envelope-card-hidden' : ''}${cardRevealing && !showContent ? ' envelope-card-revealing' : ''}`}>
+        <div ref={scrollRef} className={`scroll-container${!showContent ? ' no-scroll' : ''}`}>
 
         {/* ═══ SECTION 2 — HERO ═══ */}
         <section className="scroll-section" data-section="2">
@@ -813,7 +751,47 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
           </div>
         </section>
 
-      </div>
+        </div> {/* close scroll-container */}
+      </div> {/* close envelope-card */}
+
+      {/* ═══ ENVELOPE OVERLAY — sits on top of content card ═══ */}
+      {!envelopeOpened && (
+        <div className="envelope-viewport">
+          {/* Four flaps */}
+          <div className={`envelope-flap-base envelope-flap-top ${flapsOpening ? 'flap-opening' : ''}`} />
+          <div className={`envelope-flap-base envelope-flap-bottom ${flapsOpening ? 'flap-opening' : ''}`} />
+          <div className={`envelope-flap-base envelope-flap-left ${flapsOpening ? 'flap-opening' : ''}`} />
+          <div className={`envelope-flap-base envelope-flap-right ${flapsOpening ? 'flap-opening' : ''}`} />
+
+          {/* Wax Seal */}
+          <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
+            <button
+              onClick={handleOpenEnvelope}
+              className={`gold-seal ${sealBreaking ? 'seal-slide-away' : ''}`}
+              disabled={sealBreaking}
+              aria-label="Open envelope"
+            >
+              <svg width="40" height="40" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="24" cy="30" r="10" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" fill="none" />
+                <circle cx="36" cy="30" r="10" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" fill="none" />
+                <path d="M30 16 L34 22 L30 28 L26 22 Z" fill="rgba(255,255,255,0.25)" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Tap hint */}
+          {!sealBreaking && (
+            <div className="envelope-hint">
+              <p
+                className={`text-xs uppercase tracking-[0.3em] ${isRtl ? 'font-arabic' : 'font-body'}`}
+                style={{ color: 'rgba(255,253,247,0.7)' }}
+              >
+                {t(locale, 'tapToOpen')}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
