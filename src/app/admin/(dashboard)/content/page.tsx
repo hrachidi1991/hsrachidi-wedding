@@ -58,7 +58,8 @@ export default function ContentEditor() {
 
   const uploadFile = async (file: File, key: keyof SiteContent) => {
     try {
-      const blob = await upload(file.name, file, {
+      const uniqueName = `${Date.now()}-${file.name}`;
+      const blob = await upload(uniqueName, file, {
         access: 'public',
         handleUploadUrl: '/api/upload',
       });
