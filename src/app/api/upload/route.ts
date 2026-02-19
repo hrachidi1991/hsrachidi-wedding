@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
+import { put } from '@vercel/blob';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
@@ -15,17 +14,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const ext = file.name.substring(file.name.lastIndexOf('.')) || '.bin';
+    const filename = `uploads/${uuidv4()}${ext}`;
 
-    const ext = path.extname(file.name) || '.bin';
-    const filename = `${uuidv4()}${ext}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    const blob = await put(filename, file, {
+      access: 'public',
+    });
 
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(path.join(uploadDir, filename), buffer);
-
-    return NextResponse.json({ url: `/uploads/${filename}`, filename });
+    return NextResponse.json({ url: blob.url, filename });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
