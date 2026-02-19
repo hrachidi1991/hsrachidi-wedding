@@ -93,29 +93,28 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  width: clamp(140px, 32vw, 320px);
-  height: clamp(180px, 42vh, 420px);
-  background: url('/images/floral-corner.svg') top left no-repeat;
+  width: clamp(160px, 35vw, 380px);
+  height: clamp(190px, 45vh, 450px);
+  background: url('/images/floral-tl.png') top left no-repeat;
   background-size: contain;
   z-index: 3;
   pointer-events: none;
-  opacity: 0.85;
+  opacity: 1;
 }
 
-/* Floral corner decoration — bottom-right (rotated 180deg) */
+/* Floral corner decoration — bottom-right */
 .scroll-section::after {
   content: '';
   position: absolute;
   bottom: 0;
   right: 0;
-  width: clamp(140px, 32vw, 320px);
-  height: clamp(180px, 42vh, 420px);
-  background: url('/images/floral-corner.svg') top left no-repeat;
+  width: clamp(180px, 38vw, 420px);
+  height: clamp(120px, 28vh, 265px);
+  background: url('/images/floral-br.png') bottom right no-repeat;
   background-size: contain;
-  transform: rotate(180deg);
   z-index: 3;
   pointer-events: none;
-  opacity: 0.85;
+  opacity: 1;
 }
 
 /* Section backgrounds */
