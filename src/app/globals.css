@@ -70,8 +70,10 @@ body {
 .section-bg {
   position: absolute;
   inset: 0;
-  background-size: cover;
+  background-size: contain;
   background-position: center;
+  background-repeat: no-repeat;
+  background-color: var(--cream);
   z-index: 0;
 }
 
