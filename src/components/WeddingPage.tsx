@@ -33,7 +33,6 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
   const [envelopeOpened, setEnvelopeOpened] = useState(false);
   const [sealBreaking, setSealBreaking] = useState(false);
   const [flapsOpening, setFlapsOpening] = useState(false);
-  const [cardRevealing, setCardRevealing] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -123,23 +122,24 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
       } catch {}
     }
 
-    // t=300ms: Flaps slide apart, card starts emerging, music starts
-    setTimeout(() => {
-      setCardRevealing(true);
-      setFlapsOpening(true);
-      if (currentMusicSrc && audioRef.current) {
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
-      }
-    }, 300);
+    // Start music immediately on interaction
+    if (currentMusicSrc && audioRef.current) {
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+    }
 
-    // t=3500ms: Animation complete → enable scrolling + interaction
+    // t=600ms: Seal has faded → flaps start opening
+    setTimeout(() => {
+      setFlapsOpening(true);
+    }, 600);
+
+    // t=2800ms: Flaps done + fade complete → remove overlay, enable scrolling
     setTimeout(() => {
       setEnvelopeOpened(true);
       setShowContent(true);
       setTimeout(() => {
         scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
-    }, 3500);
+    }, 2800);
   }, [settings, currentMusicSrc]);
 
   const toggleAudio = () => {
@@ -223,9 +223,8 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
         </button>
       )}
 
-      {/* Content card — slides out from behind envelope */}
-      <div className={`envelope-card${!cardRevealing && !showContent ? ' envelope-card-hidden' : ''}${cardRevealing && !showContent ? ' envelope-card-revealing' : ''}`}>
-        <div ref={scrollRef} className={`scroll-container${!showContent ? ' no-scroll' : ''}`}>
+      {/* Main content — always present, envelope overlay sits on top */}
+      <div ref={scrollRef} className={`scroll-container${!showContent ? ' no-scroll' : ''}`}>
 
         {/* ═══ SECTION 2 — HERO ═══ */}
         <section className="scroll-section" data-section="2">
@@ -751,51 +750,36 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
           </div>
         </section>
 
-        </div> {/* close scroll-container */}
-      </div> {/* close envelope-card */}
+      </div> {/* close scroll-container */}
 
-      {/* ═══ ENVELOPE OVERLAY — sits on top of content card ═══ */}
+      {/* ═══ ENVELOPE OVERLAY — cream/ivory minimalist style ═══ */}
       {!envelopeOpened && (
-        <div className="envelope-viewport">
-          {/* Four flaps */}
-          <div className={`envelope-flap-base envelope-flap-top ${flapsOpening ? 'flap-opening' : ''}`} />
-          <div className={`envelope-flap-base envelope-flap-bottom ${flapsOpening ? 'flap-opening' : ''}`} />
-          <div className={`envelope-flap-base envelope-flap-left ${flapsOpening ? 'flap-opening' : ''}`} />
-          <div className={`envelope-flap-base envelope-flap-right ${flapsOpening ? 'flap-opening' : ''}`} />
+        <div className={`envelope-viewport ${flapsOpening ? 'envelope-fading' : ''}`}>
+          {/* Four cream flaps */}
+          <div className={`envelope-flap envelope-flap-top ${flapsOpening ? 'flap-opening' : ''}`} />
+          <div className={`envelope-flap envelope-flap-bottom ${flapsOpening ? 'flap-opening' : ''}`} />
+          <div className={`envelope-flap envelope-flap-left ${flapsOpening ? 'flap-opening' : ''}`} />
+          <div className={`envelope-flap envelope-flap-right ${flapsOpening ? 'flap-opening' : ''}`} />
 
-          {/* Wax Seal */}
-          <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
+          {/* Center content: Seal + invitation text */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ zIndex: 10 }}>
+            {/* Cream wax seal with H & S monogram */}
             <button
               onClick={handleOpenEnvelope}
-              className={`gold-seal ${sealBreaking ? 'seal-slide-away' : ''}`}
+              className={`cream-seal ${sealBreaking ? 'seal-fade-out' : ''}`}
               disabled={sealBreaking}
               aria-label="Open envelope"
             >
-              <svg width="52" height="52" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Three crown dots */}
-                <circle cx="25" cy="17" r="2" fill="rgba(80,60,25,0.55)" />
-                <circle cx="30" cy="14" r="2.2" fill="rgba(80,60,25,0.55)" />
-                <circle cx="35" cy="17" r="2" fill="rgba(80,60,25,0.55)" />
-                {/* Two interlocking rings — embossed look */}
-                <circle cx="23" cy="33" r="11" stroke="rgba(80,60,25,0.55)" strokeWidth="2.8" fill="none" />
-                <circle cx="23" cy="33" r="12.2" stroke="rgba(255,255,255,0.1)" strokeWidth="0.6" fill="none" />
-                <circle cx="37" cy="33" r="11" stroke="rgba(80,60,25,0.55)" strokeWidth="2.8" fill="none" />
-                <circle cx="37" cy="33" r="12.2" stroke="rgba(255,255,255,0.1)" strokeWidth="0.6" fill="none" />
-              </svg>
+              <span className="seal-monogram font-display">H & S</span>
             </button>
-          </div>
 
-          {/* Tap hint */}
-          {!sealBreaking && (
-            <div className="envelope-hint">
-              <p
-                className={`text-xs uppercase tracking-[0.3em] ${isRtl ? 'font-arabic' : 'font-body'}`}
-                style={{ color: 'rgba(255,253,247,0.5)' }}
-              >
-                {t(locale, 'tapToOpen')}
+            {/* Invitation text below seal */}
+            {!sealBreaking && (
+              <p className={`envelope-invitation-text ${isRtl ? 'font-arabic' : ''}`} style={{ fontFamily: isRtl ? "'Aref Ruqaa', serif" : "'Cormorant Garamond', serif", fontStyle: isRtl ? 'normal' : 'italic' }}>
+                {isRtl ? 'هذه الدعوة مخصصة لك' : 'This invitation is exclusive for you'}
               </p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>
