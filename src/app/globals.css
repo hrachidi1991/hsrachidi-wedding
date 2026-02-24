@@ -1,17 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Aref+Ruqaa:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Aref+Ruqaa:wght@400;700&family=Great+Vibes&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --sage: #6F7C57;
-  --sage-light: #8B9C73;
-  --sage-dark: #556445;
-  --olive: #6F7C57;
+  --gray: #9B9B9B;
+  --gray-light: #A3A3A3;
+  --gray-dark: #858585;
   --gold: #C9A96E;
-  --cream: #EDEDEB;
-  --cream-warm: #E8E7E5;
+  --gold-light: #D4BA88;
+  --cream: #EDE9E0;
   --charcoal: #2a2a2a;
   --charcoal-light: #4f4f4f;
 }
@@ -26,8 +25,8 @@ html {
 
 body {
   font-family: 'Lora', serif;
-  background-color: var(--cream);
-  color: var(--charcoal);
+  background-color: var(--gray);
+  color: #FFFFFF;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -65,72 +64,32 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  /* Handmade cotton paper texture — visible grain and fiber */
-  background:
-    /* Fine horizontal fibers */
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 1px,
-      rgba(190, 182, 168, 0.06) 1px,
-      rgba(190, 182, 168, 0.06) 2px
-    ),
-    /* Fine vertical fibers */
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 1px,
-      rgba(190, 182, 168, 0.05) 1px,
-      rgba(190, 182, 168, 0.05) 2px
-    ),
-    /* Diagonal cotton weave */
-    repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 4px,
-      rgba(180, 172, 158, 0.035) 4px,
-      rgba(180, 172, 158, 0.035) 5px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      transparent,
-      transparent 6px,
-      rgba(185, 178, 162, 0.025) 6px,
-      rgba(185, 178, 162, 0.025) 7px
-    ),
-    /* Soft neutral patches (uneven handmade paper feel) */
-    radial-gradient(ellipse at 20% 30%, rgba(228, 227, 224, 0.4) 0%, transparent 45%),
-    radial-gradient(ellipse at 80% 60%, rgba(224, 223, 220, 0.35) 0%, transparent 40%),
-    radial-gradient(ellipse at 50% 80%, rgba(230, 229, 226, 0.25) 0%, transparent 50%),
-    radial-gradient(ellipse at 10% 70%, rgba(226, 225, 222, 0.2) 0%, transparent 35%),
-    var(--cream);
-  /* Floating card shadow + paper edge softness */
-  box-shadow: inset 0 0 150px rgba(0, 0, 0, 0.04), inset 0 0 40px rgba(0, 0, 0, 0.02);
+  background: var(--gray);
 }
 
-/* Floral corner decoration — top-left */
+/* Floral corner decoration — top-right */
 .scroll-section::before {
   content: '';
   position: absolute;
   top: -2%;
-  left: -2%;
-  width: clamp(200px, 42vw, 480px);
-  height: clamp(240px, 52vh, 580px);
-  background: url('/images/floral-tl.svg') top left no-repeat;
+  right: -2%;
+  width: clamp(180px, 38vw, 420px);
+  height: clamp(200px, 45vh, 500px);
+  background: url('/images/floral-tr.svg') top right no-repeat;
   background-size: contain;
   z-index: 3;
   pointer-events: none;
 }
 
-/* Floral corner decoration — bottom-right */
+/* Floral corner decoration — bottom-left */
 .scroll-section::after {
   content: '';
   position: absolute;
   bottom: -2%;
-  right: -2%;
-  width: clamp(200px, 42vw, 480px);
-  height: clamp(200px, 44vh, 480px);
-  background: url('/images/floral-br.svg') bottom right no-repeat;
+  left: -2%;
+  width: clamp(180px, 38vw, 420px);
+  height: clamp(180px, 40vh, 420px);
+  background: url('/images/floral-bl.svg') bottom left no-repeat;
   background-size: contain;
   z-index: 3;
   pointer-events: none;
@@ -143,66 +102,66 @@ body {
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
-  background-color: var(--cream);
+  background-color: var(--gray);
   z-index: 0;
 }
 
-/* ═══ Olive Green Sections (alternating) ═══ */
+/* ═══ Dark Gray Sections (alternating) ═══ */
 .section-olive {
-  background: var(--olive) !important;
+  background: var(--gray-dark) !important;
   box-shadow: none;
 }
 
-/* Hide floral decorations on olive sections */
+/* Hide floral decorations on dark sections */
 .section-olive::before,
 .section-olive::after {
   display: none !important;
 }
 
-/* Olive overlay for sections with bg images */
+/* Overlay for sections with bg images */
 .section-olive .section-overlay {
   background: linear-gradient(
     180deg,
-    rgba(111, 124, 87, 0.88) 0%,
-    rgba(111, 124, 87, 0.78) 50%,
-    rgba(111, 124, 87, 0.88) 100%
+    rgba(133, 133, 133, 0.88) 0%,
+    rgba(133, 133, 133, 0.78) 50%,
+    rgba(133, 133, 133, 0.88) 100%
   ) !important;
 }
 
-/* White dividers on olive sections */
+/* White dividers on dark sections */
 .section-olive .divider-gold,
 .section-olive .divider-gold-wide {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
 }
 
-/* White Quran verse on olive */
+/* White Quran verse on dark */
 .section-olive .quran-verse {
   color: rgba(255, 255, 255, 0.9);
 }
 
-/* Timeline elements on olive */
+/* Timeline elements on dark */
 .section-olive .timeline-line {
-  background: linear-gradient(180deg, transparent, rgba(255,255,255,0.5), transparent);
+  background: linear-gradient(180deg, transparent, var(--gold), transparent);
 }
 .section-olive .timeline-dot {
-  background: white;
-  border-color: var(--olive);
-  box-shadow: 0 0 0 2px white;
+  background: var(--gold);
+  border-color: var(--gray-dark);
+  box-shadow: 0 0 0 2px var(--gold);
 }
 
-/* Buttons on olive sections — white outline style */
+/* Buttons on dark sections — gold outline style */
 .section-olive .btn-gold {
   background: transparent;
-  border: 1.5px solid white;
-  color: white;
+  border: 1.5px solid var(--gold);
+  color: var(--gold);
   box-shadow: none;
 }
 .section-olive .btn-gold:hover {
-  background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.15);
+  background: rgba(201, 169, 110, 0.15);
+  box-shadow: 0 4px 16px rgba(201, 169, 110, 0.15);
 }
 
-/* Countdown on olive override */
+/* Countdown on dark override */
 .section-olive .countdown-number {
   color: white;
 }
@@ -210,7 +169,7 @@ body {
   color: rgba(255, 255, 255, 0.7);
 }
 
-/* Calendar on olive sections */
+/* Calendar on dark sections */
 .section-olive .calendar-grid .cal-header {
   color: rgba(255, 255, 255, 0.6);
 }
@@ -218,8 +177,8 @@ body {
   color: rgba(255, 255, 255, 0.85);
 }
 .section-olive .calendar-grid .cal-day.highlight {
-  background: white;
-  color: var(--olive);
+  background: var(--gold);
+  color: white;
 }
 
 /* When section has a bg image, push overlay above florals so florals stay behind */
@@ -232,9 +191,9 @@ body {
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(237, 237, 235, 0.88) 0%,
-    rgba(237, 237, 235, 0.78) 50%,
-    rgba(237, 237, 235, 0.88) 100%
+    rgba(155, 155, 155, 0.88) 0%,
+    rgba(155, 155, 155, 0.78) 50%,
+    rgba(155, 155, 155, 0.88) 100%
   );
   z-index: 1;
 }
@@ -244,9 +203,9 @@ body {
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(42, 42, 42, 0.7) 0%,
-    rgba(42, 42, 42, 0.5) 50%,
-    rgba(42, 42, 42, 0.7) 100%
+    rgba(80, 80, 80, 0.7) 0%,
+    rgba(80, 80, 80, 0.5) 50%,
+    rgba(80, 80, 80, 0.7) 100%
   );
   z-index: 1;
 }
@@ -276,14 +235,14 @@ body {
 .divider-gold {
   width: 80px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--sage), transparent);
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
   margin: 1.5rem auto;
 }
 
 .divider-gold-wide {
   width: 120px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--sage), transparent);
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
   margin: 2rem auto;
 }
 
@@ -298,18 +257,21 @@ body {
   font-family: 'Amiri', serif;
   font-size: clamp(1.1rem, 3vw, 1.6rem);
   line-height: 2.2;
-  color: var(--charcoal);
+  color: rgba(255, 255, 255, 0.9);
   direction: rtl;
   text-align: center;
 }
 
-/* ═══ Full-Viewport Envelope — Photorealistic Ivory ═══ */
+/* ═══ Full-Viewport Envelope — Gray Card with Gold Twine ═══ */
 .envelope-viewport {
   position: fixed;
   inset: 0;
   z-index: 50;
   overflow: hidden;
-  background: #6F7C57;
+  background: var(--gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: opacity 0.8s ease-in-out;
 }
 
@@ -323,230 +285,116 @@ body {
   100% { opacity: 0; }
 }
 
-/* Cotton paper texture overlay — visible grain like real stationery */
-.envelope-paper-texture {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  opacity: 0.4;
-  background-image:
-    /* Coarse horizontal fibers — olive-tinted */
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(85, 100, 69, 0.1) 2px,
-      rgba(85, 100, 69, 0.1) 3px
-    ),
-    /* Coarse vertical fibers */
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 3px,
-      rgba(80, 95, 65, 0.08) 3px,
-      rgba(80, 95, 65, 0.08) 4px
-    ),
-    /* Diagonal fibers */
-    repeating-linear-gradient(
-      35deg,
-      transparent,
-      transparent 4px,
-      rgba(90, 105, 72, 0.05) 4px,
-      rgba(90, 105, 72, 0.05) 5px
-    ),
-    /* Subtle noise-like dots */
-    radial-gradient(circle at 20% 30%, rgba(75,90,60,0.07) 1px, transparent 1px),
-    radial-gradient(circle at 80% 70%, rgba(75,90,60,0.06) 1px, transparent 1px),
-    radial-gradient(circle at 50% 50%, rgba(75,90,60,0.05) 1px, transparent 1px);
-  background-size: 3px 5px, 6px 4px, 7px 7px, 40px 40px, 35px 35px, 25px 25px;
+/* ═══ Envelope Card — centered gray rectangle ═══ */
+.envelope-card {
+  position: relative;
+  width: clamp(280px, 70vw, 400px);
+  height: clamp(400px, 80vh, 600px);
+  max-height: 85vh;
+  background: var(--gray-light);
+  border-radius: 2px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
-/* Base flap styling with paper texture */
-.envelope-flap {
+/* Top half of card — lifts upward on open */
+.envelope-card-top {
   position: absolute;
-  z-index: 2;
-}
-
-/* Top flap — lightest, catches overhead light */
-.envelope-flap-top {
   top: 0;
   left: 0;
   width: 100%;
-  height: 52%;
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-  background:
-    /* Subtle directional light gradient */
-    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 60%),
-    /* Base color — olive */
-    #6F7C57;
-  z-index: 4;
+  height: 50%;
+  background: var(--gray-light);
+  z-index: 3;
+  transform-origin: center top;
+  transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 1.2s ease;
 }
 
-/* Bottom flap — slightly in shadow */
-.envelope-flap-bottom {
+/* Bottom half of card */
+.envelope-card-bottom {
+  position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 52%;
-  clip-path: polygon(0 100%, 50% 0, 100% 100%);
-  background:
-    linear-gradient(0deg, rgba(255,255,255,0.04) 0%, transparent 50%),
-    #647254;
+  height: 50%;
+  background: var(--gray-light);
+  z-index: 1;
 }
 
-/* Left flap — slightly shaded */
-.envelope-flap-left {
-  top: 0;
+/* Gold twine band — horizontal across center */
+.envelope-twine {
+  position: absolute;
+  top: 50%;
   left: 0;
-  width: 52%;
-  height: 100%;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  width: 100%;
+  height: 6px;
+  transform: translateY(-50%);
+  z-index: 4;
   background:
-    linear-gradient(90deg, rgba(255,255,255,0.05) 0%, transparent 60%),
-    #687655;
-  z-index: 3;
+    repeating-linear-gradient(
+      90deg,
+      #C9A96E 0px,
+      #B8954A 2px,
+      #D4BA88 4px,
+      #C9A96E 6px
+    );
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.15),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
 }
 
-/* Right flap — catches side light */
-.envelope-flap-right {
-  top: 0;
-  right: 0;
-  width: 52%;
-  height: 100%;
-  clip-path: polygon(100% 0, 0 50%, 100% 100%);
-  background:
-    linear-gradient(270deg, rgba(255,255,255,0.06) 0%, transparent 60%),
-    #6A7856;
-  z-index: 3;
-}
-
-/* Fold shadow lines — visible creases like real paper folds */
-.envelope-flap-top::after,
-.envelope-flap-bottom::after,
-.envelope-flap-left::after,
-.envelope-flap-right::after {
+/* Second twine strand for jute rope effect */
+.envelope-twine::after {
   content: '';
   position: absolute;
+  top: -2px;
+  left: 0;
+  width: 100%;
+  height: 10px;
+  background:
+    repeating-linear-gradient(
+      115deg,
+      transparent 0px,
+      transparent 3px,
+      rgba(201, 169, 110, 0.3) 3px,
+      rgba(201, 169, 110, 0.3) 4px
+    );
   pointer-events: none;
 }
 
-.envelope-flap-top::after {
-  bottom: -1px;
-  left: 5%;
-  right: 5%;
-  height: 3px;
-  background: linear-gradient(90deg,
-    transparent,
-    rgba(0,0,0,0.06) 15%,
-    rgba(0,0,0,0.12) 35%,
-    rgba(0,0,0,0.16) 50%,
-    rgba(0,0,0,0.12) 65%,
-    rgba(0,0,0,0.06) 85%,
-    transparent
-  );
-  filter: blur(0.5px);
+/* Card top lifts when opening */
+.flap-opening .envelope-card-top {
+  animation: cardTopLift 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-.envelope-flap-bottom::after {
-  top: -1px;
-  left: 5%;
-  right: 5%;
-  height: 3px;
-  background: linear-gradient(90deg,
-    transparent,
-    rgba(0,0,0,0.06) 15%,
-    rgba(0,0,0,0.12) 35%,
-    rgba(0,0,0,0.16) 50%,
-    rgba(0,0,0,0.12) 65%,
-    rgba(0,0,0,0.06) 85%,
-    transparent
-  );
-  filter: blur(0.5px);
-}
-
-.envelope-flap-left::after {
-  right: -1px;
-  top: 5%;
-  bottom: 5%;
-  width: 3px;
-  background: linear-gradient(180deg,
-    transparent,
-    rgba(0,0,0,0.06) 15%,
-    rgba(0,0,0,0.12) 35%,
-    rgba(0,0,0,0.16) 50%,
-    rgba(0,0,0,0.12) 65%,
-    rgba(0,0,0,0.06) 85%,
-    transparent
-  );
-  filter: blur(0.5px);
-}
-
-.envelope-flap-right::after {
-  left: -1px;
-  top: 5%;
-  bottom: 5%;
-  width: 3px;
-  background: linear-gradient(180deg,
-    transparent,
-    rgba(0,0,0,0.06) 15%,
-    rgba(0,0,0,0.12) 35%,
-    rgba(0,0,0,0.16) 50%,
-    rgba(0,0,0,0.12) 65%,
-    rgba(0,0,0,0.06) 85%,
-    transparent
-  );
-  filter: blur(0.5px);
-}
-
-/* Flap open animations — fold outward with perspective */
-.flap-opening.envelope-flap-top {
-  transform-origin: center top;
-  animation: flapFoldTop 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-.flap-opening.envelope-flap-left {
-  transform-origin: left center;
-  animation: flapFoldLeft 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.05s forwards;
-}
-.flap-opening.envelope-flap-right {
-  transform-origin: right center;
-  animation: flapFoldRight 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.05s forwards;
-}
-.flap-opening.envelope-flap-bottom {
-  transform-origin: center bottom;
-  animation: flapFoldBottom 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards;
-}
-
-@keyframes flapFoldTop {
+@keyframes cardTopLift {
   0% { transform: perspective(800px) rotateX(0deg); opacity: 1; }
   60% { opacity: 1; }
-  100% { transform: perspective(800px) rotateX(-75deg); opacity: 0; }
-}
-@keyframes flapFoldBottom {
-  0% { transform: perspective(800px) rotateX(0deg); opacity: 1; }
-  60% { opacity: 1; }
-  100% { transform: perspective(800px) rotateX(75deg); opacity: 0; }
-}
-@keyframes flapFoldLeft {
-  0% { transform: perspective(800px) rotateY(0deg); opacity: 1; }
-  60% { opacity: 1; }
-  100% { transform: perspective(800px) rotateY(75deg); opacity: 0; }
-}
-@keyframes flapFoldRight {
-  0% { transform: perspective(800px) rotateY(0deg); opacity: 1; }
-  60% { opacity: 1; }
-  100% { transform: perspective(800px) rotateY(-75deg); opacity: 0; }
+  100% { transform: perspective(800px) rotateX(-85deg); opacity: 0; }
 }
 
-/* ═══ Photorealistic Ivory Wax Seal ═══ */
+/* Twine breaks apart on open */
+.flap-opening .envelope-twine {
+  animation: twineBreak 0.6s ease-out 0.1s forwards;
+}
+
+@keyframes twineBreak {
+  0% { transform: translateY(-50%) scaleX(1); opacity: 1; }
+  50% { transform: translateY(-50%) scaleX(1.02); opacity: 0.7; }
+  100% { transform: translateY(-50%) scaleX(0); opacity: 0; }
+}
+
+/* ═══ Cream Wax Seal — centered on twine ═══ */
 .cream-seal {
-  width: clamp(140px, 30vmin, 220px);
-  height: clamp(140px, 30vmin, 220px);
+  width: clamp(90px, 20vmin, 140px);
+  height: clamp(90px, 20vmin, 140px);
   border-radius: 50%;
   background:
     /* Subtle top-left highlight — matte, not glossy */
     radial-gradient(circle at 40% 30%, rgba(255,255,255,0.15) 0%, transparent 50%),
-    /* Wax surface — matte cream with subtle variation */
+    /* Wax surface — matte cream */
     radial-gradient(ellipse at 50% 48%,
       #EDE9E0 0%,
       #E8E4DB 25%,
@@ -554,41 +402,39 @@ body {
       #DDD8CE 75%,
       #D8D2C7 100%
     );
-  position: relative;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 10;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  /* Soft shadow — seal sitting on paper */
   box-shadow:
-    0 6px 20px rgba(0, 0, 0, 0.12),
-    0 2px 8px rgba(0, 0, 0, 0.08),
-    /* Inner shadow for 3D depth */
+    0 6px 20px rgba(0, 0, 0, 0.15),
+    0 2px 8px rgba(0, 0, 0, 0.1),
     inset 0 -4px 10px rgba(0, 0, 0, 0.07),
     inset 0 4px 8px rgba(255, 255, 255, 0.18);
   transition: transform 0.2s ease;
 }
 
-/* Raised outer rim — thick embossed edge like real wax overflow */
+/* Raised outer rim */
 .cream-seal::after {
   content: '';
   position: absolute;
   inset: -4px;
   border-radius: 50%;
-  border: 3.5px solid #DDD8CD;
+  border: 3px solid #DDD8CD;
   box-shadow:
-    /* Outer shadow below rim */
     0 2px 4px rgba(0, 0, 0, 0.08),
-    /* Inner highlight on top of rim */
     inset 0 1px 2px rgba(255, 255, 255, 0.25),
-    /* Inner shadow at bottom of rim */
     inset 0 -1px 2px rgba(0, 0, 0, 0.06);
   pointer-events: none;
 }
 
-/* Inner embossed ring — clear groove circle */
+/* Inner embossed ring */
 .cream-seal::before {
   content: '';
   position: absolute;
@@ -596,18 +442,13 @@ body {
   border-radius: 50%;
   border: 2px solid rgba(0, 0, 0, 0.06);
   box-shadow:
-    /* Outer highlight of groove */
     0 0 0 1px rgba(255, 255, 255, 0.20),
-    /* Inner shadow of groove */
     inset 0 0 0 1px rgba(0, 0, 0, 0.04),
-    /* Highlight below groove */
     inset 0 1px 2px rgba(255, 255, 255, 0.15),
-    /* Shadow above groove */
     0 1px 2px rgba(0, 0, 0, 0.04);
   pointer-events: none;
 }
 
-/* Additional inner ring detail */
 .seal-inner-ring {
   position: absolute;
   inset: 15%;
@@ -620,19 +461,18 @@ body {
 }
 
 .cream-seal:hover {
-  transform: scale(1.03);
+  transform: translate(-50%, -50%) scale(1.03);
 }
 .cream-seal:active {
-  transform: scale(0.97);
+  transform: translate(-50%, -50%) scale(0.97);
 }
 
-/* Monogram text — embossed cursive into wax */
+/* Monogram text — embossed into wax */
 .seal-monogram {
-  font-size: clamp(1.6rem, 5vmin, 2.8rem);
+  font-size: clamp(1.2rem, 4vmin, 2rem);
   font-weight: 300;
   font-style: italic;
   letter-spacing: 0.02em;
-  /* Embossed text effect — pressed into wax */
   color: rgba(140, 130, 115, 0.45);
   text-shadow:
     0 1px 1px rgba(255, 255, 255, 0.35),
@@ -648,15 +488,15 @@ body {
 }
 
 @keyframes sealFadeOut {
-  0% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(0.85); opacity: 0; }
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.85); opacity: 0; }
 }
 
-/* Invitation text below seal — elegant handwritten cursive */
+/* Invitation text below card */
 .envelope-invitation-text {
-  margin-top: clamp(2rem, 5vh, 4rem);
-  font-size: clamp(1.15rem, 3.2vw, 1.65rem);
-  color: rgba(255, 255, 255, 0.6);
+  margin-top: clamp(1.5rem, 4vh, 3rem);
+  font-size: clamp(1.05rem, 3vw, 1.5rem);
+  color: rgba(255, 255, 255, 0.55);
   letter-spacing: 0.01em;
   text-align: center;
   line-height: 1.7;
@@ -676,13 +516,13 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   padding: 4px 0;
-  color: var(--charcoal-light);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .calendar-grid .cal-day {
   font-size: 0.8rem;
   padding: 4px 0;
-  color: var(--charcoal);
+  color: rgba(255, 255, 255, 0.85);
   border-radius: 50%;
   aspect-ratio: 1;
   display: flex;
@@ -691,7 +531,7 @@ body {
 }
 
 .calendar-grid .cal-day.highlight {
-  background: var(--sage);
+  background: var(--gold);
   color: white;
   font-weight: 600;
 }
@@ -703,16 +543,16 @@ body {
 /* Timeline */
 .timeline-line {
   width: 2px;
-  background: linear-gradient(180deg, transparent, var(--sage), transparent);
+  background: linear-gradient(180deg, transparent, var(--gold), transparent);
 }
 
 .timeline-dot {
   width: 12px;
   height: 12px;
-  background: var(--olive);
+  background: var(--gold);
   border-radius: 50%;
-  border: 2px solid var(--cream);
-  box-shadow: 0 0 0 2px var(--olive);
+  border: 2px solid var(--gray);
+  box-shadow: 0 0 0 2px var(--gold);
 }
 
 /* Countdown */
@@ -727,7 +567,7 @@ body {
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(2.5rem, 8vw, 4.5rem);
   font-weight: 300;
-  color: var(--sage-dark);
+  color: white;
   line-height: 1;
 }
 
@@ -736,45 +576,46 @@ body {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  color: var(--charcoal-light);
+  color: rgba(255, 255, 255, 0.6);
   margin-top: 0.5rem;
 }
 
 /* Buttons */
 .btn-gold {
-  background: linear-gradient(135deg, var(--sage), var(--sage-dark));
-  color: white;
+  background: transparent;
+  color: var(--gold);
   padding: 0.75rem 2rem;
   border-radius: 4px;
   font-family: 'Lora', serif;
   font-size: 0.9rem;
   letter-spacing: 0.05em;
   transition: all 0.3s ease;
-  border: none;
+  border: 1.5px solid var(--gold);
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(122, 139, 105, 0.3);
+  box-shadow: none;
 }
 
 .btn-gold:hover {
-  box-shadow: 0 4px 16px rgba(122, 139, 105, 0.4);
+  background: rgba(201, 169, 110, 0.15);
+  box-shadow: 0 4px 16px rgba(201, 169, 110, 0.2);
   transform: translateY(-1px);
 }
 
 .btn-outline-gold {
   background: transparent;
-  color: var(--sage-dark);
+  color: var(--gold);
   padding: 0.75rem 2rem;
   border-radius: 4px;
   font-family: 'Lora', serif;
   font-size: 0.9rem;
   letter-spacing: 0.05em;
   transition: all 0.3s ease;
-  border: 1px solid var(--sage);
+  border: 1px solid var(--gold);
   cursor: pointer;
 }
 
 .btn-outline-gold:hover {
-  background: var(--sage);
+  background: rgba(201, 169, 110, 0.15);
   color: white;
 }
 
@@ -787,20 +628,21 @@ body {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: rgba(255, 253, 247, 0.9);
+  background: rgba(80, 80, 80, 0.7);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(122, 139, 105, 0.3);
+  border: 1px solid rgba(201, 169, 110, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
 }
 
 .audio-btn:hover {
-  background: rgba(255, 253, 247, 1);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  background: rgba(80, 80, 80, 0.9);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  border-color: var(--gold);
 }
 
 [dir="rtl"] .audio-btn {
@@ -816,19 +658,19 @@ body {
   z-index: 100;
   padding: 0.5rem 1rem;
   border-radius: 20px;
-  background: rgba(255, 253, 247, 0.9);
+  background: rgba(80, 80, 80, 0.7);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(122, 139, 105, 0.3);
+  border: 1px solid rgba(201, 169, 110, 0.4);
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  color: var(--charcoal);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  color: white;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .lang-toggle:hover {
-  background: rgba(255, 253, 247, 1);
-  border-color: var(--sage);
+  background: rgba(80, 80, 80, 0.9);
+  border-color: var(--gold);
 }
 
 [dir="rtl"] .lang-toggle {
@@ -846,7 +688,7 @@ body {
 }
 
 .scroll-container::-webkit-scrollbar-thumb {
-  background: var(--sage-light);
+  background: var(--gold);
   border-radius: 2px;
 }
 
@@ -957,4 +799,3 @@ body {
   overflow: hidden !important;
   scroll-snap-type: none !important;
 }
-
