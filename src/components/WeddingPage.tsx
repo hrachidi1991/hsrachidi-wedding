@@ -13,13 +13,18 @@ interface TimelineItem {
   sortOrder: number;
 }
 
+interface GuestAttendance {
+  name: string;
+  attending: boolean;
+}
+
 interface RsvpData {
   token: string;
   groupCode: string;
   maxGuests: number;
   side: string;
   guests: any[];
-  rsvp: { attending: boolean; numberAttending: number; guestNames: string[] } | null;
+  rsvp: { attending: boolean; numberAttending: number; guestNames: any } | null;
 }
 
 interface Props {
@@ -38,15 +43,39 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  // RSVP State
-  const [rsvpAttending, setRsvpAttending] = useState<boolean | null>(
-    rsvpData?.rsvp?.attending ?? null
-  );
-  const [numAttending, setNumAttending] = useState(rsvpData?.rsvp?.numberAttending || 1);
-  const [guestNames, setGuestNames] = useState<string[]>(
-    rsvpData?.rsvp?.guestNames || new Array(rsvpData?.maxGuests || 4).fill('')
-  );
-  const [rsvpSubmitted, setRsvpSubmitted] = useState(false);
+  // RSVP State — per-guest attendance toggles
+  const initAttendance = (): GuestAttendance[] => {
+    const dbGuests = rsvpData?.guests || [];
+    const existingRsvp = rsvpData?.rsvp?.guestNames;
+
+    // Build map from existing RSVP data (new format: objects, old format: strings)
+    const rsvpMap = new Map<string, boolean>();
+    if (Array.isArray(existingRsvp)) {
+      existingRsvp.forEach((entry: any) => {
+        if (typeof entry === 'object' && entry !== null && 'name' in entry) {
+          rsvpMap.set(entry.name.toLowerCase(), entry.attending);
+        } else if (typeof entry === 'string' && entry) {
+          rsvpMap.set(entry.toLowerCase(), true);
+        }
+      });
+    }
+
+    if (dbGuests.length === 0) return [];
+
+    return dbGuests.map((g: any) => {
+      const fullName = `${g.firstName} ${g.familyName}`;
+      const key = fullName.toLowerCase();
+      // Match by full name, or first name for legacy data
+      const matchFull = rsvpMap.get(key);
+      const matchFirst = rsvpMap.get(g.firstName.toLowerCase());
+      const attending = matchFull !== undefined ? matchFull : (matchFirst !== undefined ? matchFirst : true);
+      return { name: fullName, attending };
+    });
+  };
+
+  const [guestAttendance, setGuestAttendance] = useState<GuestAttendance[]>(initAttendance);
+  const [rsvpSubmitted, setRsvpSubmitted] = useState(!!rsvpData?.rsvp);
+  const [isEditing, setIsEditing] = useState(!rsvpData?.rsvp);
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [rsvpMessage, setRsvpMessage] = useState('');
 
@@ -158,8 +187,16 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
 
   const isRtl = locale === 'ar';
 
+  const toggleGuestAttendance = (index: number) => {
+    setGuestAttendance((prev) =>
+      prev.map((g, i) => (i === index ? { ...g, attending: !g.attending } : g))
+    );
+  };
+
+  const attendingCount = guestAttendance.filter((g) => g.attending).length;
+
   const handleRsvpSubmit = async () => {
-    if (!rsvpData?.token || rsvpAttending === null) return;
+    if (!rsvpData?.token || guestAttendance.length === 0) return;
     setRsvpLoading(true);
     try {
       const res = await fetch('/api/rsvp', {
@@ -167,15 +204,14 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: rsvpData.token,
-          attending: rsvpAttending,
-          numberAttending: rsvpAttending ? numAttending : 0,
-          guestNames: rsvpAttending ? guestNames.slice(0, numAttending) : [],
+          guestAttendance,
           language: locale,
         }),
       });
       if (res.ok) {
         const data = await res.json();
         setRsvpSubmitted(true);
+        setIsEditing(false);
         setRsvpMessage(data.updated ? t(locale, 'rsvpUpdated') : t(locale, 'rsvpSuccess'));
       } else {
         setRsvpMessage(t(locale, 'rsvpError'));
@@ -227,7 +263,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
       <div ref={scrollRef} className={`scroll-container${!showContent ? ' no-scroll' : ''}`}>
 
         {/* ═══ SECTION 2 — HERO ═══ */}
-        <section className="scroll-section" data-section="2">
+        <section className="scroll-section section-olive" data-section="2">
           {settings.heroImage && (
             <>
               <div className="section-bg" style={{ backgroundImage: `url(${settings.heroImage})` }} />
@@ -235,35 +271,35 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
             </>
           )}
           <div className={`section-content transition-all duration-1000 ${sectionVisible(2) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <p className={`text-xs sm:text-sm uppercase tracking-[0.15em] sm:tracking-[0.3em] text-sage-600 mb-4 sm:mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+            <p className={`text-xs sm:text-sm uppercase tracking-[0.15em] sm:tracking-[0.3em] text-white/60 mb-4 sm:mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
               {t(locale, 'weddingOf')}
             </p>
-            
+
             <h1 className={`mb-4 ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
-              <span className="block text-4xl sm:text-5xl md:text-6xl font-light text-charcoal-800 leading-tight">
+              <span className="block text-4xl sm:text-5xl md:text-6xl font-light text-white leading-tight">
                 {isRtl ? settings.groomNameAr : settings.groomNameEn}
               </span>
-              <span className="block text-2xl sm:text-3xl text-sage-500 my-2 font-display">&</span>
-              <span className="block text-4xl sm:text-5xl md:text-6xl font-light text-charcoal-800 leading-tight">
+              <span className="block text-2xl sm:text-3xl text-white/50 my-2 font-display">&</span>
+              <span className="block text-4xl sm:text-5xl md:text-6xl font-light text-white leading-tight">
                 {isRtl ? settings.brideNameAr : settings.brideNameEn}
               </span>
             </h1>
 
             <div className="divider-gold-wide" />
 
-            <p className={`text-lg text-charcoal-600 ${isRtl ? 'font-arabic' : 'font-body italic'}`}>
+            <p className={`text-lg text-white/80 ${isRtl ? 'font-arabic' : 'font-body italic'}`}>
               {t(locale, 'areGettingMarried')}
             </p>
-            <p className={`text-xl text-charcoal-700 mt-2 font-medium ${isRtl ? 'font-arabic' : 'font-display'}`}>
+            <p className={`text-xl text-white/90 mt-2 font-medium ${isRtl ? 'font-arabic' : 'font-display'}`}>
               {settings.weddingDate}
             </p>
 
             {/* Scroll indicator */}
             <div className="mt-12 animate-float">
-              <p className={`text-xs uppercase tracking-[0.2em] text-charcoal-400 mb-2 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+              <p className={`text-xs uppercase tracking-[0.2em] text-white/50 mb-2 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                 {t(locale, 'scrollDown')}
               </p>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-sage-500">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-white/50">
                 <path d="M12 5v14M5 12l7 7 7-7" />
               </svg>
             </div>
@@ -378,7 +414,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
         </section>
 
         {/* ═══ SECTION 4 — INVITATION (Islamic) ═══ */}
-        <section className="scroll-section" data-section="4">
+        <section className="scroll-section section-olive" data-section="4">
           {settings.invitationBg && (
             <>
               <div className="section-bg" style={{ backgroundImage: `url(${settings.invitationBg})` }} />
@@ -387,7 +423,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
           )}
           <div className={`section-content max-w-2xl transition-all duration-1000 delay-200 ${sectionVisible(4) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             {/* Bismillah */}
-            <p className="font-arabicDisplay text-xl sm:text-2xl md:text-3xl text-sage-700 mb-4 sm:mb-6" dir="rtl">
+            <p className="font-arabicDisplay text-xl sm:text-2xl md:text-3xl text-white/80 mb-4 sm:mb-6" dir="rtl">
               {t(locale, 'bismillah')}
             </p>
 
@@ -395,13 +431,13 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
 
             {/* Quran Verse */}
             <div className="my-8 px-4">
-              <p className="quran-verse text-charcoal-700" dir="rtl">
+              <p className="quran-verse" dir="rtl">
                 {t(locale, 'quranVerse')}
               </p>
             </div>
 
             {/* Sadaq Allah */}
-            <p className="font-arabicDisplay text-lg text-sage-600 mb-8" dir="rtl">
+            <p className="font-arabicDisplay text-lg text-white/70 mb-8" dir="rtl">
               {t(locale, 'sadaqAllah')}
             </p>
 
@@ -412,9 +448,9 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
               {(isRtl ? settings.invitationTextAr : settings.invitationTextEn)
                 .split('\n')
                 .map((line, i) => (
-                  <p key={i} className={`text-charcoal-700 ${
+                  <p key={i} className={`text-white/90 ${
                     line.includes('Hussein') || line.includes('حسين')
-                      ? `text-xl sm:text-2xl font-semibold text-charcoal-800 my-3 ${isRtl ? 'font-arabicDisplay' : 'font-display'}`
+                      ? `text-xl sm:text-2xl font-semibold text-white my-3 ${isRtl ? 'font-arabicDisplay' : 'font-display'}`
                       : 'text-base sm:text-lg'
                   }`}>
                     {line}
@@ -500,7 +536,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
 
         {/* ═══ SECTION 6 — PROGRAM TIMELINE ═══ */}
         {timelineItems.length > 0 && (
-          <section className="scroll-section" data-section="6">
+          <section className="scroll-section section-olive" data-section="6">
             {settings.timelineBg && (
               <>
                 <div className="section-bg" style={{ backgroundImage: `url(${settings.timelineBg})` }} />
@@ -508,7 +544,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
               </>
             )}
             <div className={`section-content transition-all duration-1000 delay-200 ${sectionVisible(6) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <p className={`text-sm uppercase tracking-[0.3em] text-sage-600 mb-10 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+              <p className={`text-sm uppercase tracking-[0.3em] text-white/60 mb-10 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                 {t(locale, 'programTitle')}
               </p>
 
@@ -531,10 +567,10 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
                         <div className="timeline-dot" />
                       </div>
                       <div className={`${isRtl ? 'text-right' : 'text-left'}`}>
-                        <p className={`text-sage-700 font-semibold text-lg ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
+                        <p className={`text-white/90 font-semibold text-lg ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
                           {item.time}
                         </p>
-                        <p className={`text-charcoal-600 text-base mt-0.5 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                        <p className={`text-white/70 text-base mt-0.5 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                           {isRtl ? item.labelAr : item.labelEn}
                         </p>
                       </div>
@@ -596,7 +632,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
         </section>
 
         {/* ═══ SECTION 8 — RSVP ═══ */}
-        <section className="scroll-section" data-section="8" style={{ minHeight: 'max(100dvh, 700px)', height: 'auto' }}>
+        <section className="scroll-section section-olive" data-section="8" style={{ minHeight: 'max(100dvh, 700px)', height: 'auto' }}>
           {settings.rsvpBg && (
             <>
               <div className="section-bg" style={{ backgroundImage: `url(${settings.rsvpBg})`, position: 'fixed' }} />
@@ -604,107 +640,131 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
             </>
           )}
           <div className={`section-content py-12 transition-all duration-1000 delay-200 ${sectionVisible(8) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <h2 className={`text-sm uppercase tracking-[0.3em] text-sage-600 mb-4 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+            <h2 className={`text-sm uppercase tracking-[0.3em] text-white/70 mb-4 ${isRtl ? 'font-arabic' : 'font-body'}`}>
               {t(locale, 'rsvpTitle')}
             </h2>
 
             {/* Deadline */}
-            <p className={`text-base text-charcoal-600 mb-8 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-              {t(locale, 'confirmBy')}: <span className="font-semibold text-charcoal-800">
+            <p className={`text-base text-white/80 mb-8 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+              {t(locale, 'confirmBy')}: <span className="font-semibold text-white">
                 {isRtl ? settings.rsvpDeadlineAr : settings.rsvpDeadlineEn}
               </span>
             </p>
 
             {!rsvpData?.token ? (
-              <div className="bg-white/60 backdrop-blur-sm rounded-lg p-8 border border-sage-300/30">
+              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-8 border border-white/20">
                 <p className={`text-charcoal-500 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                   {locale === 'en'
                     ? 'Please use your personal invitation link to RSVP.'
                     : 'يرجى استخدام رابط الدعوة الشخصي للتأكيد.'}
                 </p>
               </div>
-            ) : rsvpSubmitted ? (
-              <div className="bg-white/60 backdrop-blur-sm rounded-lg p-8 border border-sage-300/30">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-green-500 mb-4">
+            ) : guestAttendance.length === 0 ? (
+              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-8 border border-white/20">
+                <p className={`text-charcoal-500 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                  {t(locale, 'noGuestsRegistered')}
+                </p>
+              </div>
+            ) : rsvpSubmitted && !isEditing ? (
+              /* ═══ SUBMITTED STATE — show summary ═══ */
+              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 sm:p-8 border border-white/20 max-w-lg mx-auto">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-green-500 mb-3">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                   <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
-                <p className={`text-lg text-charcoal-700 ${isRtl ? 'font-arabic' : 'font-body'}`}>{rsvpMessage}</p>
-              </div>
-            ) : (
-              <div className="bg-white/60 backdrop-blur-sm rounded-lg p-6 sm:p-8 border border-sage-300/30 max-w-lg mx-auto">
-                {/* Attendance toggle */}
-                <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
-                  <button
-                    onClick={() => { setRsvpAttending(true); if (numAttending === 0) setNumAttending(1); }}
-                    className={`rsvp-btn rsvp-btn-attending ${rsvpAttending === true ? 'active' : ''}`}
-                  >
-                    {t(locale, 'attending')}
-                  </button>
-                  <button
-                    onClick={() => { setRsvpAttending(false); setNumAttending(0); }}
-                    className={`rsvp-btn rsvp-btn-not-attending ${rsvpAttending === false ? 'active' : ''}`}
-                  >
-                    {t(locale, 'notAttending')}
-                  </button>
-                </div>
+                <p className={`text-lg text-charcoal-700 mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                  {rsvpMessage || t(locale, 'rsvpAlreadySubmitted')}
+                </p>
 
-                {/* Guest count */}
-                <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-sm ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                  <div>
-                    <label className="block text-charcoal-500 mb-1">{t(locale, 'maxGuests')}</label>
-                    <div className="bg-charcoal-50 rounded px-3 py-2 text-charcoal-700 font-semibold">
-                      {rsvpData.maxGuests}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-charcoal-500 mb-1">{t(locale, 'numberAttending')}</label>
-                    <select
-                      value={numAttending}
-                      onChange={(e) => setNumAttending(parseInt(e.target.value))}
-                      disabled={rsvpAttending !== true}
-                      className="w-full bg-white border border-charcoal-200 rounded px-3 py-2 text-charcoal-700 disabled:opacity-50 disabled:bg-charcoal-50"
-                    >
-                      {Array.from({ length: rsvpData.maxGuests }, (_, i) => i + 1).map((n) => (
-                        <option key={n} value={n}>{n}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Guest name inputs */}
+                {/* Per-guest summary */}
                 <div className="space-y-3 mb-6">
-                  {Array.from({ length: rsvpData.maxGuests }).map((_, i) => (
-                    <div key={i}>
-                      <label className={`block text-xs text-charcoal-400 mb-1 ${isRtl ? 'font-arabic text-right' : 'font-body text-left'}`}>
-                        {t(locale, 'guest')} {i + 1}
-                      </label>
-                      <input
-                        type="text"
-                        value={guestNames[i] || ''}
-                        onChange={(e) => {
-                          const updated = [...guestNames];
-                          updated[i] = e.target.value;
-                          setGuestNames(updated);
-                        }}
-                        disabled={rsvpAttending !== true || i >= numAttending}
-                        placeholder={`${t(locale, 'guestName')} ${i + 1}`}
-                        className={`w-full border rounded px-3 py-2.5 text-sm transition-all
-                          ${i < numAttending && rsvpAttending
-                            ? 'border-sage-300 bg-white text-charcoal-800 focus:border-sage-500 focus:ring-1 focus:ring-sage-300'
-                            : 'border-charcoal-100 bg-charcoal-50 text-charcoal-300 cursor-not-allowed'
-                          }
-                          ${isRtl ? 'font-arabic text-right' : 'font-body'}
-                        `}
-                      />
+                  {guestAttendance.map((g, i) => (
+                    <div key={i} className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        g.attending ? 'bg-green-100' : 'bg-red-100'
+                      }`}>
+                        {g.attending ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-green-600">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-red-500">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className={`text-base text-charcoal-700 ${isRtl ? 'font-arabic' : 'font-body'}`}>{g.name}</span>
                     </div>
                   ))}
                 </div>
 
-                {/* Confirm */}
+                <p className={`text-sm text-charcoal-500 mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                  {attendingCount} / {guestAttendance.length} {t(locale, 'perGuestAttending').toLowerCase()}
+                </p>
+
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="btn-gold w-full"
+                >
+                  {t(locale, 'rsvpUpdatePrompt')}
+                </button>
+              </div>
+            ) : (
+              /* ═══ EDITING STATE — per-guest toggle form ═══ */
+              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 sm:p-8 border border-white/20 max-w-lg mx-auto">
+                {/* Per-guest attendance toggles */}
+                <div className="space-y-4 mb-6">
+                  {guestAttendance.map((g, i) => (
+                    <div key={i} className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                      {/* Attending toggle */}
+                      <button
+                        onClick={() => toggleGuestAttendance(i)}
+                        className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+                          g.attending
+                            ? 'bg-green-500 text-white shadow-md shadow-green-200'
+                            : 'bg-white border-2 border-charcoal-200 text-charcoal-300 hover:border-green-300'
+                        }`}
+                        aria-label={g.attending ? t(locale, 'perGuestAttending') : t(locale, 'perGuestNotAttending')}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </button>
+
+                      {/* Guest name */}
+                      <span className={`flex-1 text-base text-charcoal-700 ${isRtl ? 'text-right font-arabic' : 'font-body'}`}>
+                        {g.name}
+                      </span>
+
+                      {/* Not attending toggle */}
+                      <button
+                        onClick={() => toggleGuestAttendance(i)}
+                        className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+                          !g.attending
+                            ? 'bg-red-500 text-white shadow-md shadow-red-200'
+                            : 'bg-white border-2 border-charcoal-200 text-charcoal-300 hover:border-red-300'
+                        }`}
+                        aria-label={!g.attending ? t(locale, 'perGuestNotAttending') : t(locale, 'perGuestAttending')}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Attendance summary */}
+                <p className={`text-sm text-charcoal-500 mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                  {attendingCount} / {guestAttendance.length} {t(locale, 'perGuestAttending').toLowerCase()}
+                </p>
+
+                {/* Confirm button */}
                 <button
                   onClick={handleRsvpSubmit}
-                  disabled={rsvpAttending === null || rsvpLoading}
+                  disabled={rsvpLoading}
                   className="btn-gold w-full disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {rsvpLoading ? (
@@ -729,9 +789,9 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
                 href={settings.whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 mt-8 text-charcoal-500 hover:text-green-600 transition-colors"
+                className="inline-flex items-center gap-2 mt-8 text-white/70 hover:text-white transition-colors"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-green-500">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-white/70">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                 </svg>
                 <span className={`text-sm ${isRtl ? 'font-arabic' : 'font-body'}`}>
@@ -743,7 +803,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
             {/* Footer */}
             <div className="mt-8">
               <div className="divider-gold" />
-              <p className={`text-xs text-charcoal-400 mt-4 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+              <p className={`text-xs text-white/50 mt-4 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                 {isRtl ? `${settings.groomNameAr} & ${settings.brideNameAr}` : `${settings.groomNameEn} & ${settings.brideNameEn}`} — {settings.weddingDate}
               </p>
             </div>
@@ -752,25 +812,29 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
 
       </div> {/* close scroll-container */}
 
-      {/* ═══ ENVELOPE OVERLAY — cream/ivory minimalist style ═══ */}
+      {/* ═══ ENVELOPE OVERLAY — photorealistic ivory style ═══ */}
       {!envelopeOpened && (
         <div className={`envelope-viewport ${flapsOpening ? 'envelope-fading' : ''}`}>
-          {/* Four cream flaps */}
+          {/* Paper texture overlay */}
+          <div className="envelope-paper-texture" />
+
+          {/* Four ivory flaps */}
           <div className={`envelope-flap envelope-flap-top ${flapsOpening ? 'flap-opening' : ''}`} />
           <div className={`envelope-flap envelope-flap-bottom ${flapsOpening ? 'flap-opening' : ''}`} />
           <div className={`envelope-flap envelope-flap-left ${flapsOpening ? 'flap-opening' : ''}`} />
           <div className={`envelope-flap envelope-flap-right ${flapsOpening ? 'flap-opening' : ''}`} />
 
-          {/* Center content: Seal + invitation text */}
+          {/* Center content: Wax seal + invitation text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ zIndex: 10 }}>
-            {/* Cream wax seal with H & S monogram */}
+            {/* Photorealistic wax seal with H & S monogram */}
             <button
               onClick={handleOpenEnvelope}
               className={`cream-seal ${sealBreaking ? 'seal-fade-out' : ''}`}
               disabled={sealBreaking}
               aria-label="Open envelope"
             >
-              <span className="seal-monogram font-display">H & S</span>
+              <span className="seal-inner-ring" />
+              <span className="seal-monogram font-display" style={{ fontStyle: 'italic' }}>H & S</span>
             </button>
 
             {/* Invitation text below seal */}

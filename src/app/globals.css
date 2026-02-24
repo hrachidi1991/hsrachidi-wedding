@@ -5,12 +5,13 @@
 @tailwind utilities;
 
 :root {
-  --sage: #7a8b69;
-  --sage-light: #A3B18A;
-  --sage-dark: #4f5c44;
+  --sage: #6F7C57;
+  --sage-light: #8B9C73;
+  --sage-dark: #556445;
+  --olive: #6F7C57;
   --gold: #C9A96E;
-  --cream: #F8F7F4;
-  --cream-warm: #F5F0E8;
+  --cream: #EDEDEB;
+  --cream-warm: #E8E7E5;
   --charcoal: #2a2a2a;
   --charcoal-light: #4f4f4f;
 }
@@ -97,11 +98,11 @@ body {
       rgba(185, 178, 162, 0.025) 6px,
       rgba(185, 178, 162, 0.025) 7px
     ),
-    /* Soft warm patches (uneven handmade paper feel) */
-    radial-gradient(ellipse at 20% 30%, rgba(242, 236, 224, 0.5) 0%, transparent 45%),
-    radial-gradient(ellipse at 80% 60%, rgba(238, 232, 218, 0.4) 0%, transparent 40%),
-    radial-gradient(ellipse at 50% 80%, rgba(245, 240, 230, 0.3) 0%, transparent 50%),
-    radial-gradient(ellipse at 10% 70%, rgba(240, 234, 222, 0.25) 0%, transparent 35%),
+    /* Soft neutral patches (uneven handmade paper feel) */
+    radial-gradient(ellipse at 20% 30%, rgba(228, 227, 224, 0.4) 0%, transparent 45%),
+    radial-gradient(ellipse at 80% 60%, rgba(224, 223, 220, 0.35) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 80%, rgba(230, 229, 226, 0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 10% 70%, rgba(226, 225, 222, 0.2) 0%, transparent 35%),
     var(--cream);
   /* Floating card shadow + paper edge softness */
   box-shadow: inset 0 0 150px rgba(0, 0, 0, 0.04), inset 0 0 40px rgba(0, 0, 0, 0.02);
@@ -146,6 +147,81 @@ body {
   z-index: 0;
 }
 
+/* ═══ Olive Green Sections (alternating) ═══ */
+.section-olive {
+  background: var(--olive) !important;
+  box-shadow: none;
+}
+
+/* Hide floral decorations on olive sections */
+.section-olive::before,
+.section-olive::after {
+  display: none !important;
+}
+
+/* Olive overlay for sections with bg images */
+.section-olive .section-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(111, 124, 87, 0.88) 0%,
+    rgba(111, 124, 87, 0.78) 50%,
+    rgba(111, 124, 87, 0.88) 100%
+  ) !important;
+}
+
+/* White dividers on olive sections */
+.section-olive .divider-gold,
+.section-olive .divider-gold-wide {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+}
+
+/* White Quran verse on olive */
+.section-olive .quran-verse {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Timeline elements on olive */
+.section-olive .timeline-line {
+  background: linear-gradient(180deg, transparent, rgba(255,255,255,0.5), transparent);
+}
+.section-olive .timeline-dot {
+  background: white;
+  border-color: var(--olive);
+  box-shadow: 0 0 0 2px white;
+}
+
+/* Buttons on olive sections — white outline style */
+.section-olive .btn-gold {
+  background: transparent;
+  border: 1.5px solid white;
+  color: white;
+  box-shadow: none;
+}
+.section-olive .btn-gold:hover {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.15);
+}
+
+/* Countdown on olive override */
+.section-olive .countdown-number {
+  color: white;
+}
+.section-olive .countdown-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Calendar on olive sections */
+.section-olive .calendar-grid .cal-header {
+  color: rgba(255, 255, 255, 0.6);
+}
+.section-olive .calendar-grid .cal-day {
+  color: rgba(255, 255, 255, 0.85);
+}
+.section-olive .calendar-grid .cal-day.highlight {
+  background: white;
+  color: var(--olive);
+}
+
 /* When section has a bg image, push overlay above florals so florals stay behind */
 .section-bg + .section-overlay {
   z-index: 2;
@@ -156,9 +232,9 @@ body {
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(248, 247, 244, 0.88) 0%,
-    rgba(248, 247, 244, 0.78) 50%,
-    rgba(248, 247, 244, 0.88) 100%
+    rgba(237, 237, 235, 0.88) 0%,
+    rgba(237, 237, 235, 0.78) 50%,
+    rgba(237, 237, 235, 0.88) 100%
   );
   z-index: 1;
 }
@@ -227,13 +303,13 @@ body {
   text-align: center;
 }
 
-/* ═══ Full-Viewport Envelope — Cream/Ivory Minimalist ═══ */
+/* ═══ Full-Viewport Envelope — Photorealistic Ivory ═══ */
 .envelope-viewport {
   position: fixed;
   inset: 0;
   z-index: 50;
   overflow: hidden;
-  background: #f0ebe3;
+  background: #6F7C57;
   transition: opacity 0.8s ease-in-out;
 }
 
@@ -247,79 +323,105 @@ body {
   100% { opacity: 0; }
 }
 
-/* Cream cotton paper texture for flaps */
+/* Cotton paper texture overlay — visible grain like real stationery */
+.envelope-paper-texture {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.4;
+  background-image:
+    /* Coarse horizontal fibers — olive-tinted */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(85, 100, 69, 0.1) 2px,
+      rgba(85, 100, 69, 0.1) 3px
+    ),
+    /* Coarse vertical fibers */
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 3px,
+      rgba(80, 95, 65, 0.08) 3px,
+      rgba(80, 95, 65, 0.08) 4px
+    ),
+    /* Diagonal fibers */
+    repeating-linear-gradient(
+      35deg,
+      transparent,
+      transparent 4px,
+      rgba(90, 105, 72, 0.05) 4px,
+      rgba(90, 105, 72, 0.05) 5px
+    ),
+    /* Subtle noise-like dots */
+    radial-gradient(circle at 20% 30%, rgba(75,90,60,0.07) 1px, transparent 1px),
+    radial-gradient(circle at 80% 70%, rgba(75,90,60,0.06) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(75,90,60,0.05) 1px, transparent 1px);
+  background-size: 3px 5px, 6px 4px, 7px 7px, 40px 40px, 35px 35px, 25px 25px;
+}
+
+/* Base flap styling with paper texture */
 .envelope-flap {
   position: absolute;
   z-index: 2;
-  background:
-    /* Cotton fiber texture — visible grain */
-    repeating-linear-gradient(
-      2deg,
-      transparent,
-      transparent 1px,
-      rgba(200, 192, 178, 0.07) 1px,
-      rgba(200, 192, 178, 0.07) 2px
-    ),
-    repeating-linear-gradient(
-      88deg,
-      transparent,
-      transparent 1px,
-      rgba(195, 188, 172, 0.06) 1px,
-      rgba(195, 188, 172, 0.06) 2px
-    ),
-    repeating-linear-gradient(
-      42deg,
-      transparent,
-      transparent 5px,
-      rgba(210, 202, 188, 0.03) 5px,
-      rgba(210, 202, 188, 0.03) 6px
-    );
 }
 
-/* Top flap — slightly lighter, catches light */
+/* Top flap — lightest, catches overhead light */
 .envelope-flap-top {
   top: 0;
   left: 0;
   width: 100%;
   height: 52%;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
-  background-color: #ede8df;
+  background:
+    /* Subtle directional light gradient */
+    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 60%),
+    /* Base color — olive */
+    #6F7C57;
   z-index: 4;
 }
 
-/* Bottom flap — slightly warmer shadow */
+/* Bottom flap — slightly in shadow */
 .envelope-flap-bottom {
   bottom: 0;
   left: 0;
   width: 100%;
   height: 52%;
   clip-path: polygon(0 100%, 50% 0, 100% 100%);
-  background-color: #e8e2d8;
+  background:
+    linear-gradient(0deg, rgba(255,255,255,0.04) 0%, transparent 50%),
+    #647254;
 }
 
-/* Left flap */
+/* Left flap — slightly shaded */
 .envelope-flap-left {
   top: 0;
   left: 0;
   width: 52%;
   height: 100%;
   clip-path: polygon(0 0, 100% 50%, 0 100%);
-  background-color: #eae4da;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.05) 0%, transparent 60%),
+    #687655;
   z-index: 3;
 }
 
-/* Right flap */
+/* Right flap — catches side light */
 .envelope-flap-right {
   top: 0;
   right: 0;
   width: 52%;
   height: 100%;
   clip-path: polygon(100% 0, 0 50%, 100% 100%);
-  background-color: #ece6dc;
+  background:
+    linear-gradient(270deg, rgba(255,255,255,0.06) 0%, transparent 60%),
+    #6A7856;
   z-index: 3;
 }
 
-/* Subtle fold shadow lines — cream-on-cream */
+/* Fold shadow lines — visible creases like real paper folds */
 .envelope-flap-top::after,
 .envelope-flap-bottom::after,
 .envelope-flap-left::after,
@@ -330,39 +432,71 @@ body {
 }
 
 .envelope-flap-top::after {
-  bottom: 0;
-  left: 15%;
-  right: 15%;
-  height: 1.5px;
-  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.08) 30%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.08) 70%, transparent);
-  filter: blur(0.3px);
+  bottom: -1px;
+  left: 5%;
+  right: 5%;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(0,0,0,0.06) 15%,
+    rgba(0,0,0,0.12) 35%,
+    rgba(0,0,0,0.16) 50%,
+    rgba(0,0,0,0.12) 65%,
+    rgba(0,0,0,0.06) 85%,
+    transparent
+  );
+  filter: blur(0.5px);
 }
 
 .envelope-flap-bottom::after {
-  top: 0;
-  left: 15%;
-  right: 15%;
-  height: 1.5px;
-  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.08) 30%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.08) 70%, transparent);
-  filter: blur(0.3px);
+  top: -1px;
+  left: 5%;
+  right: 5%;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(0,0,0,0.06) 15%,
+    rgba(0,0,0,0.12) 35%,
+    rgba(0,0,0,0.16) 50%,
+    rgba(0,0,0,0.12) 65%,
+    rgba(0,0,0,0.06) 85%,
+    transparent
+  );
+  filter: blur(0.5px);
 }
 
 .envelope-flap-left::after {
-  right: 0;
-  top: 15%;
-  bottom: 15%;
-  width: 1.5px;
-  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.08) 30%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.08) 70%, transparent);
-  filter: blur(0.3px);
+  right: -1px;
+  top: 5%;
+  bottom: 5%;
+  width: 3px;
+  background: linear-gradient(180deg,
+    transparent,
+    rgba(0,0,0,0.06) 15%,
+    rgba(0,0,0,0.12) 35%,
+    rgba(0,0,0,0.16) 50%,
+    rgba(0,0,0,0.12) 65%,
+    rgba(0,0,0,0.06) 85%,
+    transparent
+  );
+  filter: blur(0.5px);
 }
 
 .envelope-flap-right::after {
-  left: 0;
-  top: 15%;
-  bottom: 15%;
-  width: 1.5px;
-  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.08) 30%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.08) 70%, transparent);
-  filter: blur(0.3px);
+  left: -1px;
+  top: 5%;
+  bottom: 5%;
+  width: 3px;
+  background: linear-gradient(180deg,
+    transparent,
+    rgba(0,0,0,0.06) 15%,
+    rgba(0,0,0,0.12) 35%,
+    rgba(0,0,0,0.16) 50%,
+    rgba(0,0,0,0.12) 65%,
+    rgba(0,0,0,0.06) 85%,
+    transparent
+  );
+  filter: blur(0.5px);
 }
 
 /* Flap open animations — fold outward with perspective */
@@ -404,14 +538,22 @@ body {
   100% { transform: perspective(800px) rotateY(-75deg); opacity: 0; }
 }
 
-/* ═══ Cream Wax Seal ═══ */
+/* ═══ Photorealistic Ivory Wax Seal ═══ */
 .cream-seal {
-  width: clamp(90px, 20vmin, 130px);
-  height: clamp(90px, 20vmin, 130px);
+  width: clamp(140px, 30vmin, 220px);
+  height: clamp(140px, 30vmin, 220px);
   border-radius: 50%;
   background:
-    radial-gradient(circle at 38% 32%, rgba(255,255,255,0.25) 0%, transparent 40%),
-    radial-gradient(circle at 40% 35%, #ede8df, #e4ded4 35%, #d8d0c4 60%, #cec5b8 100%);
+    /* Subtle top-left highlight — matte, not glossy */
+    radial-gradient(circle at 40% 30%, rgba(255,255,255,0.15) 0%, transparent 50%),
+    /* Wax surface — matte cream with subtle variation */
+    radial-gradient(ellipse at 50% 48%,
+      #EDE9E0 0%,
+      #E8E4DB 25%,
+      #E3DED4 50%,
+      #DDD8CE 75%,
+      #D8D2C7 100%
+    );
   position: relative;
   z-index: 10;
   cursor: pointer;
@@ -419,49 +561,82 @@ body {
   align-items: center;
   justify-content: center;
   border: none;
+  /* Soft shadow — seal sitting on paper */
   box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.12),
-    0 2px 6px rgba(0, 0, 0, 0.08),
-    inset 0 -3px 8px rgba(0, 0, 0, 0.08),
-    inset 0 3px 6px rgba(255, 255, 255, 0.25);
+    0 6px 20px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    /* Inner shadow for 3D depth */
+    inset 0 -4px 10px rgba(0, 0, 0, 0.07),
+    inset 0 4px 8px rgba(255, 255, 255, 0.18);
   transition: transform 0.2s ease;
 }
 
-/* Seal raised inner rim — embossed circle */
-.cream-seal::before {
-  content: '';
-  position: absolute;
-  inset: 8px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.04);
-  pointer-events: none;
-}
-
-/* Outer rim */
+/* Raised outer rim — thick embossed edge like real wax overflow */
 .cream-seal::after {
   content: '';
   position: absolute;
-  inset: -2px;
+  inset: -4px;
   border-radius: 50%;
-  border: 1.5px solid rgba(180, 170, 155, 0.25);
+  border: 3.5px solid #DDD8CD;
+  box-shadow:
+    /* Outer shadow below rim */
+    0 2px 4px rgba(0, 0, 0, 0.08),
+    /* Inner highlight on top of rim */
+    inset 0 1px 2px rgba(255, 255, 255, 0.25),
+    /* Inner shadow at bottom of rim */
+    inset 0 -1px 2px rgba(0, 0, 0, 0.06);
+  pointer-events: none;
+}
+
+/* Inner embossed ring — clear groove circle */
+.cream-seal::before {
+  content: '';
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.06);
+  box-shadow:
+    /* Outer highlight of groove */
+    0 0 0 1px rgba(255, 255, 255, 0.20),
+    /* Inner shadow of groove */
+    inset 0 0 0 1px rgba(0, 0, 0, 0.04),
+    /* Highlight below groove */
+    inset 0 1px 2px rgba(255, 255, 255, 0.15),
+    /* Shadow above groove */
+    0 1px 2px rgba(0, 0, 0, 0.04);
+  pointer-events: none;
+}
+
+/* Additional inner ring detail */
+.seal-inner-ring {
+  position: absolute;
+  inset: 15%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.03);
   pointer-events: none;
 }
 
 .cream-seal:hover {
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 .cream-seal:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
 }
 
-/* Monogram text inside seal */
+/* Monogram text — embossed cursive into wax */
 .seal-monogram {
-  font-size: clamp(1.1rem, 3.5vmin, 1.7rem);
+  font-size: clamp(1.6rem, 5vmin, 2.8rem);
   font-weight: 300;
-  letter-spacing: 0.05em;
-  color: rgba(120, 110, 95, 0.5);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+  font-style: italic;
+  letter-spacing: 0.02em;
+  /* Embossed text effect — pressed into wax */
+  color: rgba(140, 130, 115, 0.45);
+  text-shadow:
+    0 1px 1px rgba(255, 255, 255, 0.35),
+    0 -1px 1px rgba(0, 0, 0, 0.06);
   position: relative;
   z-index: 1;
 }
@@ -477,14 +652,14 @@ body {
   100% { transform: scale(0.85); opacity: 0; }
 }
 
-/* Invitation text below seal */
+/* Invitation text below seal — elegant handwritten cursive */
 .envelope-invitation-text {
-  margin-top: clamp(1.5rem, 4vh, 3rem);
-  font-size: clamp(1rem, 2.5vw, 1.4rem);
-  color: rgba(100, 92, 80, 0.45);
-  letter-spacing: 0.02em;
+  margin-top: clamp(2rem, 5vh, 4rem);
+  font-size: clamp(1.15rem, 3.2vw, 1.65rem);
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.01em;
   text-align: center;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 /* Calendar mini-grid */
@@ -534,10 +709,10 @@ body {
 .timeline-dot {
   width: 12px;
   height: 12px;
-  background: var(--sage);
+  background: var(--olive);
   border-radius: 50%;
   border: 2px solid var(--cream);
-  box-shadow: 0 0 0 2px var(--sage);
+  box-shadow: 0 0 0 2px var(--olive);
 }
 
 /* Countdown */
