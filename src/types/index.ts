@@ -13,8 +13,7 @@ export interface GuestAttendance {
 
 export interface Guest {
   id: string;
-  firstName: string;
-  familyName: string;
+  name: string;
   phone?: string | null;
   side: 'bride' | 'groom';
   relation: string;

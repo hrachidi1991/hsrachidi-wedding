@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   }
   try {
     const { guests } = await request.json();
-    // Expected format: [{ firstName, familyName, phone, side, relation, groupCode, maxGuests }]
+    // Expected format: [{ name, phone, side, relation, groupCode, maxGuests }]
     if (!Array.isArray(guests)) {
       return NextResponse.json({ error: 'Expected guests array' }, { status: 400 });
     }
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     let groupsCreated = 0;
 
     for (const g of guests) {
-      if (!g.firstName || !g.familyName || !g.groupCode) continue;
+      if (!g.name || !g.groupCode) continue;
 
       // Ensure group exists
       const existing = await prisma.guestGroup.findUnique({ where: { groupCode: g.groupCode } });
@@ -36,8 +36,7 @@ export async function POST(request: NextRequest) {
 
       await prisma.guest.create({
         data: {
-          firstName: g.firstName,
-          familyName: g.familyName,
+          name: g.name,
           phone: g.phone || null,
           side: g.side || 'groom',
           relation: g.relation || 'friend',

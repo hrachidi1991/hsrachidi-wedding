@@ -13,7 +13,7 @@ interface GroupWithRsvp {
   maxGuests: number;
   side: string;
   token: string;
-  guests: { firstName: string; familyName: string; phone: string | null }[];
+  guests: { name: string; phone: string | null }[];
   rsvpResponse: {
     attending: boolean;
     numberAttending: number;
@@ -80,7 +80,7 @@ export default function RsvpTracking() {
       const s = search.toLowerCase();
       const match =
         g.groupCode.toLowerCase().includes(s) ||
-        g.guests?.some((guest) => `${guest.firstName} ${guest.familyName}`.toLowerCase().includes(s) || guest.phone?.includes(s)) ||
+        g.guests?.some((guest) => guest.name.toLowerCase().includes(s) || guest.phone?.includes(s)) ||
         (g.rsvpResponse?.guestNames ? getSearchableNames(g.rsvpResponse.guestNames).includes(s) : false);
       if (!match) return false;
     }
@@ -189,7 +189,7 @@ export default function RsvpTracking() {
                     {g.rsvpResponse?.guestNames ? renderGuestNames(g.rsvpResponse.guestNames) : '-'}
                   </td>
                   <td className="py-2 text-gray-500 text-xs">
-                    {g.guests?.map((guest) => `${guest.firstName} ${guest.familyName}`).join(', ') || '-'}
+                    {g.guests?.map((guest) => guest.name).join(', ') || '-'}
                   </td>
                   <td className="py-2 text-gray-400 text-xs">
                     {g.rsvpResponse?.updatedAt

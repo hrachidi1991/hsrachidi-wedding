@@ -22,8 +22,7 @@ export async function POST(request: NextRequest) {
     const data = await request.json();
     const guest = await prisma.guest.create({
       data: {
-        firstName: data.firstName,
-        familyName: data.familyName,
+        name: data.name,
         phone: data.phone || null,
         side: data.side || 'groom',
         relation: data.relation || 'friend',

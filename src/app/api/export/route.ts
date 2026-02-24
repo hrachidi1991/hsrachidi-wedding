@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     for (const group of groups) {
       const groupGuests = guests.filter((g) => g.groupCode === group.groupCode);
-      const guestNamesList = groupGuests.map((g) => `${g.firstName} ${g.familyName}`).join('; ');
+      const guestNamesList = groupGuests.map((g) => g.name).join('; ');
       const rsvp = group.rsvpResponse;
       const status = rsvp ? (rsvp.attending ? 'Attending' : 'Not Attending') : 'No Response';
       const numAttending = rsvp?.numberAttending || 0;

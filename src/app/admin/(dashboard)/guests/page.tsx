@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 
 interface Guest {
   id: string;
-  firstName: string;
-  familyName: string;
+  name: string;
   phone: string | null;
   side: string;
   relation: string;
@@ -68,7 +67,7 @@ export default function GuestsPage() {
   const [newGroupSide, setNewGroupSide] = useState('groom');
   
   // New guest form
-  const [newGuest, setNewGuest] = useState({ firstName: '', familyName: '', phone: '', side: 'groom', relation: 'Friend', groupCode: '' });
+  const [newGuest, setNewGuest] = useState({ name: '', phone: '', side: 'groom', relation: 'Friend', groupCode: '' });
   
   // CSV import
   const [csvText, setCsvText] = useState('');
@@ -116,14 +115,14 @@ export default function GuestsPage() {
   };
 
   const addGuest = async () => {
-    if (!newGuest.firstName || !newGuest.familyName || !newGuest.groupCode) return;
+    if (!newGuest.name || !newGuest.groupCode) return;
     const res = await fetch('/api/guests', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newGuest),
     });
     if (res.ok) {
-      setNewGuest({ firstName: '', familyName: '', phone: '', side: 'groom', relation: 'Friend', groupCode: '' });
+      setNewGuest({ name: '', phone: '', side: 'groom', relation: 'Friend', groupCode: '' });
       reload();
     }
   };
@@ -143,27 +142,70 @@ export default function GuestsPage() {
       const lines = csvText.trim().split('\n');
       if (lines.length < 2) { setImportResult('Need header + at least 1 row'); return; }
       const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
-      const parsed = lines.slice(1).map((line) => {
+      const rows = lines.slice(1).map((line) => {
         const vals = line.split(',').map((v) => v.trim());
         const obj: any = {};
         headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
-        return {
-          firstName: obj.firstname || obj['first name'] || obj.first || '',
-          familyName: obj.familyname || obj['family name'] || obj.family || obj.lastname || obj['last name'] || '',
-          phone: obj.phone || '',
+        return obj;
+      });
+
+      // Detect format: new format has "s", "gt", "group #" columns
+      const hasNewFormat = headers.includes('s') && headers.includes('gt') && headers.includes('group #');
+
+      if (hasNewFormat) {
+        // New format: Name, Phone Number, S, GT, Group #
+        // Build groupCode = S + GT + Group# (concatenated, uppercase)
+        // Map S: G/g → "groom", B/b → "bride"
+        // Auto-calculate maxGuests per group
+        const guestRows = rows.map((obj: any) => {
+          const s = (obj['s'] || '').toUpperCase();
+          const gt = (obj['gt'] || '').toUpperCase();
+          const groupNum = (obj['group #'] || '').trim();
+          const groupCode = `${s}${gt}${groupNum}`;
+          const side = s === 'B' ? 'bride' : 'groom';
+          return {
+            name: obj['name'] || '',
+            phone: obj['phone number'] || '',
+            side,
+            relation: 'Friend',
+            groupCode,
+          };
+        }).filter((g: any) => g.name && g.groupCode);
+
+        // Calculate maxGuests per group
+        const groupCounts: Record<string, number> = {};
+        guestRows.forEach((g: any) => { groupCounts[g.groupCode] = (groupCounts[g.groupCode] || 0) + 1; });
+
+        const parsed = guestRows.map((g: any) => ({
+          ...g,
+          maxGuests: groupCounts[g.groupCode],
+        }));
+
+        const res = await fetch('/api/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ guests: parsed }),
+        });
+        const data = await res.json();
+        setImportResult(`Created ${data.created} guests and ${data.groupsCreated} new groups.`);
+      } else {
+        // Legacy/flexible format
+        const parsed = rows.map((obj: any) => ({
+          name: obj.name || obj.firstname || obj['first name'] || '',
+          phone: obj.phone || obj['phone number'] || '',
           side: obj.side || 'groom',
           relation: obj.relation || 'Friend',
           groupCode: obj.groupcode || obj['group code'] || obj.group || '',
           maxGuests: parseInt(obj.maxguests || obj['max guests'] || '2') || 2,
-        };
-      });
-      const res = await fetch('/api/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ guests: parsed }),
-      });
-      const data = await res.json();
-      setImportResult(`Created ${data.created} guests and ${data.groupsCreated} new groups.`);
+        }));
+        const res = await fetch('/api/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ guests: parsed }),
+        });
+        const data = await res.json();
+        setImportResult(`Created ${data.created} guests and ${data.groupsCreated} new groups.`);
+      }
       reload();
     } catch (e: any) {
       setImportResult(`Error: ${e.message}`);
@@ -282,8 +324,7 @@ export default function GuestsPage() {
           <div className="admin-card mb-6">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Add New Guest</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              <input type="text" value={newGuest.firstName} onChange={(e) => setNewGuest({ ...newGuest, firstName: e.target.value })} placeholder="First Name" className="border rounded px-3 py-2 text-sm" />
-              <input type="text" value={newGuest.familyName} onChange={(e) => setNewGuest({ ...newGuest, familyName: e.target.value })} placeholder="Family Name" className="border rounded px-3 py-2 text-sm" />
+              <input type="text" value={newGuest.name} onChange={(e) => setNewGuest({ ...newGuest, name: e.target.value })} placeholder="Full Name" className="border rounded px-3 py-2 text-sm" />
               <input type="text" value={newGuest.phone} onChange={(e) => setNewGuest({ ...newGuest, phone: e.target.value })} placeholder="Phone" className="border rounded px-3 py-2 text-sm" />
               <select value={newGuest.side} onChange={(e) => setNewGuest({ ...newGuest, side: e.target.value })} className="border rounded px-3 py-2 text-sm">
                 <option value="groom">Groom</option>
@@ -321,7 +362,7 @@ export default function GuestsPage() {
                 <tbody>
                   {guests.map((g) => (
                     <tr key={g.id} className="border-b border-gray-50">
-                      <td className="py-2 font-medium text-gray-800">{g.firstName} {g.familyName}</td>
+                      <td className="py-2 font-medium text-gray-800">{g.name}</td>
                       <td className="py-2 text-gray-600">
                         <span className="flex items-center gap-2">
                           {g.phone || '-'}
@@ -354,13 +395,14 @@ export default function GuestsPage() {
         <div className="admin-card">
           <h3 className="text-sm font-semibold text-gray-700 mb-3">Import Guests from CSV</h3>
           <p className="text-xs text-gray-500 mb-3">
-            Format: <code className="bg-gray-100 px-1 rounded">firstName,familyName,phone,side,relation,groupCode,maxGuests</code>
+            Format: <code className="bg-gray-100 px-1 rounded">Name,Phone Number,S,GT,Group #</code>
+            <span className="block mt-1 text-gray-400">S = G (groom) or B (bride) &middot; GroupCode = S+GT+Group# &middot; maxGuests auto-calculated</span>
           </p>
           <textarea
             value={csvText}
             onChange={(e) => setCsvText(e.target.value)}
             rows={10}
-            placeholder={`firstName,familyName,phone,side,relation,groupCode,maxGuests\nHussein,Rachidi,81538385,groom,Groom,RACHIDI-FAM,4\nSuzan,Rachidi,,bride,Bride,RACHIDI-FAM,4`}
+            placeholder={`Name,Phone Number,S,GT,Group #\nHussein Rachidi,03833508,G,FAM,1\nSuzan Rachidi,,B,FAM,1\nAhmad Rachidi,71538385,G,FRD,2`}
             className="w-full border rounded-md px-3 py-2 text-sm font-mono mb-3"
           />
           <div className="flex items-center gap-3">

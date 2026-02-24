@@ -63,11 +63,11 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
     if (dbGuests.length === 0) return [];
 
     return dbGuests.map((g: any) => {
-      const fullName = `${g.firstName} ${g.familyName}`;
+      const fullName = g.name;
       const key = fullName.toLowerCase();
       // Match by full name, or first name for legacy data
       const matchFull = rsvpMap.get(key);
-      const matchFirst = rsvpMap.get(g.firstName.toLowerCase());
+      const matchFirst = rsvpMap.get(fullName.split(' ')[0]?.toLowerCase());
       const attending = matchFull !== undefined ? matchFull : (matchFirst !== undefined ? matchFirst : true);
       return { name: fullName, attending };
     });

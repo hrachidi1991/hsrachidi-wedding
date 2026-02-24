@@ -81,8 +81,8 @@ async function main() {
 
   // Sample guests
   const sampleGuests = [
-    { firstName: 'Hussein', familyName: 'Rachidi', phone: '81538385', side: 'groom', relation: 'Groom', groupCode: 'RACHIDI-FAM' },
-    { firstName: 'Suzan', familyName: 'Rachidi', side: 'bride', relation: 'Bride', groupCode: 'BRIDE-FAMILY' },
+    { name: 'Hussein Rachidi', phone: '81538385', side: 'groom', relation: 'Groom', groupCode: 'RACHIDI-FAM' },
+    { name: 'Suzan Rachidi', side: 'bride', relation: 'Bride', groupCode: 'BRIDE-FAMILY' },
   ];
 
   for (const guest of sampleGuests) {
