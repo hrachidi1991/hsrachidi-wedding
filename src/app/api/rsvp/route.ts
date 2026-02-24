@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { token, attending, numberAttending, guestNames, language } = body;
+    const { token, language } = body;
 
     if (!token) {
       return NextResponse.json({ error: 'Token required' }, { status: 400 });
@@ -58,8 +58,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid invitation link' }, { status: 404 });
     }
 
-    const actualAttending = attending ? Math.min(numberAttending || 1, group.maxGuests) : 0;
-    const names = Array.isArray(guestNames) ? guestNames.slice(0, group.maxGuests) : [];
+    let attending: boolean;
+    let actualAttending: number;
+    let names: any;
+
+    // New format: guestAttendance array of { name, attending }
+    if (Array.isArray(body.guestAttendance)) {
+      const ga = body.guestAttendance.slice(0, group.maxGuests);
+      attending = ga.some((g: { attending: boolean }) => g.attending);
+      actualAttending = ga.filter((g: { attending: boolean }) => g.attending).length;
+      names = ga;
+    } else {
+      // Legacy format: attending, numberAttending, guestNames[]
+      attending = body.attending;
+      actualAttending = attending ? Math.min(body.numberAttending || 1, group.maxGuests) : 0;
+      names = Array.isArray(body.guestNames) ? body.guestNames.slice(0, group.maxGuests) : [];
+    }
 
     if (group.rsvpResponse) {
       // Update existing

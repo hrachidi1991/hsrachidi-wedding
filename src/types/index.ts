@@ -6,6 +6,11 @@ export interface TimelineItem {
   sortOrder: number;
 }
 
+export interface GuestAttendance {
+  name: string;
+  attending: boolean;
+}
+
 export interface Guest {
   id: string;
   firstName: string;
@@ -30,7 +35,7 @@ export interface RsvpResponse {
   groupId: string;
   attending: boolean;
   numberAttending: number;
-  guestNames: string[];
+  guestNames: GuestAttendance[] | string[];
   language: string;
   submittedAt: string;
   updatedAt: string;
@@ -38,8 +43,6 @@ export interface RsvpResponse {
 
 export interface RsvpSubmitData {
   token: string;
-  attending: boolean;
-  numberAttending: number;
-  guestNames: string[];
+  guestAttendance: GuestAttendance[];
   language: string;
 }

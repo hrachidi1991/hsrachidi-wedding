@@ -17,7 +17,27 @@
       "Bash(where:*)",
       "Bash(nvm list:*)",
       "Bash(fnm list:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(git push:*)",
+      "Bash(git branch:*)",
+      "Bash(npx next build)",
+      "Bash(git checkout:*)",
+      "Bash(ffmpeg:*)",
+      "Bash(pip install:*)",
+      "WebFetch(domain:youtube.com)",
+      "Bash(pip show:*)",
+      "Bash(yt-dlp:*)",
+      "Bash(python3:*)",
+      "Bash(/c/Python314/python.exe -c:*)",
+      "Bash(powershell -c \"\\(Get-Item ''C:\\\\hsrachidi-wedding\\\\BUgs\\\\bckg.png''\\).Length\")",
+      "Bash(/c/Python314/python.exe -m pip install:*)",
+      "Bash(dir:*)",
+      "Bash(/c/Python314/python.exe:*)",
+      "Bash(git rm:*)",
+      "WebFetch(domain:minimalist-demo.thedigitalyes.com)",
+      "Bash(/c/Windows/System32/curl.exe:*)",
+      "Bash(echo:*)",
+      "WebFetch(domain:therachidis.com)"
     ]
   }
 }

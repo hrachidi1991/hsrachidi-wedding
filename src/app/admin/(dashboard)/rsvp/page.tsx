@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from 'react';
 
+interface GuestAttendance {
+  name: string;
+  attending: boolean;
+}
+
 interface GroupWithRsvp {
   id: string;
   groupCode: string;
@@ -12,10 +17,37 @@ interface GroupWithRsvp {
   rsvpResponse: {
     attending: boolean;
     numberAttending: number;
-    guestNames: string[];
+    guestNames: any;
     language: string;
     updatedAt: string;
   } | null;
+}
+
+function renderGuestNames(guestNames: any): React.ReactNode {
+  if (!Array.isArray(guestNames) || guestNames.length === 0) return '-';
+  // New format: objects with { name, attending }
+  if (typeof guestNames[0] === 'object' && guestNames[0] !== null && 'name' in guestNames[0]) {
+    return (
+      <div className="space-y-0.5">
+        {(guestNames as GuestAttendance[]).map((g, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${g.attending ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span>{g.name}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  // Legacy format: string[]
+  return (guestNames as string[]).filter(Boolean).join(', ') || '-';
+}
+
+function getSearchableNames(guestNames: any): string {
+  if (!Array.isArray(guestNames)) return '';
+  if (typeof guestNames[0] === 'object' && guestNames[0] !== null && 'name' in guestNames[0]) {
+    return (guestNames as GuestAttendance[]).map((g) => g.name).join(' ').toLowerCase();
+  }
+  return (guestNames as string[]).join(' ').toLowerCase();
 }
 
 export default function RsvpTracking() {
@@ -49,7 +81,7 @@ export default function RsvpTracking() {
       const match =
         g.groupCode.toLowerCase().includes(s) ||
         g.guests?.some((guest) => `${guest.firstName} ${guest.familyName}`.toLowerCase().includes(s) || guest.phone?.includes(s)) ||
-        (g.rsvpResponse?.guestNames as string[])?.some((n) => n.toLowerCase().includes(s));
+        (g.rsvpResponse?.guestNames ? getSearchableNames(g.rsvpResponse.guestNames).includes(s) : false);
       if (!match) return false;
     }
 
@@ -154,7 +186,7 @@ export default function RsvpTracking() {
                   </td>
                   <td className="py-2 text-gray-600">{g.rsvpResponse?.numberAttending || '-'}</td>
                   <td className="py-2 text-gray-600 text-xs">
-                    {(g.rsvpResponse?.guestNames as string[])?.filter(Boolean).join(', ') || '-'}
+                    {g.rsvpResponse?.guestNames ? renderGuestNames(g.rsvpResponse.guestNames) : '-'}
                   </td>
                   <td className="py-2 text-gray-500 text-xs">
                     {g.guests?.map((guest) => `${guest.firstName} ${guest.familyName}`).join(', ') || '-'}

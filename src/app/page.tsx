@@ -35,7 +35,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
             ? {
                 attending: group.rsvpResponse.attending,
                 numberAttending: group.rsvpResponse.numberAttending,
-                guestNames: group.rsvpResponse.guestNames as string[],
+                guestNames: group.rsvpResponse.guestNames as any,
               }
             : null,
         };

@@ -23,7 +23,17 @@ export async function GET(request: NextRequest) {
       const rsvp = group.rsvpResponse;
       const status = rsvp ? (rsvp.attending ? 'Attending' : 'Not Attending') : 'No Response';
       const numAttending = rsvp?.numberAttending || 0;
-      const submittedNames = rsvp ? (rsvp.guestNames as string[]).join('; ') : '';
+      let submittedNames = '';
+      if (rsvp && Array.isArray(rsvp.guestNames)) {
+        const names = rsvp.guestNames as any[];
+        if (names.length > 0 && typeof names[0] === 'object' && names[0] !== null && 'name' in names[0]) {
+          // New format: { name, attending }
+          submittedNames = names.map((g: any) => `${g.name}(${g.attending ? 'Y' : 'N'})`).join('; ');
+        } else {
+          // Legacy format: string[]
+          submittedNames = (names as string[]).join('; ');
+        }
+      }
       const lastUpdated = rsvp?.updatedAt?.toISOString() || '';
 
       rows.push(
