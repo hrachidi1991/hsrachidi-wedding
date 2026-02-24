@@ -262,14 +262,16 @@ body {
   text-align: center;
 }
 
-/* ═══ Full-Viewport Envelope — Gray Card with Gold Twine ═══ */
+/* ═══ Full-Viewport Envelope — Realistic Gray Envelope ═══ */
 .envelope-viewport {
   position: fixed;
   inset: 0;
   z-index: 50;
   overflow: hidden;
-  background: var(--gray);
+  /* Slightly darker background behind the envelope, like a table surface */
+  background: #8a8a8a;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   transition: opacity 0.8s ease-in-out;
@@ -285,221 +287,296 @@ body {
   100% { opacity: 0; }
 }
 
-/* ═══ Envelope Card — centered gray rectangle ═══ */
-.envelope-card {
+/* ═══ Envelope Body — realistic gray envelope back ═══ */
+.envelope-body {
   position: relative;
-  width: clamp(280px, 70vw, 400px);
-  height: clamp(400px, 80vh, 600px);
-  max-height: 85vh;
-  background: var(--gray-light);
-  border-radius: 2px;
+  width: clamp(300px, 80vw, 440px);
+  height: clamp(420px, 75vh, 620px);
+  max-height: 80vh;
+  /* Realistic matte paper surface — subtle fiber texture */
+  background:
+    /* Very fine horizontal fibers */
+    repeating-linear-gradient(
+      0deg,
+      transparent, transparent 2px,
+      rgba(160,160,160,0.08) 2px, rgba(160,160,160,0.08) 3px
+    ),
+    /* Very fine vertical fibers */
+    repeating-linear-gradient(
+      90deg,
+      transparent, transparent 3px,
+      rgba(150,150,150,0.06) 3px, rgba(150,150,150,0.06) 4px
+    ),
+    /* Soft uneven patches — handmade paper feel */
+    radial-gradient(ellipse at 30% 25%, rgba(175,175,175,0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 70%, rgba(170,170,170,0.12) 0%, transparent 45%),
+    #ABABAB;
+  border-radius: 1px;
+  /* Realistic paper shadow — envelope sitting on surface */
   box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.2),
-    0 4px 16px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+    0 2px 4px rgba(0,0,0,0.06),
+    0 8px 24px rgba(0,0,0,0.10),
+    0 20px 50px rgba(0,0,0,0.08);
 }
 
-/* Top half of card — lifts upward on open */
-.envelope-card-top {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 50%;
-  background: var(--gray-light);
-  z-index: 3;
-  transform-origin: center top;
-  transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 1.2s ease;
-}
-
-/* Bottom half of card */
-.envelope-card-bottom {
+/* ═══ Bottom flap — folds over the envelope body ═══ */
+.envelope-flap {
   position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 50%;
-  background: var(--gray-light);
-  z-index: 1;
+  height: 42%;
+  background:
+    /* Slightly different shade — like a real flap catching light differently */
+    repeating-linear-gradient(
+      0deg,
+      transparent, transparent 2px,
+      rgba(155,155,155,0.07) 2px, rgba(155,155,155,0.07) 3px
+    ),
+    radial-gradient(ellipse at 50% 80%, rgba(178,178,178,0.1) 0%, transparent 60%),
+    #A8A8A8;
+  z-index: 2;
+  transform-origin: center top;
+  /* Fold crease shadow along top edge */
+  box-shadow: 0 -1px 3px rgba(0,0,0,0.08), 0 -1px 1px rgba(0,0,0,0.04);
 }
 
-/* Gold twine band — horizontal across center */
+/* Subtle fold line at flap edge */
+.envelope-flap::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 2%;
+  right: 2%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0,0,0,0.08) 15%,
+    rgba(0,0,0,0.12) 50%,
+    rgba(0,0,0,0.08) 85%,
+    transparent 100%
+  );
+}
+
+/* Flap opening animation */
+.flap-opening .envelope-flap {
+  animation: flapFoldDown 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes flapFoldDown {
+  0% { transform: perspective(800px) rotateX(0deg); opacity: 1; }
+  50% { opacity: 1; }
+  100% { transform: perspective(800px) rotateX(80deg); opacity: 0; }
+}
+
+/* ═══ Gold Twine — horizontal band across envelope + flap seam ═══ */
 .envelope-twine {
   position: absolute;
-  top: 50%;
+  /* Sit exactly on the flap fold line */
+  bottom: 42%;
   left: 0;
   width: 100%;
-  height: 6px;
-  transform: translateY(-50%);
-  z-index: 4;
+  height: 4px;
+  transform: translateY(50%);
+  z-index: 5;
+  /* Braided jute rope texture */
   background:
     repeating-linear-gradient(
       90deg,
-      #C9A96E 0px,
-      #B8954A 2px,
-      #D4BA88 4px,
-      #C9A96E 6px
+      #C9A96E 0px, #B8954A 1px, #D4BA88 2px, #C4A268 3px, #C9A96E 4px
     );
   box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.15),
-    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    0 1px 2px rgba(0,0,0,0.12),
+    0 0 1px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.15);
 }
 
-/* Second twine strand for jute rope effect */
+/* Braided texture overlay */
 .envelope-twine::after {
   content: '';
   position: absolute;
-  top: -2px;
-  left: 0;
-  width: 100%;
-  height: 10px;
+  inset: -1px 0;
   background:
     repeating-linear-gradient(
-      115deg,
-      transparent 0px,
-      transparent 3px,
-      rgba(201, 169, 110, 0.3) 3px,
-      rgba(201, 169, 110, 0.3) 4px
+      120deg,
+      transparent 0px, transparent 2px,
+      rgba(180,140,70,0.2) 2px, rgba(180,140,70,0.2) 3px
     );
   pointer-events: none;
 }
 
-/* Card top lifts when opening */
-.flap-opening .envelope-card-top {
-  animation: cardTopLift 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-@keyframes cardTopLift {
-  0% { transform: perspective(800px) rotateX(0deg); opacity: 1; }
-  60% { opacity: 1; }
-  100% { transform: perspective(800px) rotateX(-85deg); opacity: 0; }
-}
-
 /* Twine breaks apart on open */
 .flap-opening .envelope-twine {
-  animation: twineBreak 0.6s ease-out 0.1s forwards;
+  animation: twineSnap 0.5s ease-out forwards;
 }
 
-@keyframes twineBreak {
-  0% { transform: translateY(-50%) scaleX(1); opacity: 1; }
-  50% { transform: translateY(-50%) scaleX(1.02); opacity: 0.7; }
-  100% { transform: translateY(-50%) scaleX(0); opacity: 0; }
+@keyframes twineSnap {
+  0% { transform: translateY(50%) scaleX(1); opacity: 1; }
+  40% { transform: translateY(50%) scaleX(1.01); opacity: 0.8; }
+  100% { transform: translateY(50%) scaleX(0); opacity: 0; }
 }
 
-/* ═══ Cream Wax Seal — centered on twine ═══ */
+/* ═══ Photorealistic Cream Wax Seal ═══ */
 .cream-seal {
-  width: clamp(90px, 20vmin, 140px);
-  height: clamp(90px, 20vmin, 140px);
+  /* Slightly irregular sizing to feel organic */
+  width: clamp(80px, 18vmin, 120px);
+  height: clamp(80px, 18vmin, 120px);
   border-radius: 50%;
-  background:
-    /* Subtle top-left highlight — matte, not glossy */
-    radial-gradient(circle at 40% 30%, rgba(255,255,255,0.15) 0%, transparent 50%),
-    /* Wax surface — matte cream */
-    radial-gradient(ellipse at 50% 48%,
-      #EDE9E0 0%,
-      #E8E4DB 25%,
-      #E3DED4 50%,
-      #DDD8CE 75%,
-      #D8D2C7 100%
-    );
   position: absolute;
-  top: 50%;
+  /* Centered on the twine/flap seam */
+  bottom: 42%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, 50%);
   z-index: 10;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
+  padding: 0;
+  /* ═══ Multi-layer wax surface for photorealism ═══ */
+  background:
+    /* Top-left light catch — subtle, matte */
+    radial-gradient(circle at 35% 28%, rgba(255,255,255,0.22) 0%, transparent 40%),
+    /* Bottom-right shadow — depth */
+    radial-gradient(circle at 68% 72%, rgba(0,0,0,0.06) 0%, transparent 40%),
+    /* Mid highlight — surface variation */
+    radial-gradient(circle at 45% 55%, rgba(255,255,255,0.08) 0%, transparent 35%),
+    /* Warm cream center */
+    radial-gradient(ellipse at 48% 46%,
+      #EDE9DF 0%,
+      #E8E3D8 20%,
+      #E3DDD2 40%,
+      #DDD7CB 60%,
+      #D8D1C4 80%,
+      #D2CBBD 100%
+    );
+  /* 3D depth — seal sitting on paper */
   box-shadow:
-    0 6px 20px rgba(0, 0, 0, 0.15),
-    0 2px 8px rgba(0, 0, 0, 0.1),
-    inset 0 -4px 10px rgba(0, 0, 0, 0.07),
-    inset 0 4px 8px rgba(255, 255, 255, 0.18);
+    /* Outer drop shadow — soft, realistic */
+    0 3px 6px rgba(0,0,0,0.12),
+    0 8px 20px rgba(0,0,0,0.08),
+    0 1px 2px rgba(0,0,0,0.10),
+    /* Inner bottom shadow — 3D thickness */
+    inset 0 -6px 12px rgba(0,0,0,0.08),
+    /* Inner top highlight — light hitting surface */
+    inset 0 6px 12px rgba(255,255,255,0.22),
+    /* Inner left highlight */
+    inset 4px 0 8px rgba(255,255,255,0.10),
+    /* Inner right shadow */
+    inset -3px 0 6px rgba(0,0,0,0.04);
   transition: transform 0.2s ease;
 }
 
-/* Raised outer rim */
+/* Wax overflow rim — slightly irregular border like real melted wax */
 .cream-seal::after {
   content: '';
   position: absolute;
-  inset: -4px;
+  inset: -3px;
   border-radius: 50%;
-  border: 3px solid #DDD8CD;
+  /* Thicker, visible wax rim */
+  border: 2.5px solid rgba(210, 203, 190, 0.8);
   box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.08),
-    inset 0 1px 2px rgba(255, 255, 255, 0.25),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.06);
+    /* Outer rim shadow */
+    0 2px 4px rgba(0,0,0,0.06),
+    /* Inner rim highlight */
+    inset 0 1px 2px rgba(255,255,255,0.30),
+    inset 0 -1px 2px rgba(0,0,0,0.05);
   pointer-events: none;
 }
 
-/* Inner embossed ring */
+/* Embossed groove circle — pressed into wax */
 .cream-seal::before {
   content: '';
   position: absolute;
-  inset: 12%;
+  inset: 14%;
   border-radius: 50%;
-  border: 2px solid rgba(0, 0, 0, 0.06);
+  border: 1.5px solid rgba(0,0,0,0.06);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.20),
-    inset 0 0 0 1px rgba(0, 0, 0, 0.04),
-    inset 0 1px 2px rgba(255, 255, 255, 0.15),
-    0 1px 2px rgba(0, 0, 0, 0.04);
+    /* Light below the groove (embossed effect) */
+    0 1px 1px rgba(255,255,255,0.25),
+    /* Shadow above the groove */
+    inset 0 1px 1px rgba(0,0,0,0.05),
+    /* Subtle outer glow */
+    0 0 0 1px rgba(255,255,255,0.12);
   pointer-events: none;
 }
 
+/* Second inner ring for depth */
 .seal-inner-ring {
   position: absolute;
-  inset: 15%;
+  inset: 18%;
   border-radius: 50%;
-  border: 1.5px solid rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0,0,0,0.04);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.12),
-    inset 0 0 0 1px rgba(0, 0, 0, 0.03);
+    0 0 0 1px rgba(255,255,255,0.10),
+    inset 0 0 0 1px rgba(0,0,0,0.02);
   pointer-events: none;
+}
+
+/* Wax surface texture overlay (sits inside the seal) */
+.seal-texture {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    /* Tiny imperfections — noise-like */
+    radial-gradient(circle at 20% 40%, rgba(200,193,180,0.3) 0%, transparent 8%),
+    radial-gradient(circle at 75% 30%, rgba(195,188,175,0.25) 0%, transparent 6%),
+    radial-gradient(circle at 55% 75%, rgba(205,198,185,0.2) 0%, transparent 7%),
+    radial-gradient(circle at 35% 65%, rgba(200,193,180,0.15) 0%, transparent 9%),
+    radial-gradient(circle at 80% 60%, rgba(195,188,175,0.2) 0%, transparent 5%);
 }
 
 .cream-seal:hover {
-  transform: translate(-50%, -50%) scale(1.03);
+  transform: translate(-50%, 50%) scale(1.04);
 }
 .cream-seal:active {
-  transform: translate(-50%, -50%) scale(0.97);
+  transform: translate(-50%, 50%) scale(0.97);
 }
 
-/* Monogram text — embossed into wax */
+/* Monogram — deeply embossed into wax */
 .seal-monogram {
-  font-size: clamp(1.2rem, 4vmin, 2rem);
+  font-size: clamp(1rem, 3.5vmin, 1.6rem);
   font-weight: 300;
   font-style: italic;
   letter-spacing: 0.02em;
-  color: rgba(140, 130, 115, 0.45);
+  /* Embossed into wax — light from top-left */
+  color: rgba(160, 150, 135, 0.4);
   text-shadow:
-    0 1px 1px rgba(255, 255, 255, 0.35),
-    0 -1px 1px rgba(0, 0, 0, 0.06);
+    /* Light hitting the bottom-right edge of embossed letters */
+    0 1.5px 1px rgba(255, 255, 255, 0.4),
+    1px 1px 0 rgba(255, 255, 255, 0.15),
+    /* Shadow on top-left edge — pressed in */
+    0 -1px 1px rgba(0, 0, 0, 0.08),
+    -0.5px -0.5px 0 rgba(0, 0, 0, 0.04);
   position: relative;
   z-index: 1;
 }
 
-/* Seal fades out smoothly */
+/* Seal breaks and pops off */
 .seal-fade-out {
-  animation: sealFadeOut 0.6s ease-out forwards;
+  animation: sealPop 0.7s ease-out forwards;
   pointer-events: none;
 }
 
-@keyframes sealFadeOut {
-  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(0.85); opacity: 0; }
+@keyframes sealPop {
+  0% { transform: translate(-50%, 50%) scale(1); opacity: 1; }
+  30% { transform: translate(-50%, 50%) scale(1.15); opacity: 1; }
+  100% { transform: translate(-50%, 50%) scale(0.3) rotate(15deg); opacity: 0; }
 }
 
-/* Invitation text below card */
+/* Invitation text below the envelope */
 .envelope-invitation-text {
-  margin-top: clamp(1.5rem, 4vh, 3rem);
-  font-size: clamp(1.05rem, 3vw, 1.5rem);
-  color: rgba(255, 255, 255, 0.55);
+  margin-top: clamp(1.5rem, 3vh, 2.5rem);
+  font-size: clamp(1rem, 2.8vw, 1.4rem);
+  color: rgba(255, 255, 255, 0.5);
   letter-spacing: 0.01em;
   text-align: center;
   line-height: 1.7;
+  pointer-events: none;
 }
 
 /* Calendar mini-grid */

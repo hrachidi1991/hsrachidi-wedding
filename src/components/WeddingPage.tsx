@@ -812,18 +812,16 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
 
       </div> {/* close scroll-container */}
 
-      {/* ═══ ENVELOPE OVERLAY — gray card with gold twine ═══ */}
+      {/* ═══ ENVELOPE OVERLAY — realistic gray envelope ═══ */}
       {!envelopeOpened && (
         <div className={`envelope-viewport ${flapsOpening ? 'envelope-fading' : ''}`}>
-          {/* Card + twine + seal structure */}
-          <div className={`envelope-card ${flapsOpening ? 'flap-opening' : ''}`}>
-            {/* Top half — lifts upward */}
-            <div className="envelope-card-top" />
-            {/* Bottom half */}
-            <div className="envelope-card-bottom" />
-            {/* Gold twine band across center */}
+          {/* Realistic envelope back — body + flap + twine + seal */}
+          <div className={`envelope-body ${flapsOpening ? 'flap-opening' : ''}`}>
+            {/* Bottom flap — folds over the body */}
+            <div className="envelope-flap" />
+            {/* Gold twine band across the flap seam */}
             <div className="envelope-twine" />
-            {/* Wax seal centered on twine */}
+            {/* Photorealistic wax seal centered on twine/seam */}
             <button
               onClick={handleOpenEnvelope}
               className={`cream-seal ${sealBreaking ? 'seal-fade-out' : ''}`}
@@ -831,17 +829,16 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
               aria-label="Open envelope"
             >
               <span className="seal-inner-ring" />
+              <span className="seal-texture" />
               <span className="seal-monogram font-display" style={{ fontStyle: 'italic' }}>H & S</span>
             </button>
           </div>
 
-          {/* Invitation text below card */}
+          {/* Invitation text below the envelope — pointer-events:none so it never blocks clicks */}
           {!sealBreaking && (
-            <div className="absolute inset-0 flex items-end justify-center pb-[8vh]" style={{ zIndex: 10 }}>
-              <p className={`envelope-invitation-text ${isRtl ? 'font-arabic' : ''}`} style={{ fontFamily: isRtl ? "'Aref Ruqaa', serif" : "'Cormorant Garamond', serif", fontStyle: isRtl ? 'normal' : 'italic' }}>
-                {isRtl ? 'هذه الدعوة مخصصة لك' : 'This invitation is exclusive for you'}
-              </p>
-            </div>
+            <p className={`envelope-invitation-text ${isRtl ? 'font-arabic' : ''}`} style={{ fontFamily: isRtl ? "'Aref Ruqaa', serif" : "'Cormorant Garamond', serif", fontStyle: isRtl ? 'normal' : 'italic' }}>
+              {isRtl ? 'هذه الدعوة مخصصة لك' : 'This invitation is exclusive for you'}
+            </p>
           )}
         </div>
       )}
