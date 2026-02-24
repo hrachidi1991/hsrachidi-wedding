@@ -279,7 +279,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
               <span className={`block font-light text-white leading-tight ${isRtl ? 'text-4xl sm:text-5xl md:text-6xl' : 'text-5xl sm:text-6xl md:text-7xl'}`}>
                 {isRtl ? settings.groomNameAr : settings.groomNameEn}
               </span>
-              <span className="block text-2xl sm:text-3xl text-gold-400/60 my-2 font-display">&</span>
+              <span className="block text-2xl sm:text-3xl text-olive-400/60 my-2 font-display">&</span>
               <span className={`block font-light text-white leading-tight ${isRtl ? 'text-4xl sm:text-5xl md:text-6xl' : 'text-5xl sm:text-6xl md:text-7xl'}`}>
                 {isRtl ? settings.brideNameAr : settings.brideNameEn}
               </span>
@@ -343,11 +343,11 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
 
                   {/* Large date with decorative pipes */}
                   <div className="flex items-center justify-center gap-3 sm:gap-5 mb-3">
-                    <span className="text-gold-400 text-3xl sm:text-4xl font-light select-none">|</span>
+                    <span className="text-olive-400 text-3xl sm:text-4xl font-light select-none">|</span>
                     <span className={`text-5xl sm:text-7xl md:text-8xl font-light text-white leading-none ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
                       {dayNum}
                     </span>
-                    <span className="text-gold-400 text-3xl sm:text-4xl font-light select-none">|</span>
+                    <span className="text-olive-400 text-3xl sm:text-4xl font-light select-none">|</span>
                   </div>
 
                   {/* Month + Year */}
@@ -361,7 +361,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
                   <div className="divider-gold" />
 
                   {/* Countdown label */}
-                  <p className={`text-xs sm:text-sm uppercase tracking-[0.25em] text-gold-400 mt-6 mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                  <p className={`text-xs sm:text-sm uppercase tracking-[0.25em] text-olive-400 mt-6 mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                     {t(locale, 'countdownTo')}
                   </p>
 
@@ -379,7 +379,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
                           <div className={`countdown-label ${isRtl ? 'font-arabic' : ''}`}>{unit.label}</div>
                         </div>
                         {i < 3 && (
-                          <span className="text-gold-400/50 text-xl sm:text-2xl font-light select-none mx-1 sm:mx-2 -mt-4">:</span>
+                          <span className="text-olive-400/50 text-xl sm:text-2xl font-light select-none mx-1 sm:mx-2 -mt-4">:</span>
                         )}
                       </div>
                     ))}
@@ -388,7 +388,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
                   <div className="divider-gold mt-8 mb-6" />
 
                   {/* Mini calendar */}
-                  <p className={`text-xs uppercase tracking-[0.25em] text-gold-400 mb-4 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                  <p className={`text-xs uppercase tracking-[0.25em] text-olive-400 mb-4 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                     {t(locale, 'theGreatDay')}
                   </p>
                   <p className={`text-xs uppercase tracking-[0.15em] text-white/50 mb-3 ${isRtl ? 'font-arabic' : 'font-body'}`}>
@@ -471,7 +471,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
           <div className={`section-content transition-all duration-1000 delay-200 ${sectionVisible(5) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             {/* Decorative top */}
             <div className="mb-8">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto text-gold-400 mb-4">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto text-olive-400 mb-4">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
@@ -479,7 +479,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
 
             <div className="space-y-6">
               <div>
-                <p className={`text-xs uppercase tracking-[0.25em] text-gold-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                <p className={`text-xs uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                   {t(locale, 'dateLabel')}
                 </p>
                 <p className={`text-xl font-medium text-white ${isRtl ? 'font-arabic' : 'font-display'}`}>
@@ -488,7 +488,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
               </div>
 
               <div>
-                <p className={`text-xs uppercase tracking-[0.25em] text-gold-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                <p className={`text-xs uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                   {t(locale, 'timeLabel')}
                 </p>
                 <p className={`text-xl font-medium text-white ${isRtl ? 'font-arabic' : 'font-display'}`}>
@@ -499,7 +499,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
               <div className="divider-gold" />
 
               <div>
-                <p className={`text-xs uppercase tracking-[0.25em] text-gold-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                <p className={`text-xs uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                   {t(locale, 'venueLabel')}
                 </p>
                 <p className={`text-2xl font-semibold text-white ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
@@ -508,7 +508,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
               </div>
 
               <div>
-                <p className={`text-xs uppercase tracking-[0.25em] text-gold-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                <p className={`text-xs uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                   {t(locale, 'addressLabel')}
                 </p>
                 <p className={`text-base text-white/70 ${isRtl ? 'font-arabic' : 'font-body'}`}>
@@ -592,7 +592,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
           )}
           <div className={`section-content transition-all duration-1000 delay-200 ${sectionVisible(7) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             {/* Gift icon */}
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="mx-auto text-gold-400 mb-6">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="mx-auto text-olive-400 mb-6">
               <polyline points="20 12 20 22 4 22 4 12" />
               <rect x="2" y="7" width="20" height="5" />
               <line x1="12" y1="22" x2="12" y2="7" />
@@ -600,7 +600,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
               <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
             </svg>
 
-            <h2 className={`text-sm uppercase tracking-[0.3em] text-gold-400 mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+            <h2 className={`text-sm uppercase tracking-[0.3em] text-olive-400 mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
               {t(locale, 'giftTitle')}
             </h2>
 
