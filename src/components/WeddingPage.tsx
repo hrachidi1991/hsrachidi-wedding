@@ -812,16 +812,17 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
 
       </div> {/* close scroll-container */}
 
-      {/* ═══ ENVELOPE OVERLAY — realistic gray envelope ═══ */}
+      {/* ═══ ENVELOPE OVERLAY — real photo background ═══ */}
       {!envelopeOpened && (
         <div className={`envelope-viewport ${flapsOpening ? 'envelope-fading' : ''}`}>
-          {/* Realistic envelope back — body + flap + twine + seal */}
           <div className={`envelope-body ${flapsOpening ? 'flap-opening' : ''}`}>
-            {/* Bottom flap — folds over the body */}
-            <div className="envelope-flap" />
-            {/* Gold twine band across the flap seam */}
+            {/* Flap overlay — lifts upward on open */}
+            <div className="envelope-flap-overlay" />
+            {/* Thick jute twine across the card */}
             <div className="envelope-twine" />
-            {/* Photorealistic wax seal centered on twine/seam */}
+            {/* Baby's breath flowers */}
+            <div className="envelope-flowers" />
+            {/* Olive green 3D wax seal */}
             <button
               onClick={handleOpenEnvelope}
               className={`cream-seal ${sealBreaking ? 'seal-fade-out' : ''}`}
@@ -834,7 +835,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
             </button>
           </div>
 
-          {/* Invitation text below the envelope — pointer-events:none so it never blocks clicks */}
+          {/* Invitation text below the envelope */}
           {!sealBreaking && (
             <p className={`envelope-invitation-text ${isRtl ? 'font-arabic' : ''}`} style={{ fontFamily: isRtl ? "'Aref Ruqaa', serif" : "'Cormorant Garamond', serif", fontStyle: isRtl ? 'normal' : 'italic' }}>
               {isRtl ? 'هذه الدعوة مخصصة لك' : 'This invitation is exclusive for you'}
