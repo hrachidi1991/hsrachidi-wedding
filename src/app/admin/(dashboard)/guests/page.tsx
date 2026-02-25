@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import * as XLSX from 'xlsx';
 
 interface Guest {
   id: string;
@@ -69,9 +70,10 @@ export default function GuestsPage() {
   // New guest form
   const [newGuest, setNewGuest] = useState({ name: '', phone: '', side: 'groom', relation: 'Friend', groupCode: '' });
   
-  // CSV import
+  // CSV/Excel import
   const [csvText, setCsvText] = useState('');
   const [importResult, setImportResult] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -137,6 +139,60 @@ export default function GuestsPage() {
     reload();
   };
 
+  // Shared import logic — processes rows from CSV or Excel
+  const processImportRows = async (headers: string[], rows: Record<string, string>[]) => {
+    const hasNewFormat = headers.includes('s') && headers.includes('gt') && headers.includes('group #');
+
+    if (hasNewFormat) {
+      const guestRows = rows.map((obj: any) => {
+        const s = (obj['s'] || '').toUpperCase();
+        const gt = (obj['gt'] || '').toUpperCase();
+        const groupNum = (obj['group #'] || '').trim();
+        const groupCode = `${s}${gt}${groupNum}`;
+        const side = s === 'B' ? 'bride' : 'groom';
+        return {
+          name: obj['name'] || '',
+          phone: obj['phone number'] || obj['phone'] || '',
+          side,
+          relation: 'Friend',
+          groupCode,
+        };
+      }).filter((g: any) => g.name && g.groupCode);
+
+      const groupCounts: Record<string, number> = {};
+      guestRows.forEach((g: any) => { groupCounts[g.groupCode] = (groupCounts[g.groupCode] || 0) + 1; });
+
+      const parsed = guestRows.map((g: any) => ({
+        ...g,
+        maxGuests: groupCounts[g.groupCode],
+      }));
+
+      const res = await fetch('/api/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guests: parsed }),
+      });
+      const data = await res.json();
+      return `Created ${data.created} guests and ${data.groupsCreated} new groups.`;
+    } else {
+      const parsed = rows.map((obj: any) => ({
+        name: obj.name || obj.firstname || obj['first name'] || '',
+        phone: obj.phone || obj['phone number'] || '',
+        side: obj.side || 'groom',
+        relation: obj.relation || 'Friend',
+        groupCode: obj.groupcode || obj['group code'] || obj.group || '',
+        maxGuests: parseInt(obj.maxguests || obj['max guests'] || '2') || 2,
+      }));
+      const res = await fetch('/api/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guests: parsed }),
+      });
+      const data = await res.json();
+      return `Created ${data.created} guests and ${data.groupsCreated} new groups.`;
+    }
+  };
+
   const handleImport = async () => {
     try {
       const lines = csvText.trim().split('\n');
@@ -148,68 +204,44 @@ export default function GuestsPage() {
         headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
         return obj;
       });
-
-      // Detect format: new format has "s", "gt", "group #" columns
-      const hasNewFormat = headers.includes('s') && headers.includes('gt') && headers.includes('group #');
-
-      if (hasNewFormat) {
-        // New format: Name, Phone Number, S, GT, Group #
-        // Build groupCode = S + GT + Group# (concatenated, uppercase)
-        // Map S: G/g → "groom", B/b → "bride"
-        // Auto-calculate maxGuests per group
-        const guestRows = rows.map((obj: any) => {
-          const s = (obj['s'] || '').toUpperCase();
-          const gt = (obj['gt'] || '').toUpperCase();
-          const groupNum = (obj['group #'] || '').trim();
-          const groupCode = `${s}${gt}${groupNum}`;
-          const side = s === 'B' ? 'bride' : 'groom';
-          return {
-            name: obj['name'] || '',
-            phone: obj['phone number'] || '',
-            side,
-            relation: 'Friend',
-            groupCode,
-          };
-        }).filter((g: any) => g.name && g.groupCode);
-
-        // Calculate maxGuests per group
-        const groupCounts: Record<string, number> = {};
-        guestRows.forEach((g: any) => { groupCounts[g.groupCode] = (groupCounts[g.groupCode] || 0) + 1; });
-
-        const parsed = guestRows.map((g: any) => ({
-          ...g,
-          maxGuests: groupCounts[g.groupCode],
-        }));
-
-        const res = await fetch('/api/import', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ guests: parsed }),
-        });
-        const data = await res.json();
-        setImportResult(`Created ${data.created} guests and ${data.groupsCreated} new groups.`);
-      } else {
-        // Legacy/flexible format
-        const parsed = rows.map((obj: any) => ({
-          name: obj.name || obj.firstname || obj['first name'] || '',
-          phone: obj.phone || obj['phone number'] || '',
-          side: obj.side || 'groom',
-          relation: obj.relation || 'Friend',
-          groupCode: obj.groupcode || obj['group code'] || obj.group || '',
-          maxGuests: parseInt(obj.maxguests || obj['max guests'] || '2') || 2,
-        }));
-        const res = await fetch('/api/import', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ guests: parsed }),
-        });
-        const data = await res.json();
-        setImportResult(`Created ${data.created} guests and ${data.groupsCreated} new groups.`);
-      }
+      const result = await processImportRows(headers, rows);
+      setImportResult(result);
       reload();
     } catch (e: any) {
       setImportResult(`Error: ${e.message}`);
     }
+  };
+
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportResult('');
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      // Get raw rows as arrays to read headers
+      const rawRows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      if (rawRows.length < 2) { setImportResult('Excel file needs header + at least 1 row'); return; }
+
+      const headers = rawRows[0].map((h: any) => String(h).trim().toLowerCase());
+      const rows = rawRows.slice(1)
+        .filter((row: any[]) => row.some((cell: any) => String(cell).trim() !== ''))
+        .map((row: any[]) => {
+          const obj: Record<string, string> = {};
+          headers.forEach((h: string, i: number) => { obj[h] = String(row[i] ?? '').trim(); });
+          return obj;
+        });
+
+      const result = await processImportRows(headers, rows);
+      setImportResult(result);
+      reload();
+    } catch (err: any) {
+      setImportResult(`Error reading Excel file: ${err.message}`);
+    }
+    // Reset file input so the same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const copyLink = (token: string) => {
@@ -231,7 +263,7 @@ export default function GuestsPage() {
               activeTab === tab ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border'
             }`}
           >
-            {tab === 'import' ? 'CSV Import' : tab}
+            {tab === 'import' ? 'Import' : tab}
           </button>
         ))}
       </div>
@@ -390,27 +422,65 @@ export default function GuestsPage() {
         </div>
       )}
 
-      {/* ═══ CSV IMPORT TAB ═══ */}
+      {/* ═══ IMPORT TAB ═══ */}
       {activeTab === 'import' && (
-        <div className="admin-card">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Import Guests from CSV</h3>
-          <p className="text-xs text-gray-500 mb-3">
-            Format: <code className="bg-gray-100 px-1 rounded">Name,Phone Number,S,GT,Group #</code>
-            <span className="block mt-1 text-gray-400">S = G (groom) or B (bride) &middot; GroupCode = S+GT+Group# &middot; maxGuests auto-calculated</span>
-          </p>
-          <textarea
-            value={csvText}
-            onChange={(e) => setCsvText(e.target.value)}
-            rows={10}
-            placeholder={`Name,Phone Number,S,GT,Group #\nHussein Rachidi,03833508,G,FAM,1\nSuzan Rachidi,,B,FAM,1\nAhmad Rachidi,71538385,G,FRD,2`}
-            className="w-full border rounded-md px-3 py-2 text-sm font-mono mb-3"
-          />
-          <div className="flex items-center gap-3">
-            <button onClick={handleImport} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
-              Import
+        <div className="space-y-6">
+          {/* Excel Upload */}
+          <div className="admin-card">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Import from Excel File</h3>
+            <p className="text-xs text-gray-500 mb-3">
+              Upload an <strong>.xlsx</strong> or <strong>.xls</strong> file with columns:
+              <code className="bg-gray-100 px-1 rounded ml-1">Name, Phone Number, S, GT, Group #</code>
+              <span className="block mt-1 text-gray-400">
+                S = G (groom) or B (bride) &middot; GroupCode = S+GT+Group# (e.g. GFAM1) &middot; maxGuests auto-calculated per group
+              </span>
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleExcelUpload}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 inline-flex items-center gap-2"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              Upload Excel File
             </button>
-            {importResult && <p className="text-sm text-green-600">{importResult}</p>}
           </div>
+
+          {/* CSV Paste */}
+          <div className="admin-card">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Or Paste CSV Data</h3>
+            <p className="text-xs text-gray-500 mb-3">
+              Same format: <code className="bg-gray-100 px-1 rounded">Name,Phone Number,S,GT,Group #</code>
+            </p>
+            <textarea
+              value={csvText}
+              onChange={(e) => setCsvText(e.target.value)}
+              rows={8}
+              placeholder={`Name,Phone Number,S,GT,Group #\nHussein Rachidi,03833508,G,FAM,1\nSuzan Rachidi,,B,FAM,1\nAhmad Rachidi,71538385,G,FRD,2`}
+              className="w-full border rounded-md px-3 py-2 text-sm font-mono mb-3"
+            />
+            <button onClick={handleImport} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
+              Import CSV
+            </button>
+          </div>
+
+          {/* Import result */}
+          {importResult && (
+            <div className={`admin-card ${importResult.startsWith('Error') ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}`}>
+              <p className={`text-sm ${importResult.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>
+                {importResult}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>
