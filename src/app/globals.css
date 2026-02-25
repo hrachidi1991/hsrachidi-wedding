@@ -8,8 +8,8 @@
   --gray: #9B9B9B;
   --gray-light: #A3A3A3;
   --gray-dark: #858585;
-  --gold: #C9A96E;
-  --gold-light: #D4BA88;
+  --gold: #79734F;
+  --gold-light: #9B957A;
   --cream: #EDE9E0;
   --charcoal: #2a2a2a;
   --charcoal-light: #4f4f4f;
@@ -64,7 +64,15 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--gray);
+  /* Photo background with gray overlay for readability */
+  background:
+    linear-gradient(
+      180deg,
+      rgba(105, 105, 105, 0.82) 0%,
+      rgba(115, 115, 115, 0.75) 50%,
+      rgba(105, 105, 105, 0.82) 100%
+    ),
+    url('/images/section-bg.jpg') center / cover fixed no-repeat;
 }
 
 /* Floral corner decoration — top-right */
@@ -106,9 +114,16 @@ body {
   z-index: 0;
 }
 
-/* ═══ Dark Gray Sections (alternating) ═══ */
+/* ═══ Darker alternating sections ═══ */
 .section-olive {
-  background: var(--gray-dark) !important;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(85, 85, 85, 0.87) 0%,
+      rgba(95, 95, 95, 0.82) 50%,
+      rgba(85, 85, 85, 0.87) 100%
+    ),
+    url('/images/section-bg.jpg') center / cover fixed no-repeat !important;
   box-shadow: none;
 }
 
@@ -122,16 +137,16 @@ body {
 .section-olive .section-overlay {
   background: linear-gradient(
     180deg,
-    rgba(133, 133, 133, 0.88) 0%,
-    rgba(133, 133, 133, 0.78) 50%,
-    rgba(133, 133, 133, 0.88) 100%
+    rgba(85, 85, 85, 0.88) 0%,
+    rgba(95, 95, 95, 0.78) 50%,
+    rgba(85, 85, 85, 0.88) 100%
   ) !important;
 }
 
-/* White dividers on dark sections */
+/* Olive dividers on dark sections */
 .section-olive .divider-gold,
 .section-olive .divider-gold-wide {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
 }
 
 /* White Quran verse on dark */
@@ -149,7 +164,7 @@ body {
   box-shadow: 0 0 0 2px var(--gold);
 }
 
-/* Buttons on dark sections — gold outline style */
+/* Buttons on dark sections — olive outline style */
 .section-olive .btn-gold {
   background: transparent;
   border: 1.5px solid var(--gold);
@@ -157,8 +172,8 @@ body {
   box-shadow: none;
 }
 .section-olive .btn-gold:hover {
-  background: rgba(201, 169, 110, 0.15);
-  box-shadow: 0 4px 16px rgba(201, 169, 110, 0.15);
+  background: rgba(121, 115, 79, 0.15);
+  box-shadow: 0 4px 16px rgba(121, 115, 79, 0.15);
 }
 
 /* Countdown on dark override */
@@ -472,8 +487,8 @@ body {
 }
 
 .btn-gold:hover {
-  background: rgba(201, 169, 110, 0.15);
-  box-shadow: 0 4px 16px rgba(201, 169, 110, 0.2);
+  background: rgba(121, 115, 79, 0.15);
+  box-shadow: 0 4px 16px rgba(121, 115, 79, 0.2);
   transform: translateY(-1px);
 }
 
@@ -491,7 +506,7 @@ body {
 }
 
 .btn-outline-gold:hover {
-  background: rgba(201, 169, 110, 0.15);
+  background: rgba(121, 115, 79, 0.15);
   color: white;
 }
 
@@ -506,7 +521,7 @@ body {
   border-radius: 50%;
   background: rgba(80, 80, 80, 0.7);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(201, 169, 110, 0.4);
+  border: 1px solid rgba(121, 115, 79, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -536,7 +551,7 @@ body {
   border-radius: 20px;
   background: rgba(80, 80, 80, 0.7);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(201, 169, 110, 0.4);
+  border: 1px solid rgba(121, 115, 79, 0.4);
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.3s ease;
