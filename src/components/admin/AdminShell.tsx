@@ -57,7 +57,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto text-gray-900">
         <div className="p-6 max-w-6xl">
           {children}
         </div>
