@@ -80,8 +80,28 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
     }).catch(() => {});
   };
 
+  // Countdown
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
   // Visibility observer for animations
   const [visibleSections, setVisibleSections] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    const target = new Date(settings.countdownDate).getTime();
+    const tick = () => {
+      const now = Date.now();
+      const diff = Math.max(0, target - now);
+      setCountdown({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((diff % (1000 * 60)) / 1000),
+      });
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [settings.countdownDate]);
 
   // Switch music track when locale changes
   const currentMusicSrc = locale === 'ar' && settings.musicFileAr ? settings.musicFileAr : settings.musicFile;
@@ -366,15 +386,113 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
           </div>
         </section>
 
-        {/* ═══ SECTION 5 — LOCATION ═══ */}
+        {/* ═══ SECTION 5 — COUNTDOWN (Calendar Style) ═══ */}
         <section className="scroll-section" data-section="5">
+          {settings.countdownBg && (
+            <>
+              <div className="section-bg" style={{ backgroundImage: `url(${settings.countdownBg})` }} />
+              <div className="section-overlay" />
+            </>
+          )}
+          <div className={`section-content transition-all duration-1000 delay-200 ${sectionVisible(5) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            {(() => {
+              const weddingDate = new Date(settings.countdownDate);
+              const dayNum = weddingDate.getDate();
+              const year = weddingDate.getFullYear();
+              const dayName = weddingDate.toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { weekday: 'long' });
+              const monthName = weddingDate.toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { month: 'long' });
+
+              const firstOfMonth = new Date(year, weddingDate.getMonth(), 1);
+              const daysInMonth = new Date(year, weddingDate.getMonth() + 1, 0).getDate();
+              const startDay = (firstOfMonth.getDay() + 6) % 7;
+              const dayHeaders = locale === 'ar'
+                ? ['ن','ث','ر','خ','ج','س','ح']
+                : ['Mo','Tu','We','Th','Fr','Sa','Su'];
+
+              return (
+                <>
+                  <div className="divider-gold-wide" />
+
+                  <p className={`text-sm sm:text-base uppercase tracking-[0.3em] text-black/40 mb-3 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                    {dayName}
+                  </p>
+
+                  <div className="flex items-center justify-center gap-3 sm:gap-5 mb-3">
+                    <span className="text-[#C9A96E] text-4xl sm:text-5xl font-light select-none">|</span>
+                    <span className={`text-6xl sm:text-8xl md:text-9xl font-light text-black leading-none ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
+                      {dayNum}
+                    </span>
+                    <span className="text-[#C9A96E] text-4xl sm:text-5xl font-light select-none">|</span>
+                  </div>
+
+                  <p className={`text-base sm:text-lg uppercase tracking-[0.2em] text-black/60 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                    {monthName}
+                  </p>
+                  <p className={`text-base tracking-[0.15em] text-black/40 mb-8 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                    {year}
+                  </p>
+
+                  <div className="divider-gold" />
+
+                  <p className={`text-sm sm:text-base uppercase tracking-[0.25em] text-olive-400 mt-6 mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                    {t(locale, 'countdownTo')}
+                  </p>
+
+                  <div className="flex items-center justify-center gap-1 sm:gap-2 mb-2">
+                    {[
+                      { value: countdown.days, label: t(locale, 'days') },
+                      { value: countdown.hours, label: t(locale, 'hours') },
+                      { value: countdown.minutes, label: t(locale, 'minutes') },
+                      { value: countdown.seconds, label: t(locale, 'seconds') },
+                    ].map((unit, i) => (
+                      <div key={i} className="flex items-center">
+                        <div className="countdown-unit">
+                          <div className="countdown-number">{String(unit.value).padStart(2, '0')}</div>
+                          <div className={`countdown-label ${isRtl ? 'font-arabic' : ''}`}>{unit.label}</div>
+                        </div>
+                        {i < 3 && (
+                          <span className="text-[#C9A96E]/50 text-xl sm:text-2xl font-light select-none mx-1 sm:mx-2 -mt-4">:</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="divider-gold mt-8 mb-6" />
+
+                  <p className={`text-sm uppercase tracking-[0.25em] text-olive-400 mb-4 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                    {t(locale, 'theGreatDay')}
+                  </p>
+                  <p className={`text-sm uppercase tracking-[0.15em] text-black/40 mb-3 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                    {monthName} {year}
+                  </p>
+                  <div className="calendar-grid">
+                    {dayHeaders.map((d) => (
+                      <div key={d} className="cal-header font-body">{d}</div>
+                    ))}
+                    {Array.from({ length: startDay }).map((_, i) => (
+                      <div key={`e${i}`} className="cal-day empty" />
+                    ))}
+                    {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => (
+                      <div key={d} className={`cal-day ${d === dayNum ? 'highlight' : ''}`}>
+                        {d}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </section>
+
+        {/* ═══ SECTION 6 — LOCATION ═══ */}
+        <section className="scroll-section section-olive" data-section="6">
           {settings.locationBg && (
             <>
               <div className="section-bg" style={{ backgroundImage: `url(${settings.locationBg})` }} />
               <div className="section-overlay" />
             </>
           )}
-          <div className={`section-content transition-all duration-1000 delay-200 ${sectionVisible(5) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className={`section-content transition-all duration-1000 delay-200 ${sectionVisible(6) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             {/* Decorative top */}
             <div className="mb-8">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto text-olive-400 mb-4">
@@ -440,15 +558,15 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
           </div>
         </section>
 
-        {/* ═══ SECTION 6 — GIFT REGISTRY ═══ */}
-        <section className="scroll-section section-olive" data-section="6">
+        {/* ═══ SECTION 7 — GIFT REGISTRY ═══ */}
+        <section className="scroll-section" data-section="7">
           {settings.giftBg && (
             <>
               <div className="section-bg" style={{ backgroundImage: `url(${settings.giftBg})` }} />
               <div className="section-overlay" />
             </>
           )}
-          <div className={`section-content transition-all duration-1000 delay-200 ${sectionVisible(6) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className={`section-content transition-all duration-1000 delay-200 ${sectionVisible(7) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             {/* Gift icon */}
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="mx-auto text-olive-400 mb-6">
               <polyline points="20 12 20 22 4 22 4 12" />
@@ -525,15 +643,15 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
           </div>
         </section>
 
-        {/* ═══ SECTION 7 — RSVP ═══ */}
-        <section className="scroll-section" data-section="7" style={{ minHeight: 'max(100dvh, 700px)', height: 'auto' }}>
+        {/* ═══ SECTION 8 — RSVP ═══ */}
+        <section className="scroll-section section-olive" data-section="8" style={{ minHeight: 'max(100dvh, 700px)', height: 'auto' }}>
           {settings.rsvpBg && (
             <>
               <div className="section-bg" style={{ backgroundImage: `url(${settings.rsvpBg})`, position: 'fixed' }} />
               <div className="section-overlay" style={{ position: 'fixed' }} />
             </>
           )}
-          <div className={`section-content py-12 transition-all duration-1000 delay-200 ${sectionVisible(7) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className={`section-content py-12 transition-all duration-1000 delay-200 ${sectionVisible(8) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <h2 className={`text-base sm:text-lg uppercase tracking-[0.3em] text-black/60 mb-4 ${isRtl ? 'font-arabic' : 'font-body'}`}>
               {t(locale, 'rsvpTitle')}
             </h2>

@@ -64,6 +64,7 @@ export default function ContentEditor() {
     { id: 'envelope', label: 'Envelope' },
     { id: 'quran', label: 'Quran Aya' },
     { id: 'invitation', label: 'Formal Invitation' },
+    { id: 'countdown', label: 'Countdown' },
     { id: 'location', label: 'Location' },
     { id: 'gift', label: 'Gift Registry' },
     { id: 'rsvp', label: 'RSVP' },
@@ -153,6 +154,15 @@ export default function ContentEditor() {
             <TextArea label="Invitation Text (EN)" value={settings.invitationTextEn} onChange={(v) => update('invitationTextEn', v)} rows={6} />
             <TextArea label="Invitation Text (AR)" value={settings.invitationTextAr} onChange={(v) => update('invitationTextAr', v)} rows={6} dir="rtl" />
             <FileUpload label="Invitation Background" current={settings.invitationBg} onUpload={(f) => uploadFile(f, 'invitationBg')} onRemove={() => update('invitationBg', '')} />
+          </div>
+        )}
+
+        {/* COUNTDOWN */}
+        {activeTab === 'countdown' && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold mb-2">Countdown Section</h2>
+            <Field label="Countdown Target (ISO datetime)" value={settings.countdownDate} onChange={(v) => update('countdownDate', v)} type="datetime-local" />
+            <FileUpload label="Countdown Background" current={settings.countdownBg} onUpload={(f) => uploadFile(f, 'countdownBg')} onRemove={() => update('countdownBg', '')} />
           </div>
         )}
 
