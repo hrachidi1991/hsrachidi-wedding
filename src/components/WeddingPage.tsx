@@ -156,19 +156,19 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     }
 
-    // t=600ms: Seal has faded → flaps start opening
+    // t=400ms: Start the fade-out of the entire overlay
     setTimeout(() => {
       setFlapsOpening(true);
-    }, 600);
+    }, 400);
 
-    // t=2800ms: Flaps done + fade complete → remove overlay, enable scrolling
+    // t=2000ms: Animation complete → remove overlay, enable scrolling
     setTimeout(() => {
       setEnvelopeOpened(true);
       setShowContent(true);
       setTimeout(() => {
         scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
-    }, 2800);
+    }, 2000);
   }, [settings, currentMusicSrc]);
 
   const toggleAudio = () => {
@@ -812,7 +812,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
 
       </div> {/* close scroll-container */}
 
-      {/* ═══ ENVELOPE OVERLAY — full-screen photo, click anywhere to open ═══ */}
+      {/* ═══ ENVELOPE OVERLAY — single photo, click to open ═══ */}
       {!envelopeOpened && (
         <div
           className={`envelope-viewport ${flapsOpening ? 'envelope-fading' : ''} ${sealBreaking ? 'envelope-opening' : ''}`}
@@ -824,14 +824,18 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/images/envelope-bg.png"
+            src="/images/envelope-iphone2.png"
             alt="Wedding envelope"
             className="envelope-photo"
             draggable={false}
           />
+          {/* Exclusive text */}
+          <p className={`envelope-exclusive-text ${isRtl ? 'font-arabic' : ''}`}>
+            {isRtl ? 'هذه الدعوة حصرية لك' : 'This invitation is exclusive for you'}
+          </p>
           {/* Tap hint */}
           {!sealBreaking && (
-            <p className={`envelope-tap-hint ${isRtl ? 'font-arabic' : ''}`} style={{ fontFamily: isRtl ? "'Amiri', serif" : "'Lora', serif" }}>
+            <p className={`envelope-tap-hint ${isRtl ? 'font-arabic' : ''}`}>
               {isRtl ? 'انقر لفتح الدعوة' : 'Tap to open'}
             </p>
           )}

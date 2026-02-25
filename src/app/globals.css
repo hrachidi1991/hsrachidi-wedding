@@ -249,67 +249,91 @@ body {
   text-align: center;
 }
 
-/* ═══ Full-Viewport Envelope — Photo Background ═══ */
+/* ═══ Full-Viewport Envelope — Single Photo ═══ */
 .envelope-viewport {
   position: fixed;
   inset: 0;
   z-index: 50;
-  overflow: hidden;
-  background: #d5d3d0;
+  background: #6b6b6b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 
-.envelope-fading {
-  animation: envelopeFadeOut 2.2s ease-in-out forwards;
+.envelope-viewport.envelope-fading {
+  animation: envelopeFadeOut 1.6s ease-in-out forwards;
 }
 
 @keyframes envelopeFadeOut {
   0% { opacity: 1; }
-  50% { opacity: 1; }
+  40% { opacity: 1; }
   100% { opacity: 0; }
 }
 
-/* The photo IS the entire envelope — fills the viewport */
+/* The envelope photo — responsive, centered, contained */
 .envelope-photo {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
+  max-width: 90vw;
+  max-height: 85vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   pointer-events: none;
+  border-radius: 4px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Scale-up + fade animation on open */
+.envelope-opening .envelope-photo {
+  animation: envelopeScaleOut 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes envelopeScaleOut {
+  0% { transform: scale(1); opacity: 1; }
+  40% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+
+/* "This invitation is exclusive for you" text below the image */
+.envelope-exclusive-text {
+  margin-top: 1.5rem;
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0.85;
 }
 
 /* Subtle tap hint text */
 .envelope-tap-hint {
-  position: absolute;
-  bottom: clamp(2.5rem, 6vh, 4.5rem);
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: clamp(0.75rem, 2vw, 1rem);
-  color: rgba(120, 110, 90, 0.6);
+  margin-top: 1rem;
+  font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+  color: rgba(255, 255, 255, 0.4);
   letter-spacing: 0.15em;
   text-transform: uppercase;
   text-align: center;
   pointer-events: none;
-  z-index: 2;
   animation: hintPulse 2.5s ease-in-out infinite;
 }
 
 @keyframes hintPulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
 }
 
-/* Envelope opening animation — scale + fade */
-.envelope-opening .envelope-photo {
-  animation: envelopeSlideUp 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+/* Fade out all child text when opening */
+.envelope-opening .envelope-exclusive-text,
+.envelope-opening .envelope-tap-hint {
+  animation: textFadeOut 0.6s ease-out forwards;
 }
 
-@keyframes envelopeSlideUp {
-  0% { transform: scale(1); opacity: 1; }
-  40% { transform: scale(1.05); opacity: 1; }
-  100% { transform: scale(1.15) translateY(-8%); opacity: 0; }
+@keyframes textFadeOut {
+  0% { opacity: 0.85; }
+  100% { opacity: 0; }
 }
 
 /* Calendar mini-grid */
