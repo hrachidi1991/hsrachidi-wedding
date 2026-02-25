@@ -155,7 +155,7 @@ body {
 
 .quran-verse {
   font-family: 'Amiri', serif;
-  font-size: clamp(1.1rem, 3vw, 1.6rem);
+  font-size: clamp(1.3rem, 3.5vw, 2rem);
   line-height: 2.2;
   color: rgba(42, 42, 42, 0.9);
   direction: rtl;
@@ -263,22 +263,22 @@ body {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-  max-width: 280px;
+  gap: 3px;
+  max-width: 320px;
   margin: 0 auto;
 }
 
 .calendar-grid .cal-header {
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  padding: 4px 0;
+  padding: 5px 0;
   color: rgba(42, 42, 42, 0.5);
 }
 
 .calendar-grid .cal-day {
-  font-size: 0.8rem;
-  padding: 4px 0;
+  font-size: 0.95rem;
+  padding: 5px 0;
   color: rgba(42, 42, 42, 0.85);
   border-radius: 50%;
   aspect-ratio: 1;
@@ -322,7 +322,7 @@ body {
 
 .countdown-number {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-size: clamp(3rem, 10vw, 5.5rem);
   font-weight: 300;
   color: var(--charcoal);
   line-height: 1;
@@ -330,7 +330,7 @@ body {
 
 .countdown-label {
   font-family: 'Lora', serif;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.2em;
   color: rgba(42, 42, 42, 0.6);
@@ -341,10 +341,10 @@ body {
 .btn-gold {
   background: transparent;
   color: var(--gold);
-  padding: 0.75rem 2rem;
+  padding: 0.875rem 2.25rem;
   border-radius: 4px;
   font-family: 'Lora', serif;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
   letter-spacing: 0.05em;
   transition: all 0.3s ease;
   border: 1.5px solid var(--gold);
