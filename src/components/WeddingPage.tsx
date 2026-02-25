@@ -812,30 +812,28 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
 
       </div> {/* close scroll-container */}
 
-      {/* ═══ ENVELOPE OVERLAY — real photo background ═══ */}
+      {/* ═══ ENVELOPE OVERLAY — full-screen photo ═══ */}
       {!envelopeOpened && (
         <div className={`envelope-viewport ${flapsOpening ? 'envelope-fading' : ''}`}>
-          <div className={`envelope-body ${flapsOpening ? 'flap-opening' : ''}`}>
-            {/* Flap overlay — lifts upward on open */}
-            <div className="envelope-flap-overlay" />
-            {/* Thick jute twine across the card */}
-            <div className="envelope-twine" />
-            {/* Baby's breath flowers */}
-            <div className="envelope-flowers" />
-            {/* Olive green 3D wax seal */}
-            <button
-              onClick={handleOpenEnvelope}
-              className={`cream-seal ${sealBreaking ? 'seal-fade-out' : ''}`}
-              disabled={sealBreaking}
-              aria-label="Open envelope"
-            >
-              <span className="seal-inner-ring" />
-              <span className="seal-texture" />
-              <span className="seal-monogram font-display" style={{ fontStyle: 'italic' }}>H & S</span>
-            </button>
-          </div>
-
-          {/* Invitation text below the envelope */}
+          {/* The photo IS the envelope — covers entire viewport */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/envelope-bg.png"
+            alt="Wedding envelope"
+            className="envelope-photo"
+            draggable={false}
+          />
+          {/* Flap that lifts on open */}
+          <div className={`envelope-flap-top ${flapsOpening ? '' : ''}`}
+               style={flapsOpening ? { animation: 'flapLift 1.2s cubic-bezier(0.4,0,0.2,1) forwards' } : { opacity: 0 }} />
+          {/* Invisible hotspot over the wax seal */}
+          <button
+            onClick={handleOpenEnvelope}
+            className={`seal-hotspot ${sealBreaking ? 'seal-cracking' : ''}`}
+            disabled={sealBreaking}
+            aria-label="Open envelope"
+          />
+          {/* Invitation text */}
           {!sealBreaking && (
             <p className={`envelope-invitation-text ${isRtl ? 'font-arabic' : ''}`} style={{ fontFamily: isRtl ? "'Aref Ruqaa', serif" : "'Cormorant Garamond', serif", fontStyle: isRtl ? 'normal' : 'italic' }}>
               {isRtl ? 'هذه الدعوة مخصصة لك' : 'This invitation is exclusive for you'}

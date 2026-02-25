@@ -262,19 +262,16 @@ body {
   text-align: center;
 }
 
-/* ═══ Full-Viewport Envelope — Real Photo Background ═══ */
+/* ═══ Full-Viewport Envelope — Photo Background ═══ */
 .envelope-viewport {
   position: fixed;
   inset: 0;
   z-index: 50;
   overflow: hidden;
-  /* Dark ambient surface behind the card */
-  background: #6b6b6b;
+  background: #888;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.8s ease-in-out;
 }
 
 .envelope-fading {
@@ -287,315 +284,98 @@ body {
   100% { opacity: 0; }
 }
 
-/* ═══ Envelope Body — real photo as the card ═══ */
-.envelope-body {
-  position: relative;
-  width: clamp(300px, 80vw, 440px);
-  height: clamp(420px, 75vh, 620px);
-  max-height: 80vh;
-  /* The actual photograph IS the envelope */
-  background-image: url('/images/envelope-photo.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  border-radius: 2px;
-  /* Paper-edge drop shadow for depth */
-  box-shadow:
-    0 2px 6px rgba(0,0,0,0.10),
-    0 10px 30px rgba(0,0,0,0.15),
-    0 25px 60px rgba(0,0,0,0.10);
+/* The photo IS the entire envelope — fills the viewport */
+.envelope-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
-/* ═══ Flap Overlay — transparent cover on top 55% that lifts on open ═══ */
-.envelope-flap-overlay {
+/* Invisible clickable hotspot over the wax seal in the photo */
+.seal-hotspot {
+  position: absolute;
+  /* Seal position in the image: ~57% from left, ~53% from top */
+  top: 53%;
+  left: 57%;
+  transform: translate(-50%, -50%);
+  width: clamp(70px, 14vmin, 120px);
+  height: clamp(70px, 14vmin, 120px);
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  /* Subtle pulse hint so users know to tap */
+  animation: sealPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes sealPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  50% { box-shadow: 0 0 0 8px rgba(255,255,255,0.12); }
+}
+
+.seal-hotspot:hover {
+  box-shadow: 0 0 0 6px rgba(255,255,255,0.15);
+  animation: none;
+}
+
+.seal-hotspot:active {
+  transform: translate(-50%, -50%) scale(0.95);
+}
+
+/* Seal crack animation on click */
+.seal-cracking {
+  animation: sealCrack 0.7s ease-out forwards !important;
+}
+
+@keyframes sealCrack {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  25% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.4) rotate(20deg); opacity: 0; }
+}
+
+/* Top flap lifts on open — covers top portion of image */
+.envelope-flap-top {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 55%;
-  z-index: 2;
+  height: 50%;
+  z-index: 5;
   transform-origin: center bottom;
-  /* Slightly tinted transparent to show paper edge on lift */
-  background: transparent;
-  /* Paper edge thickness visible on lift */
-  border-bottom: 3px solid rgba(180, 175, 165, 0.6);
   pointer-events: none;
+  /* Matches the envelope paper color at the fold line */
+  background: linear-gradient(180deg, #b0aead 0%, #b5b3b2 90%, #a8a6a5 100%);
+  opacity: 0;
 }
 
-/* Flap lifts up on open */
-.flap-opening .envelope-flap-overlay {
-  animation: flapLift 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+.flap-opening .envelope-flap-top {
+  animation: flapLift 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes flapLift {
-  0% { transform: perspective(800px) rotateX(0deg); opacity: 1; }
-  40% { opacity: 1; }
-  100% { transform: perspective(800px) rotateX(-85deg); opacity: 0; }
-}
-
-/* ═══ Jute Twine — thick brown rope across the card ═══ */
-.envelope-twine {
-  position: absolute;
-  top: 58%;
-  left: -3%;
-  width: 106%;
-  height: 14px;
-  transform: translateY(-50%);
-  z-index: 5;
-  /* Thick jute rope — brown/tan base with diagonal fibers */
-  background:
-    repeating-linear-gradient(
-      135deg,
-      transparent 0px, transparent 1px,
-      rgba(110,90,55,0.25) 1px, rgba(110,90,55,0.25) 2px
-    ),
-    repeating-linear-gradient(
-      45deg,
-      transparent 0px, transparent 2px,
-      rgba(160,130,80,0.15) 2px, rgba(160,130,80,0.15) 3px
-    ),
-    linear-gradient(
-      180deg,
-      #9B8B6E 0%,
-      #8B7355 20%,
-      #7A6548 50%,
-      #8B7355 80%,
-      #9B8B6E 100%
-    );
-  border-radius: 7px;
-  /* Frayed rough edges */
-  box-shadow:
-    0 2px 4px rgba(0,0,0,0.20),
-    0 -1px 2px rgba(0,0,0,0.10),
-    0 0 6px rgba(0,0,0,0.08),
-    inset 0 2px 3px rgba(255,255,255,0.12),
-    inset 0 -2px 3px rgba(0,0,0,0.15);
-}
-
-/* Extra fiber texture overlay on twine */
-.envelope-twine::after {
-  content: '';
-  position: absolute;
-  inset: -2px 0;
-  border-radius: 7px;
-  background:
-    repeating-linear-gradient(
-      110deg,
-      transparent 0px, transparent 3px,
-      rgba(140,110,65,0.18) 3px, rgba(140,110,65,0.18) 4px
-    );
-  pointer-events: none;
-}
-
-/* Twine knot bump at center */
-.envelope-twine::before {
-  content: '';
-  position: absolute;
-  top: -3px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 22px;
-  height: 20px;
-  background: radial-gradient(ellipse, #8B7355 30%, #7A6548 70%, transparent 100%);
-  border-radius: 50%;
-  box-shadow:
-    0 1px 3px rgba(0,0,0,0.2),
-    inset 0 1px 2px rgba(255,255,255,0.1);
-}
-
-/* Twine snaps on open */
-.flap-opening .envelope-twine {
-  animation: twineSnap 0.5s ease-out forwards;
-}
-
-@keyframes twineSnap {
-  0% { transform: translateY(-50%) scaleX(1); opacity: 1; }
-  40% { transform: translateY(-50%) scaleX(1.02); opacity: 0.8; }
-  100% { transform: translateY(-50%) scaleX(0); opacity: 0; }
-}
-
-/* ═══ Baby's Breath Flowers ═══ */
-.envelope-flowers {
-  position: absolute;
-  top: 22%;
-  left: 8%;
-  width: clamp(80px, 22vmin, 130px);
-  height: clamp(70px, 18vmin, 110px);
-  background-image: url('/images/babys-breath.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-  z-index: 6;
-  pointer-events: none;
-  opacity: 0.85;
-}
-
-/* Flowers float away on open */
-.flap-opening .envelope-flowers {
-  animation: flowersFloat 0.8s ease-out forwards;
-}
-
-@keyframes flowersFloat {
-  0% { transform: translate(0, 0); opacity: 0.85; }
-  100% { transform: translate(-20px, -40px); opacity: 0; }
-}
-
-/* ═══ Olive Green 3D Wax Seal ═══ */
-.cream-seal {
-  /* Larger, slightly irregular organic shape */
-  width: clamp(90px, 22vmin, 140px);
-  height: clamp(90px, 22vmin, 140px);
-  /* Slightly irregular border for organic wax edge */
-  border-radius: 48% 52% 50% 50% / 50% 48% 52% 50%;
-  position: absolute;
-  /* Centered on the twine area */
-  top: 58%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 10;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  padding: 0;
-  /* ═══ Multi-layer olive wax surface ═══ */
-  background:
-    /* Top-left light catch */
-    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.20) 0%, transparent 45%),
-    /* Bottom-right ambient shadow */
-    radial-gradient(circle at 72% 75%, rgba(0,0,0,0.12) 0%, transparent 45%),
-    /* Mid surface variation */
-    radial-gradient(circle at 45% 50%, rgba(255,255,255,0.06) 0%, transparent 40%),
-    /* Olive green wax gradient */
-    radial-gradient(ellipse at 48% 44%,
-      #8B9C73 0%,
-      #829469 15%,
-      #7A8C61 30%,
-      #728458 50%,
-      #6F7C57 70%,
-      #657350 100%
-    );
-  /* Heavy 3D depth */
-  box-shadow:
-    /* Heavy drop shadow */
-    0 4px 14px rgba(0,0,0,0.30),
-    0 10px 25px rgba(0,0,0,0.15),
-    0 2px 4px rgba(0,0,0,0.20),
-    /* Inner bottom — 3D wax thickness */
-    inset 0 -8px 16px rgba(0,0,0,0.15),
-    /* Inner top highlight */
-    inset 0 8px 16px rgba(255,255,255,0.18),
-    /* Inner left highlight */
-    inset 5px 0 10px rgba(255,255,255,0.08),
-    /* Inner right shadow */
-    inset -4px 0 8px rgba(0,0,0,0.08);
-  transition: transform 0.2s ease;
-}
-
-/* Wax drip edge — slightly irregular melted wax rim */
-.cream-seal::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 48% 52% 50% 50% / 50% 48% 52% 50%;
-  /* Visible wax rim with olive tint */
-  border: 3px solid rgba(107, 124, 87, 0.6);
-  box-shadow:
-    /* Outer rim shadow */
-    0 3px 6px rgba(0,0,0,0.12),
-    /* Inner rim highlight */
-    inset 0 2px 3px rgba(255,255,255,0.20),
-    inset 0 -2px 3px rgba(0,0,0,0.08);
-  pointer-events: none;
-}
-
-/* Embossed groove circle */
-.cream-seal::before {
-  content: '';
-  position: absolute;
-  inset: 14%;
-  border-radius: 50%;
-  border: 1.5px solid rgba(0,0,0,0.10);
-  box-shadow:
-    0 1px 1px rgba(255,255,255,0.20),
-    inset 0 1px 1px rgba(0,0,0,0.08),
-    0 0 0 1px rgba(255,255,255,0.08);
-  pointer-events: none;
-}
-
-/* Second inner ring for depth */
-.seal-inner-ring {
-  position: absolute;
-  inset: 18%;
-  border-radius: 50%;
-  border: 1px solid rgba(0,0,0,0.06);
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.08),
-    inset 0 0 0 1px rgba(0,0,0,0.03);
-  pointer-events: none;
-}
-
-/* Wax surface texture with olive tones */
-.seal-texture {
-  position: absolute;
-  inset: 0;
-  border-radius: 48% 52% 50% 50% / 50% 48% 52% 50%;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 20% 40%, rgba(139,156,115,0.3) 0%, transparent 8%),
-    radial-gradient(circle at 75% 30%, rgba(130,148,105,0.25) 0%, transparent 6%),
-    radial-gradient(circle at 55% 75%, rgba(145,160,120,0.2) 0%, transparent 7%),
-    radial-gradient(circle at 35% 65%, rgba(139,156,115,0.15) 0%, transparent 9%),
-    radial-gradient(circle at 80% 60%, rgba(130,148,105,0.2) 0%, transparent 5%);
-}
-
-.cream-seal:hover {
-  transform: translate(-50%, -50%) scale(1.04);
-}
-.cream-seal:active {
-  transform: translate(-50%, -50%) scale(0.97);
-}
-
-/* Monogram — embossed into olive wax */
-.seal-monogram {
-  font-size: clamp(1.1rem, 4vmin, 1.8rem);
-  font-weight: 300;
-  font-style: italic;
-  letter-spacing: 0.03em;
-  /* Embossed olive-tinted text */
-  color: rgba(90, 105, 70, 0.45);
-  text-shadow:
-    /* Light hitting bottom-right edge */
-    0 1.5px 1px rgba(255, 255, 255, 0.35),
-    1px 1px 0 rgba(255, 255, 255, 0.12),
-    /* Shadow on top-left edge — pressed in */
-    0 -1px 1px rgba(0, 0, 0, 0.12),
-    -0.5px -0.5px 0 rgba(0, 0, 0, 0.06);
-  position: relative;
-  z-index: 1;
-}
-
-/* Seal pops and spins off */
-.seal-fade-out {
-  animation: sealPop 0.7s ease-out forwards;
-  pointer-events: none;
-}
-
-@keyframes sealPop {
-  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  30% { transform: translate(-50%, -50%) scale(1.18); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(0.3) rotate(25deg); opacity: 0; }
+  0% { opacity: 0.95; transform: perspective(800px) rotateX(0deg); }
+  10% { opacity: 0.95; }
+  100% { opacity: 0; transform: perspective(800px) rotateX(-90deg); }
 }
 
 /* Invitation text below the envelope */
 .envelope-invitation-text {
-  margin-top: clamp(1.5rem, 3vh, 2.5rem);
-  font-size: clamp(1rem, 2.8vw, 1.4rem);
+  position: absolute;
+  bottom: clamp(3rem, 8vh, 6rem);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(0.9rem, 2.5vw, 1.3rem);
   color: rgba(255, 255, 255, 0.5);
   letter-spacing: 0.01em;
   text-align: center;
   line-height: 1.7;
   pointer-events: none;
+  white-space: nowrap;
+  z-index: 2;
 }
 
 /* Calendar mini-grid */
