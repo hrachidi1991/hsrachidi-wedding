@@ -812,10 +812,16 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
 
       </div> {/* close scroll-container */}
 
-      {/* ═══ ENVELOPE OVERLAY — full-screen photo ═══ */}
+      {/* ═══ ENVELOPE OVERLAY — full-screen photo, click anywhere to open ═══ */}
       {!envelopeOpened && (
-        <div className={`envelope-viewport ${flapsOpening ? 'envelope-fading' : ''}`}>
-          {/* The photo IS the envelope — covers entire viewport */}
+        <div
+          className={`envelope-viewport ${flapsOpening ? 'envelope-fading' : ''} ${sealBreaking ? 'envelope-opening' : ''}`}
+          onClick={!sealBreaking ? handleOpenEnvelope : undefined}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') !sealBreaking && handleOpenEnvelope(); }}
+          aria-label="Open envelope"
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/envelope-bg.png"
@@ -823,20 +829,10 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
             className="envelope-photo"
             draggable={false}
           />
-          {/* Flap that lifts on open */}
-          <div className={`envelope-flap-top ${flapsOpening ? '' : ''}`}
-               style={flapsOpening ? { animation: 'flapLift 1.2s cubic-bezier(0.4,0,0.2,1) forwards' } : { opacity: 0 }} />
-          {/* Invisible hotspot over the wax seal */}
-          <button
-            onClick={handleOpenEnvelope}
-            className={`seal-hotspot ${sealBreaking ? 'seal-cracking' : ''}`}
-            disabled={sealBreaking}
-            aria-label="Open envelope"
-          />
-          {/* Invitation text */}
+          {/* Tap hint */}
           {!sealBreaking && (
-            <p className={`envelope-invitation-text ${isRtl ? 'font-arabic' : ''}`} style={{ fontFamily: isRtl ? "'Aref Ruqaa', serif" : "'Cormorant Garamond', serif", fontStyle: isRtl ? 'normal' : 'italic' }}>
-              {isRtl ? 'هذه الدعوة مخصصة لك' : 'This invitation is exclusive for you'}
+            <p className={`envelope-tap-hint ${isRtl ? 'font-arabic' : ''}`} style={{ fontFamily: isRtl ? "'Amiri', serif" : "'Lora', serif" }}>
+              {isRtl ? 'انقر لفتح الدعوة' : 'Tap to open'}
             </p>
           )}
         </div>

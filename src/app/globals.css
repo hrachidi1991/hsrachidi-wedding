@@ -8,8 +8,8 @@
   --gray: #9B9B9B;
   --gray-light: #A3A3A3;
   --gray-dark: #858585;
-  --gold: #79734F;
-  --gold-light: #9B957A;
+  --gold: #C9A96E;
+  --gold-light: #D4BA88;
   --cream: #EDE9E0;
   --charcoal: #2a2a2a;
   --charcoal-light: #4f4f4f;
@@ -75,32 +75,10 @@ body {
     url('/images/section-bg.jpg') center / cover fixed no-repeat;
 }
 
-/* Floral corner decoration — top-right */
-.scroll-section::before {
-  content: '';
-  position: absolute;
-  top: -2%;
-  right: -2%;
-  width: clamp(180px, 38vw, 420px);
-  height: clamp(200px, 45vh, 500px);
-  background: url('/images/floral-tr.svg') top right no-repeat;
-  background-size: contain;
-  z-index: 3;
-  pointer-events: none;
-}
-
-/* Floral corner decoration — bottom-left */
+/* Floral corner decorations removed — using full photo background */
+.scroll-section::before,
 .scroll-section::after {
-  content: '';
-  position: absolute;
-  bottom: -2%;
-  left: -2%;
-  width: clamp(180px, 38vw, 420px);
-  height: clamp(180px, 40vh, 420px);
-  background: url('/images/floral-bl.svg') bottom left no-repeat;
-  background-size: contain;
-  z-index: 3;
-  pointer-events: none;
+  display: none;
 }
 
 /* Section backgrounds */
@@ -119,34 +97,28 @@ body {
   background:
     linear-gradient(
       180deg,
-      rgba(85, 85, 85, 0.87) 0%,
-      rgba(95, 95, 95, 0.82) 50%,
-      rgba(85, 85, 85, 0.87) 100%
+      rgba(75, 73, 73, 0.85) 0%,
+      rgba(85, 83, 83, 0.80) 50%,
+      rgba(75, 73, 73, 0.85) 100%
     ),
     url('/images/section-bg.jpg') center / cover fixed no-repeat !important;
   box-shadow: none;
-}
-
-/* Hide floral decorations on dark sections */
-.section-olive::before,
-.section-olive::after {
-  display: none !important;
 }
 
 /* Overlay for sections with bg images */
 .section-olive .section-overlay {
   background: linear-gradient(
     180deg,
-    rgba(85, 85, 85, 0.88) 0%,
-    rgba(95, 95, 95, 0.78) 50%,
-    rgba(85, 85, 85, 0.88) 100%
+    rgba(75, 73, 73, 0.88) 0%,
+    rgba(85, 83, 83, 0.78) 50%,
+    rgba(75, 73, 73, 0.88) 100%
   ) !important;
 }
 
-/* Olive dividers on dark sections */
+/* Gold dividers on dark sections */
 .section-olive .divider-gold,
 .section-olive .divider-gold-wide {
-  background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
 }
 
 /* White Quran verse on dark */
@@ -164,7 +136,7 @@ body {
   box-shadow: 0 0 0 2px var(--gold);
 }
 
-/* Buttons on dark sections — olive outline style */
+/* Buttons on dark sections — gold outline style */
 .section-olive .btn-gold {
   background: transparent;
   border: 1.5px solid var(--gold);
@@ -172,8 +144,8 @@ body {
   box-shadow: none;
 }
 .section-olive .btn-gold:hover {
-  background: rgba(121, 115, 79, 0.15);
-  box-shadow: 0 4px 16px rgba(121, 115, 79, 0.15);
+  background: rgba(201, 169, 110, 0.15);
+  box-shadow: 0 4px 16px rgba(201, 169, 110, 0.15);
 }
 
 /* Countdown on dark override */
@@ -206,9 +178,9 @@ body {
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(155, 155, 155, 0.88) 0%,
-    rgba(155, 155, 155, 0.78) 50%,
-    rgba(155, 155, 155, 0.88) 100%
+    rgba(80, 78, 78, 0.82) 0%,
+    rgba(90, 88, 88, 0.75) 50%,
+    rgba(80, 78, 78, 0.82) 100%
   );
   z-index: 1;
 }
@@ -283,10 +255,8 @@ body {
   inset: 0;
   z-index: 50;
   overflow: hidden;
-  background: #888;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: #d5d3d0;
+  cursor: pointer;
 }
 
 .envelope-fading {
@@ -307,90 +277,39 @@ body {
   height: 100%;
   object-fit: cover;
   object-position: center;
-}
-
-/* Invisible clickable hotspot over the wax seal in the photo */
-.seal-hotspot {
-  position: absolute;
-  /* Seal position in the image: ~57% from left, ~53% from top */
-  top: 53%;
-  left: 57%;
-  transform: translate(-50%, -50%);
-  width: clamp(70px, 14vmin, 120px);
-  height: clamp(70px, 14vmin, 120px);
-  border-radius: 50%;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  z-index: 10;
-  /* Subtle pulse hint so users know to tap */
-  animation: sealPulse 2.5s ease-in-out infinite;
-}
-
-@keyframes sealPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
-  50% { box-shadow: 0 0 0 8px rgba(255,255,255,0.12); }
-}
-
-.seal-hotspot:hover {
-  box-shadow: 0 0 0 6px rgba(255,255,255,0.15);
-  animation: none;
-}
-
-.seal-hotspot:active {
-  transform: translate(-50%, -50%) scale(0.95);
-}
-
-/* Seal crack animation on click */
-.seal-cracking {
-  animation: sealCrack 0.7s ease-out forwards !important;
-}
-
-@keyframes sealCrack {
-  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  25% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(0.4) rotate(20deg); opacity: 0; }
-}
-
-/* Top flap lifts on open — covers top portion of image */
-.envelope-flap-top {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 50%;
-  z-index: 5;
-  transform-origin: center bottom;
   pointer-events: none;
-  /* Matches the envelope paper color at the fold line */
-  background: linear-gradient(180deg, #b0aead 0%, #b5b3b2 90%, #a8a6a5 100%);
-  opacity: 0;
 }
 
-.flap-opening .envelope-flap-top {
-  animation: flapLift 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-@keyframes flapLift {
-  0% { opacity: 0.95; transform: perspective(800px) rotateX(0deg); }
-  10% { opacity: 0.95; }
-  100% { opacity: 0; transform: perspective(800px) rotateX(-90deg); }
-}
-
-/* Invitation text below the envelope */
-.envelope-invitation-text {
+/* Subtle tap hint text */
+.envelope-tap-hint {
   position: absolute;
-  bottom: clamp(3rem, 8vh, 6rem);
+  bottom: clamp(2.5rem, 6vh, 4.5rem);
   left: 50%;
   transform: translateX(-50%);
-  font-size: clamp(0.9rem, 2.5vw, 1.3rem);
-  color: rgba(255, 255, 255, 0.5);
-  letter-spacing: 0.01em;
+  font-size: clamp(0.75rem, 2vw, 1rem);
+  color: rgba(120, 110, 90, 0.6);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
   text-align: center;
-  line-height: 1.7;
   pointer-events: none;
-  white-space: nowrap;
   z-index: 2;
+  animation: hintPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes hintPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* Envelope opening animation — scale + fade */
+.envelope-opening .envelope-photo {
+  animation: envelopeSlideUp 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes envelopeSlideUp {
+  0% { transform: scale(1); opacity: 1; }
+  40% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1.15) translateY(-8%); opacity: 0; }
 }
 
 /* Calendar mini-grid */
@@ -487,8 +406,8 @@ body {
 }
 
 .btn-gold:hover {
-  background: rgba(121, 115, 79, 0.15);
-  box-shadow: 0 4px 16px rgba(121, 115, 79, 0.2);
+  background: rgba(201, 169, 110, 0.15);
+  box-shadow: 0 4px 16px rgba(201, 169, 110, 0.2);
   transform: translateY(-1px);
 }
 
@@ -506,7 +425,7 @@ body {
 }
 
 .btn-outline-gold:hover {
-  background: rgba(121, 115, 79, 0.15);
+  background: rgba(201, 169, 110, 0.15);
   color: white;
 }
 
@@ -521,7 +440,7 @@ body {
   border-radius: 50%;
   background: rgba(80, 80, 80, 0.7);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(121, 115, 79, 0.4);
+  border: 1px solid rgba(201, 169, 110, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -551,7 +470,7 @@ body {
   border-radius: 20px;
   background: rgba(80, 80, 80, 0.7);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(121, 115, 79, 0.4);
+  border: 1px solid rgba(201, 169, 110, 0.4);
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.3s ease;
