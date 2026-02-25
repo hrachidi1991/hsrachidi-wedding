@@ -259,83 +259,6 @@ body {
   100% { opacity: 0; }
 }
 
-/* Calendar mini-grid */
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
-  max-width: 320px;
-  margin: 0 auto;
-}
-
-.calendar-grid .cal-header {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 5px 0;
-  color: rgba(42, 42, 42, 0.5);
-}
-
-.calendar-grid .cal-day {
-  font-size: 0.95rem;
-  padding: 5px 0;
-  color: rgba(42, 42, 42, 0.85);
-  border-radius: 50%;
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.calendar-grid .cal-day.highlight {
-  background: var(--gold);
-  color: white;
-  font-weight: 600;
-}
-
-.calendar-grid .cal-day.empty {
-  visibility: hidden;
-}
-
-/* Timeline */
-.timeline-line {
-  width: 2px;
-  background: linear-gradient(180deg, transparent, var(--gold), transparent);
-}
-
-.timeline-dot {
-  width: 12px;
-  height: 12px;
-  background: var(--gold);
-  border-radius: 50%;
-  border: 2px solid #f0ebe4;
-  box-shadow: 0 0 0 2px var(--gold);
-}
-
-/* Countdown */
-.countdown-unit {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 80px;
-}
-
-.countdown-number {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(3rem, 10vw, 5.5rem);
-  font-weight: 300;
-  color: var(--charcoal);
-  line-height: 1;
-}
-
-.countdown-label {
-  font-family: 'Lora', serif;
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: rgba(42, 42, 42, 0.6);
-  margin-top: 0.5rem;
-}
 
 /* Buttons */
 .btn-gold {
@@ -503,17 +426,6 @@ body {
   background: #dc2626;
   color: white;
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-}
-
-/* Responsive — Mobile First */
-.countdown-unit {
-  min-width: 55px;
-}
-
-@media (min-width: 640px) {
-  .countdown-unit {
-    min-width: 80px;
-  }
 }
 
 /* Mobile-friendly RSVP buttons */

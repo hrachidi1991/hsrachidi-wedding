@@ -7,11 +7,6 @@ export const dynamic = 'force-dynamic';
 export default async function Home({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
   const params = await searchParams;
   const settings = await getSettings();
-  
-  let timelineItems: any[] = [];
-  try {
-    timelineItems = await prisma.timelineItem.findMany({ orderBy: { sortOrder: 'asc' } });
-  } catch {}
 
   // If there's a token, load group info
   let rsvpData = null;
@@ -46,7 +41,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
   return (
     <WeddingPage
       settings={settings}
-      timelineItems={timelineItems}
       rsvpData={rsvpData}
     />
   );

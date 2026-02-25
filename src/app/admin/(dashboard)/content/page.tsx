@@ -4,17 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { upload } from '@vercel/blob/client';
 import type { SiteContent } from '@/lib/settings';
 
-interface TimelineItem {
-  id?: string;
-  time: string;
-  labelEn: string;
-  labelAr: string;
-  sortOrder: number;
-}
-
 export default function ContentEditor() {
   const [settings, setSettings] = useState<SiteContent | null>(null);
-  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -23,9 +14,6 @@ export default function ContentEditor() {
   useEffect(() => {
     fetch('/api/settings').then((r) => r.json()).then((data) => {
       if (data && !data.error) setSettings(data);
-    });
-    fetch('/api/timeline').then((r) => r.json()).then((data) => {
-      if (Array.isArray(data)) setTimeline(data);
     });
   }, []);
 
@@ -69,46 +57,14 @@ export default function ContentEditor() {
     }
   };
 
-  // Timeline CRUD
-  const addTimelineItem = async () => {
-    const res = await fetch('/api/timeline', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ time: '00:00', labelEn: 'New Event', labelAr: 'حدث جديد', sortOrder: timeline.length }),
-    });
-    if (res.ok) {
-      const item = await res.json();
-      setTimeline([...timeline, item]);
-    }
-  };
-
-  const updateTimelineItem = async (item: TimelineItem) => {
-    if (!item.id) return;
-    await fetch('/api/timeline', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(item),
-    });
-  };
-
-  const deleteTimelineItem = async (id: string) => {
-    await fetch('/api/timeline', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
-    setTimeline(timeline.filter((t) => t.id !== id));
-  };
-
   if (!settings) return <div className="p-8 text-gray-400">Loading...</div>;
 
   const tabs = [
     { id: 'hero', label: 'Hero / Names' },
     { id: 'envelope', label: 'Envelope' },
-    { id: 'countdown', label: 'Countdown' },
-    { id: 'invitation', label: 'Invitation' },
+    { id: 'quran', label: 'Quran Aya' },
+    { id: 'invitation', label: 'Formal Invitation' },
     { id: 'location', label: 'Location' },
-    { id: 'timeline', label: 'Timeline' },
     { id: 'gift', label: 'Gift Registry' },
     { id: 'rsvp', label: 'RSVP' },
     { id: 'music', label: 'Music' },
@@ -181,19 +137,19 @@ export default function ContentEditor() {
           </div>
         )}
 
-        {/* COUNTDOWN */}
-        {activeTab === 'countdown' && (
+        {/* QURAN AYA */}
+        {activeTab === 'quran' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold mb-2">Countdown Section</h2>
-            <Field label="Countdown Target (ISO datetime)" value={settings.countdownDate} onChange={(v) => update('countdownDate', v)} type="datetime-local" />
-            <FileUpload label="Countdown Background" current={settings.countdownBg} onUpload={(f) => uploadFile(f, 'countdownBg')} onRemove={() => update('countdownBg', '')} />
+            <h2 className="text-lg font-semibold mb-2">Quran Aya Section</h2>
+            <p className="text-sm text-gray-500">This section displays Bismillah, Ar-Rum 30:21 verse, and the &quot;Created You in Pairs&quot; verse (78:8). Upload a background image below.</p>
+            <FileUpload label="Quran Aya Background" current={settings.quranBg} onUpload={(f) => uploadFile(f, 'quranBg')} onRemove={() => update('quranBg', '')} />
           </div>
         )}
 
-        {/* INVITATION */}
+        {/* FORMAL INVITATION */}
         {activeTab === 'invitation' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold mb-2">Invitation Section</h2>
+            <h2 className="text-lg font-semibold mb-2">Formal Invitation</h2>
             <TextArea label="Invitation Text (EN)" value={settings.invitationTextEn} onChange={(v) => update('invitationTextEn', v)} rows={6} />
             <TextArea label="Invitation Text (AR)" value={settings.invitationTextAr} onChange={(v) => update('invitationTextAr', v)} rows={6} dir="rtl" />
             <FileUpload label="Invitation Background" current={settings.invitationBg} onUpload={(f) => uploadFile(f, 'invitationBg')} onRemove={() => update('invitationBg', '')} />
@@ -214,70 +170,6 @@ export default function ContentEditor() {
             </div>
             <Field label="Google Maps URL" value={settings.googleMapsUrl} onChange={(v) => update('googleMapsUrl', v)} />
             <FileUpload label="Location Background" current={settings.locationBg} onUpload={(f) => uploadFile(f, 'locationBg')} onRemove={() => update('locationBg', '')} />
-          </div>
-        )}
-
-        {/* TIMELINE */}
-        {activeTab === 'timeline' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-semibold">Program Timeline</h2>
-              <button onClick={addTimelineItem} className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
-                + Add Item
-              </button>
-            </div>
-            <FileUpload label="Timeline Background" current={settings.timelineBg} onUpload={(f) => uploadFile(f, 'timelineBg')} onRemove={() => update('timelineBg', '')} />
-            <div className="space-y-3 mt-4">
-              {timeline.map((item, i) => (
-                <div key={item.id || i} className="flex gap-3 items-start bg-gray-50 rounded-lg p-3">
-                  <div className="flex-1 grid grid-cols-3 gap-2">
-                    <input
-                      type="text"
-                      value={item.time}
-                      onChange={(e) => {
-                        const updated = [...timeline];
-                        updated[i] = { ...updated[i], time: e.target.value };
-                        setTimeline(updated);
-                      }}
-                      onBlur={() => updateTimelineItem(timeline[i])}
-                      placeholder="Time (e.g., 8:00)"
-                      className="border rounded px-2 py-1.5 text-sm"
-                    />
-                    <input
-                      type="text"
-                      value={item.labelEn}
-                      onChange={(e) => {
-                        const updated = [...timeline];
-                        updated[i] = { ...updated[i], labelEn: e.target.value };
-                        setTimeline(updated);
-                      }}
-                      onBlur={() => updateTimelineItem(timeline[i])}
-                      placeholder="Label (EN)"
-                      className="border rounded px-2 py-1.5 text-sm"
-                    />
-                    <input
-                      type="text"
-                      value={item.labelAr}
-                      onChange={(e) => {
-                        const updated = [...timeline];
-                        updated[i] = { ...updated[i], labelAr: e.target.value };
-                        setTimeline(updated);
-                      }}
-                      onBlur={() => updateTimelineItem(timeline[i])}
-                      placeholder="Label (AR)"
-                      className="border rounded px-2 py-1.5 text-sm"
-                      dir="rtl"
-                    />
-                  </div>
-                  <button
-                    onClick={() => item.id && deleteTimelineItem(item.id)}
-                    className="text-red-400 hover:text-red-600 text-sm px-2 py-1"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
           </div>
         )}
 

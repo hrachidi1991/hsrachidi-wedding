@@ -13,6 +13,9 @@ export interface SiteContent {
   countdownDate: string;
   countdownBg: string;
 
+  // Quran Aya
+  quranBg: string;
+
   // Invitation
   invitationTextEn: string;
   invitationTextAr: string;
@@ -68,6 +71,8 @@ export const defaultSettings: SiteContent = {
 
   countdownDate: '2026-06-12T20:00:00',
   countdownBg: '',
+
+  quranBg: '',
 
   invitationTextEn: 'With joyous hearts,\nTogether with their families,\nHussein & Suzan\nrequest the honor of your presence\nat their wedding celebration\nJune 12, 2026',
   invitationTextAr: 'بقلوب مليئة بالفرح،\nبرفقة عائلتيهما،\nحسين و سوزان\nيتشرفان بدعوتكم لحضور\nحفل زفافهما\n١٢ يونيو ٢٠٢٦',

@@ -5,14 +5,6 @@ import type { SiteContent } from '@/lib/settings';
 import type { Locale } from '@/lib/i18n';
 import { t } from '@/lib/i18n';
 
-interface TimelineItem {
-  id: string;
-  time: string;
-  labelEn: string;
-  labelAr: string;
-  sortOrder: number;
-}
-
 interface GuestAttendance {
   name: string;
   attending: boolean;
@@ -29,11 +21,10 @@ interface RsvpData {
 
 interface Props {
   settings: SiteContent;
-  timelineItems: TimelineItem[];
   rsvpData: RsvpData | null;
 }
 
-export default function WeddingPage({ settings, timelineItems, rsvpData }: Props) {
+export default function WeddingPage({ settings, rsvpData }: Props) {
   const [locale, setLocale] = useState<Locale>('en');
   const [envelopeOpened, setEnvelopeOpened] = useState(false);
   const [sealBreaking, setSealBreaking] = useState(false);
@@ -79,28 +70,18 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [rsvpMessage, setRsvpMessage] = useState('');
 
-  // Countdown
-  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  // Copy to clipboard state
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    }).catch(() => {});
+  };
 
   // Visibility observer for animations
   const [visibleSections, setVisibleSections] = useState<Set<number>>(new Set());
-
-  useEffect(() => {
-    const target = new Date(settings.countdownDate).getTime();
-    const tick = () => {
-      const now = Date.now();
-      const diff = Math.max(0, target - now);
-      setCountdown({
-        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-        minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
-        seconds: Math.floor((diff % (1000 * 60)) / 1000),
-      });
-    };
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [settings.countdownDate]);
 
   // Switch music track when locale changes
   const currentMusicSrc = locale === 'ar' && settings.musicFileAr ? settings.musicFileAr : settings.musicFile;
@@ -262,15 +243,67 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
       {/* Main content — always present, envelope overlay sits on top */}
       <div ref={scrollRef} className={`scroll-container${!showContent ? ' no-scroll' : ''}`}>
 
-        {/* ═══ SECTION 2 — HERO ═══ */}
-        <section className="scroll-section section-olive" data-section="2">
+        {/* ═══ SECTION 2 — QURAN AYA ═══ */}
+        <section className="scroll-section" data-section="2">
+          {settings.quranBg && (
+            <>
+              <div className="section-bg" style={{ backgroundImage: `url(${settings.quranBg})` }} />
+              <div className="section-overlay" />
+            </>
+          )}
+          <div className={`section-content max-w-2xl transition-all duration-1000 ${sectionVisible(2) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            {/* Bismillah */}
+            <p className="font-arabicDisplay text-2xl sm:text-3xl md:text-4xl text-black/70 mb-4 sm:mb-6" dir="rtl">
+              {t(locale, 'bismillah')}
+            </p>
+
+            <div className="divider-gold" />
+
+            {/* Quran Verse — Ar-Rum 30:21 */}
+            <div className="my-6 sm:my-8 px-4">
+              <p className="quran-verse" dir="rtl">
+                {t(locale, 'quranVerse')}
+              </p>
+            </div>
+
+            {/* English translation */}
+            <p className={`text-base sm:text-lg text-black/60 leading-relaxed mb-4 px-4 ${isRtl ? 'font-arabic' : 'font-body italic'}`}>
+              {t(locale, 'quranVerseTranslation')}
+            </p>
+
+            {/* Verse reference */}
+            <p className={`text-sm uppercase tracking-[0.2em] text-black/40 mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+              {t(locale, 'quranVerseRef')}
+            </p>
+
+            <div className="divider-gold-wide" />
+
+            {/* "وخلقناكم أزواجا" — large calligraphy */}
+            <p className="font-arabicDisplay text-3xl sm:text-4xl md:text-5xl text-black/80 mt-6 mb-4" dir="rtl">
+              {t(locale, 'quranPairsVerse')}
+            </p>
+
+            {/* English translation of pairs verse */}
+            <p className={`text-sm sm:text-base uppercase tracking-[0.2em] text-black/50 mb-3 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+              {t(locale, 'quranPairsTranslation')}
+            </p>
+
+            {/* Pairs verse reference */}
+            <p className={`text-xs sm:text-sm uppercase tracking-[0.15em] text-black/35 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+              {t(locale, 'quranPairsRef')}
+            </p>
+          </div>
+        </section>
+
+        {/* ═══ SECTION 3 — HERO ═══ */}
+        <section className="scroll-section section-olive" data-section="3">
           {settings.heroImage && (
             <>
               <div className="section-bg" style={{ backgroundImage: `url(${settings.heroImage})` }} />
               <div className="section-overlay" />
             </>
           )}
-          <div className={`section-content transition-all duration-1000 ${sectionVisible(2) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className={`section-content transition-all duration-1000 ${sectionVisible(3) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <p className={`text-sm sm:text-base uppercase tracking-[0.15em] sm:tracking-[0.3em] text-black/50 mb-4 sm:mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
               {t(locale, 'weddingOf')}
             </p>
@@ -303,114 +336,7 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
           </div>
         </section>
 
-        {/* ═══ SECTION 3 — COUNTDOWN (Calendar Style) ═══ */}
-        <section className="scroll-section" data-section="3">
-          {settings.countdownBg && (
-            <>
-              <div className="section-bg" style={{ backgroundImage: `url(${settings.countdownBg})` }} />
-              <div className="section-overlay" />
-            </>
-          )}
-          <div className={`section-content transition-all duration-1000 delay-200 ${sectionVisible(3) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            {/* Calendar-style date display */}
-            {(() => {
-              const weddingDate = new Date(settings.countdownDate);
-              const dayNum = weddingDate.getDate();
-              const year = weddingDate.getFullYear();
-              const dayName = weddingDate.toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { weekday: 'long' });
-              const monthName = weddingDate.toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { month: 'long' });
-
-              // Build calendar grid for the wedding month
-              const firstOfMonth = new Date(year, weddingDate.getMonth(), 1);
-              const daysInMonth = new Date(year, weddingDate.getMonth() + 1, 0).getDate();
-              // getDay() returns 0=Sunday; shift so Monday=0
-              const startDay = (firstOfMonth.getDay() + 6) % 7;
-              const dayHeaders = locale === 'ar'
-                ? ['ن','ث','ر','خ','ج','س','ح']
-                : ['Mo','Tu','We','Th','Fr','Sa','Su'];
-
-              return (
-                <>
-                  <div className="divider-gold-wide" />
-
-                  {/* Day of week */}
-                  <p className={`text-sm sm:text-base uppercase tracking-[0.3em] text-black/40 mb-3 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                    {dayName}
-                  </p>
-
-                  {/* Large date with decorative pipes */}
-                  <div className="flex items-center justify-center gap-3 sm:gap-5 mb-3">
-                    <span className="text-[#C9A96E] text-4xl sm:text-5xl font-light select-none">|</span>
-                    <span className={`text-6xl sm:text-8xl md:text-9xl font-light text-black leading-none ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
-                      {dayNum}
-                    </span>
-                    <span className="text-[#C9A96E] text-4xl sm:text-5xl font-light select-none">|</span>
-                  </div>
-
-                  {/* Month + Year */}
-                  <p className={`text-base sm:text-lg uppercase tracking-[0.2em] text-black/60 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                    {monthName}
-                  </p>
-                  <p className={`text-base tracking-[0.15em] text-black/40 mb-8 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                    {year}
-                  </p>
-
-                  <div className="divider-gold" />
-
-                  {/* Countdown label */}
-                  <p className={`text-sm sm:text-base uppercase tracking-[0.25em] text-olive-400 mt-6 mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                    {t(locale, 'countdownTo')}
-                  </p>
-
-                  {/* Countdown timer */}
-                  <div className="flex items-center justify-center gap-1 sm:gap-2 mb-2">
-                    {[
-                      { value: countdown.days, label: t(locale, 'days') },
-                      { value: countdown.hours, label: t(locale, 'hours') },
-                      { value: countdown.minutes, label: t(locale, 'minutes') },
-                      { value: countdown.seconds, label: t(locale, 'seconds') },
-                    ].map((unit, i) => (
-                      <div key={i} className="flex items-center">
-                        <div className="countdown-unit">
-                          <div className="countdown-number">{String(unit.value).padStart(2, '0')}</div>
-                          <div className={`countdown-label ${isRtl ? 'font-arabic' : ''}`}>{unit.label}</div>
-                        </div>
-                        {i < 3 && (
-                          <span className="text-[#C9A96E]/50 text-xl sm:text-2xl font-light select-none mx-1 sm:mx-2 -mt-4">:</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="divider-gold mt-8 mb-6" />
-
-                  {/* Mini calendar */}
-                  <p className={`text-sm uppercase tracking-[0.25em] text-olive-400 mb-4 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                    {t(locale, 'theGreatDay')}
-                  </p>
-                  <p className={`text-sm uppercase tracking-[0.15em] text-black/40 mb-3 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                    {monthName} {year}
-                  </p>
-                  <div className="calendar-grid">
-                    {dayHeaders.map((d) => (
-                      <div key={d} className="cal-header font-body">{d}</div>
-                    ))}
-                    {Array.from({ length: startDay }).map((_, i) => (
-                      <div key={`e${i}`} className="cal-day empty" />
-                    ))}
-                    {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => (
-                      <div key={d} className={`cal-day ${d === dayNum ? 'highlight' : ''}`}>
-                        {d}
-                      </div>
-                    ))}
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        </section>
-
-        {/* ═══ SECTION 4 — INVITATION (Islamic) ═══ */}
+        {/* ═══ SECTION 4 — FORMAL INVITATION ═══ */}
         <section className="scroll-section section-olive" data-section="4">
           {settings.invitationBg && (
             <>
@@ -419,29 +345,10 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
             </>
           )}
           <div className={`section-content max-w-2xl transition-all duration-1000 delay-200 ${sectionVisible(4) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            {/* Bismillah */}
-            <p className="font-arabicDisplay text-2xl sm:text-3xl md:text-4xl text-black/70 mb-4 sm:mb-6" dir="rtl">
-              {t(locale, 'bismillah')}
-            </p>
-
-            <div className="divider-gold" />
-
-            {/* Quran Verse */}
-            <div className="my-8 px-4">
-              <p className="quran-verse" dir="rtl">
-                {t(locale, 'quranVerse')}
-              </p>
-            </div>
-
-            {/* Sadaq Allah */}
-            <p className="font-arabicDisplay text-xl sm:text-2xl text-black/60 mb-8" dir="rtl">
-              {t(locale, 'sadaqAllah')}
-            </p>
-
-            <div className="divider-gold" />
+            <div className="divider-gold mb-8" />
 
             {/* Invitation Text */}
-            <div className={`mt-8 space-y-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+            <div className={`space-y-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
               {(isRtl ? settings.invitationTextAr : settings.invitationTextEn)
                 .split('\n')
                 .map((line, i) => (
@@ -454,6 +361,8 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
                   </p>
                 ))}
             </div>
+
+            <div className="divider-gold mt-8" />
           </div>
         </section>
 
@@ -531,63 +440,15 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
           </div>
         </section>
 
-        {/* ═══ SECTION 6 — PROGRAM TIMELINE ═══ */}
-        {timelineItems.length > 0 && (
-          <section className="scroll-section section-olive" data-section="6">
-            {settings.timelineBg && (
-              <>
-                <div className="section-bg" style={{ backgroundImage: `url(${settings.timelineBg})` }} />
-                <div className="section-overlay" />
-              </>
-            )}
-            <div className={`section-content transition-all duration-1000 delay-200 ${sectionVisible(6) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <p className={`text-base sm:text-lg uppercase tracking-[0.3em] text-black/50 mb-10 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                {t(locale, 'programTitle')}
-              </p>
-
-              <div className="relative max-w-md mx-auto">
-                {/* Vertical line */}
-                <div className={`absolute ${isRtl ? 'right-[19px]' : 'left-[19px]'} top-0 bottom-0 timeline-line`} />
-
-                <div className="space-y-5 sm:space-y-8">
-                  {timelineItems.map((item, i) => (
-                    <div
-                      key={item.id}
-                      className={`flex items-start gap-3 sm:gap-6 ${isRtl ? 'flex-row-reverse' : ''}`}
-                      style={{
-                        opacity: sectionVisible(6) ? 1 : 0,
-                        transform: sectionVisible(6) ? 'translateY(0)' : 'translateY(20px)',
-                        transition: `all 0.6s ease ${i * 150}ms`,
-                      }}
-                    >
-                      <div className="flex-shrink-0 relative z-10 mt-1">
-                        <div className="timeline-dot" />
-                      </div>
-                      <div className={`${isRtl ? 'text-right' : 'text-left'}`}>
-                        <p className={`text-black/80 font-semibold text-xl sm:text-2xl ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
-                          {item.time}
-                        </p>
-                        <p className={`text-black/60 text-lg sm:text-xl mt-0.5 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                          {isRtl ? item.labelAr : item.labelEn}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* ═══ SECTION 7 — GIFT REGISTRY ═══ */}
-        <section className="scroll-section" data-section="7">
+        {/* ═══ SECTION 6 — GIFT REGISTRY ═══ */}
+        <section className="scroll-section section-olive" data-section="6">
           {settings.giftBg && (
             <>
               <div className="section-bg" style={{ backgroundImage: `url(${settings.giftBg})` }} />
               <div className="section-overlay" />
             </>
           )}
-          <div className={`section-content transition-all duration-1000 delay-200 ${sectionVisible(7) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className={`section-content transition-all duration-1000 delay-200 ${sectionVisible(6) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             {/* Gift icon */}
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="mx-auto text-olive-400 mb-6">
               <polyline points="20 12 20 22 4 22 4 12" />
@@ -616,27 +477,63 @@ export default function WeddingPage({ settings, timelineItems, rsvpData }: Props
               <div className={`space-y-3 text-base ${isRtl ? 'text-right font-arabic' : 'text-left font-body'}`}>
                 <div className="flex justify-between items-center">
                   <span className="text-black/40">Account ID</span>
-                  <span className="text-black font-mono text-base">{settings.giftAccountId}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-black font-mono text-base">{settings.giftAccountId}</span>
+                    <button
+                      onClick={() => copyToClipboard(settings.giftAccountId, 'accountId')}
+                      className="p-1.5 rounded-md hover:bg-black/10 transition-colors"
+                      aria-label={t(locale, 'copyToClipboard')}
+                    >
+                      {copiedField === 'accountId' ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-black/40">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div className="border-t border-black/10" />
                 <div className="flex justify-between items-center">
                   <span className="text-black/40">Phone</span>
-                  <span className="text-black font-mono text-base">{settings.giftPhone}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-black font-mono text-base">{settings.giftPhone}</span>
+                    <button
+                      onClick={() => copyToClipboard(settings.giftPhone, 'phone')}
+                      className="p-1.5 rounded-md hover:bg-black/10 transition-colors"
+                      aria-label={t(locale, 'copyToClipboard')}
+                    >
+                      {copiedField === 'phone' ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-black/40">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ═══ SECTION 8 — RSVP ═══ */}
-        <section className="scroll-section section-olive" data-section="8" style={{ minHeight: 'max(100dvh, 700px)', height: 'auto' }}>
+        {/* ═══ SECTION 7 — RSVP ═══ */}
+        <section className="scroll-section" data-section="7" style={{ minHeight: 'max(100dvh, 700px)', height: 'auto' }}>
           {settings.rsvpBg && (
             <>
               <div className="section-bg" style={{ backgroundImage: `url(${settings.rsvpBg})`, position: 'fixed' }} />
               <div className="section-overlay" style={{ position: 'fixed' }} />
             </>
           )}
-          <div className={`section-content py-12 transition-all duration-1000 delay-200 ${sectionVisible(8) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className={`section-content py-12 transition-all duration-1000 delay-200 ${sectionVisible(7) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <h2 className={`text-base sm:text-lg uppercase tracking-[0.3em] text-black/60 mb-4 ${isRtl ? 'font-arabic' : 'font-body'}`}>
               {t(locale, 'rsvpTitle')}
             </h2>
