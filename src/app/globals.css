@@ -25,8 +25,8 @@ html {
 
 body {
   font-family: 'Lora', serif;
-  background-color: var(--gray);
-  color: #FFFFFF;
+  background-color: #f0ebe4;
+  color: #2a2a2a;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -64,15 +64,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  /* Photo background with gray overlay for readability */
-  background:
-    linear-gradient(
-      180deg,
-      rgba(105, 105, 105, 0.82) 0%,
-      rgba(115, 115, 115, 0.75) 50%,
-      rgba(105, 105, 105, 0.82) 100%
-    ),
-    url('/images/section-bg.jpg') center / cover fixed no-repeat;
+  /* Cream paper texture background */
+  background: url('/images/paper-bg.png') center / cover no-repeat;
 }
 
 /* Floral corner decorations removed — using full photo background */
@@ -85,87 +78,16 @@ body {
 .section-bg {
   position: absolute;
   inset: 0;
-  background-size: contain;
+  background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-color: var(--gray);
+  background-color: #f0ebe4;
   z-index: 0;
 }
 
-/* ═══ Darker alternating sections ═══ */
+/* Alternating sections — same paper background */
 .section-olive {
-  background:
-    linear-gradient(
-      180deg,
-      rgba(75, 73, 73, 0.85) 0%,
-      rgba(85, 83, 83, 0.80) 50%,
-      rgba(75, 73, 73, 0.85) 100%
-    ),
-    url('/images/section-bg.jpg') center / cover fixed no-repeat !important;
-  box-shadow: none;
-}
-
-/* Overlay for sections with bg images */
-.section-olive .section-overlay {
-  background: linear-gradient(
-    180deg,
-    rgba(75, 73, 73, 0.88) 0%,
-    rgba(85, 83, 83, 0.78) 50%,
-    rgba(75, 73, 73, 0.88) 100%
-  ) !important;
-}
-
-/* Gold dividers on dark sections */
-.section-olive .divider-gold,
-.section-olive .divider-gold-wide {
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-}
-
-/* White Quran verse on dark */
-.section-olive .quran-verse {
-  color: rgba(255, 255, 255, 0.9);
-}
-
-/* Timeline elements on dark */
-.section-olive .timeline-line {
-  background: linear-gradient(180deg, transparent, var(--gold), transparent);
-}
-.section-olive .timeline-dot {
-  background: var(--gold);
-  border-color: var(--gray-dark);
-  box-shadow: 0 0 0 2px var(--gold);
-}
-
-/* Buttons on dark sections — gold outline style */
-.section-olive .btn-gold {
-  background: transparent;
-  border: 1.5px solid var(--gold);
-  color: var(--gold);
-  box-shadow: none;
-}
-.section-olive .btn-gold:hover {
-  background: rgba(201, 169, 110, 0.15);
-  box-shadow: 0 4px 16px rgba(201, 169, 110, 0.15);
-}
-
-/* Countdown on dark override */
-.section-olive .countdown-number {
-  color: white;
-}
-.section-olive .countdown-label {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-/* Calendar on dark sections */
-.section-olive .calendar-grid .cal-header {
-  color: rgba(255, 255, 255, 0.6);
-}
-.section-olive .calendar-grid .cal-day {
-  color: rgba(255, 255, 255, 0.85);
-}
-.section-olive .calendar-grid .cal-day.highlight {
-  background: var(--gold);
-  color: white;
+  background: url('/images/paper-bg.png') center / cover no-repeat !important;
 }
 
 /* When section has a bg image, push overlay above florals so florals stay behind */
@@ -173,27 +95,18 @@ body {
   z-index: 2;
 }
 
+/* Light translucent overlay for sections with custom bg images */
 .section-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(80, 78, 78, 0.82) 0%,
-    rgba(90, 88, 88, 0.75) 50%,
-    rgba(80, 78, 78, 0.82) 100%
-  );
+  background: rgba(240, 235, 228, 0.6);
   z-index: 1;
 }
 
 .section-overlay-dark {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(80, 80, 80, 0.7) 0%,
-    rgba(80, 80, 80, 0.5) 50%,
-    rgba(80, 80, 80, 0.7) 100%
-  );
+  background: rgba(240, 235, 228, 0.5);
   z-index: 1;
 }
 
@@ -244,7 +157,7 @@ body {
   font-family: 'Amiri', serif;
   font-size: clamp(1.1rem, 3vw, 1.6rem);
   line-height: 2.2;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(42, 42, 42, 0.9);
   direction: rtl;
   text-align: center;
 }
@@ -320,7 +233,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   font-size: clamp(0.7rem, 1.8vw, 0.85rem);
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(120, 110, 90, 0.6);
   letter-spacing: 0.15em;
   text-transform: uppercase;
   text-align: center;
@@ -360,13 +273,13 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   padding: 4px 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(42, 42, 42, 0.5);
 }
 
 .calendar-grid .cal-day {
   font-size: 0.8rem;
   padding: 4px 0;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(42, 42, 42, 0.85);
   border-radius: 50%;
   aspect-ratio: 1;
   display: flex;
@@ -395,7 +308,7 @@ body {
   height: 12px;
   background: var(--gold);
   border-radius: 50%;
-  border: 2px solid var(--gray);
+  border: 2px solid #f0ebe4;
   box-shadow: 0 0 0 2px var(--gold);
 }
 
@@ -411,7 +324,7 @@ body {
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(2.5rem, 8vw, 4.5rem);
   font-weight: 300;
-  color: white;
+  color: var(--charcoal);
   line-height: 1;
 }
 
@@ -420,7 +333,7 @@ body {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(42, 42, 42, 0.6);
   margin-top: 0.5rem;
 }
 
@@ -460,7 +373,7 @@ body {
 
 .btn-outline-gold:hover {
   background: rgba(201, 169, 110, 0.15);
-  color: white;
+  color: var(--charcoal);
 }
 
 /* Floating Audio Button */
@@ -472,7 +385,7 @@ body {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: rgba(80, 80, 80, 0.7);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(201, 169, 110, 0.4);
   display: flex;
@@ -480,12 +393,12 @@ body {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .audio-btn:hover {
-  background: rgba(80, 80, 80, 0.9);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   border-color: var(--gold);
 }
 
@@ -502,18 +415,18 @@ body {
   z-index: 100;
   padding: 0.5rem 1rem;
   border-radius: 20px;
-  background: rgba(80, 80, 80, 0.7);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(201, 169, 110, 0.4);
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  color: white;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  color: var(--charcoal);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 .lang-toggle:hover {
-  background: rgba(80, 80, 80, 0.9);
+  background: rgba(255, 255, 255, 0.9);
   border-color: var(--gold);
 }
 
