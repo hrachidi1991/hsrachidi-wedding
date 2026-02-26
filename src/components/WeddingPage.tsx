@@ -387,30 +387,30 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   {/* Row 1: Prefixes aligned */}
                   {(prefix1 || prefix2) && (
                     <div className="grid grid-cols-2 gap-2 sm:gap-8">
-                      <p className={`text-center text-sm sm:text-lg font-bold text-black ${isRtl ? 'font-arabic' : 'font-body'}`}>{prefix1}</p>
-                      <p className={`text-center text-sm sm:text-lg font-bold text-black ${isRtl ? 'font-arabic' : 'font-body'}`}>{prefix2}</p>
+                      <p className={`text-center font-bold text-black ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'text-sm sm:text-lg font-body'}`}>{prefix1}</p>
+                      <p className={`text-center font-bold text-black ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'text-sm sm:text-lg font-body'}`}>{prefix2}</p>
                     </div>
                   )}
 
                   {/* Row 2: Father names — bold, hero calligraphy font */}
                   <div className="grid grid-cols-2 gap-2 sm:gap-8 -mt-2">
-                    <p className={`text-center font-bold text-black whitespace-nowrap ${nameFont} ${isRtl ? 'text-xl sm:text-3xl' : 'text-[clamp(1rem,4.5vw,2.25rem)]'}`}>{father1}</p>
-                    <p className={`text-center font-bold text-black whitespace-nowrap ${nameFont} ${isRtl ? 'text-xl sm:text-3xl' : 'text-[clamp(1rem,4.5vw,2.25rem)]'}`}>{father2}</p>
+                    <p className={`text-center font-bold text-black whitespace-nowrap ${nameFont} ${isRtl ? 'text-2xl sm:text-4xl' : 'text-[clamp(1rem,4.5vw,2.25rem)]'}`}>{father1}</p>
+                    <p className={`text-center font-bold text-black whitespace-nowrap ${nameFont} ${isRtl ? 'text-2xl sm:text-4xl' : 'text-[clamp(1rem,4.5vw,2.25rem)]'}`}>{father2}</p>
                   </div>
 
                   {/* Row 3: Connectors */}
                   {(conn1 || conn2) && (
                     <div className="grid grid-cols-2 gap-2 sm:gap-8 -mt-2">
-                      <p className={`text-center text-xs sm:text-base text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{conn1}</p>
-                      <p className={`text-center text-xs sm:text-base text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{conn2}</p>
+                      <p className={`text-center text-black/50 ${isRtl ? 'text-base sm:text-lg font-arabic' : 'text-xs sm:text-base font-body'}`}>{conn1}</p>
+                      <p className={`text-center text-black/50 ${isRtl ? 'text-base sm:text-lg font-arabic' : 'text-xs sm:text-base font-body'}`}>{conn2}</p>
                     </div>
                   )}
 
                   {/* Row 4: Mother names — bold calligraphy, smaller than father */}
                   {(mother1 || mother2) && (
                     <div className="grid grid-cols-2 gap-2 sm:gap-8 -mt-2">
-                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-lg sm:text-2xl' : 'text-[clamp(1rem,4vw,1.875rem)]'}`}>{mother1}</p>
-                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-lg sm:text-2xl' : 'text-[clamp(1rem,4vw,1.875rem)]'}`}>{mother2}</p>
+                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-xl sm:text-3xl' : 'text-[clamp(1rem,4vw,1.875rem)]'}`}>{mother1}</p>
+                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-xl sm:text-3xl' : 'text-[clamp(1rem,4vw,1.875rem)]'}`}>{mother2}</p>
                     </div>
                   )}
 
@@ -418,17 +418,17 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
                   {/* Body text */}
                   {body && body.split('\n').map((line, i) => (
-                    <p key={i} className="text-lg sm:text-xl text-black/80">{line}</p>
+                    <p key={i} className={`text-black/80 ${isRtl ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl'}`}>{line}</p>
                   ))}
 
                   {/* Couple names — large bold calligraphy in gold */}
                   {couple && (
-                    <p className={`font-bold text-[#C9A96E] ${nameFont} ${isRtl ? 'text-3xl sm:text-4xl' : 'text-4xl sm:text-5xl'}`}>{couple}</p>
+                    <p className={`font-bold text-[#C9A96E] ${nameFont} ${isRtl ? 'text-4xl sm:text-5xl' : 'text-4xl sm:text-5xl'}`}>{couple}</p>
                   )}
 
                   {/* Date */}
                   {date && (
-                    <p className="text-lg sm:text-xl text-black/80">{date}</p>
+                    <p className={`text-black/80 ${isRtl ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl'}`}>{date}</p>
                   )}
                 </div>
               );
