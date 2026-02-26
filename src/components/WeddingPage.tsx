@@ -11,7 +11,6 @@ interface GuestAttendance {
 }
 
 interface RsvpData {
-  token: string;
   groupCode: string;
   maxGuests: number;
   side: string;
@@ -197,14 +196,14 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
   const attendingCount = guestAttendance.filter((g) => g.attending).length;
 
   const handleRsvpSubmit = async () => {
-    if (!rsvpData?.token || guestAttendance.length === 0) return;
+    if (!rsvpData?.groupCode || guestAttendance.length === 0) return;
     setRsvpLoading(true);
     try {
       const res = await fetch('/api/rsvp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token: rsvpData.token,
+          groupCode: rsvpData.groupCode,
           guestAttendance,
           language: locale,
         }),
@@ -715,7 +714,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               </span>
             </p>
 
-            {!rsvpData?.token ? (
+            {!rsvpData?.groupCode ? (
               <div className="bg-black/5 backdrop-blur-sm rounded-lg p-8 border border-black/10">
                 <p className={`text-black/60 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                   {locale === 'en'

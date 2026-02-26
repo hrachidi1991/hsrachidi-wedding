@@ -244,8 +244,8 @@ export default function GuestsPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const copyLink = (token: string) => {
-    navigator.clipboard.writeText(`${baseUrl}/?token=${token}`);
+  const copyLink = (groupCode: string) => {
+    navigator.clipboard.writeText(`${baseUrl}/?g=${groupCode}`);
   };
 
   if (loading) return <div className="p-8 text-gray-400">Loading...</div>;
@@ -320,7 +320,7 @@ export default function GuestsPage() {
                       <td className="py-2">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => copyLink(g.token)}
+                            onClick={() => copyLink(g.groupCode)}
                             className="text-blue-600 hover:text-blue-800 text-xs underline"
                           >
                             Copy Link
@@ -329,7 +329,7 @@ export default function GuestsPage() {
                             <WhatsAppIcon
                               key={guest.id}
                               phone={guest.phone!}
-                              rsvpLink={`${baseUrl}/?token=${g.token}`}
+                              rsvpLink={`${baseUrl}/?g=${g.groupCode}`}
                             />
                           ))}
                         </div>
@@ -401,7 +401,7 @@ export default function GuestsPage() {
                           {g.phone && (
                             <WhatsAppIcon
                               phone={g.phone}
-                              rsvpLink={`${baseUrl}/?token=${groups.find((gr) => gr.groupCode === g.groupCode)?.token || ''}`}
+                              rsvpLink={`${baseUrl}/?g=${g.groupCode}`}
                             />
                           )}
                         </span>

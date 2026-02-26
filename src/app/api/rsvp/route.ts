@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 
-// GET: load RSVP data for a token
+// GET: load RSVP data for a group
 export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get('token');
-  if (!token) {
-    return NextResponse.json({ error: 'Token required' }, { status: 400 });
+  const groupCode = request.nextUrl.searchParams.get('g') || request.nextUrl.searchParams.get('token');
+  if (!groupCode) {
+    return NextResponse.json({ error: 'Group code required' }, { status: 400 });
   }
   try {
-    const group = await prisma.guestGroup.findUnique({
-      where: { token },
+    // Try groupCode first, fall back to token for legacy links
+    let group = await prisma.guestGroup.findUnique({
+      where: { groupCode },
       include: { rsvpResponse: true },
     });
+    if (!group) {
+      group = await prisma.guestGroup.findUnique({
+        where: { token: groupCode },
+        include: { rsvpResponse: true },
+      });
+    }
     if (!group) {
       return NextResponse.json({ error: 'Invalid invitation link' }, { status: 404 });
     }
@@ -43,16 +50,24 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { token, language } = body;
+    const { groupCode, token, language } = body;
+    const identifier = groupCode || token;
 
-    if (!token) {
-      return NextResponse.json({ error: 'Token required' }, { status: 400 });
+    if (!identifier) {
+      return NextResponse.json({ error: 'Group code required' }, { status: 400 });
     }
 
-    const group = await prisma.guestGroup.findUnique({
-      where: { token },
+    // Try groupCode first, fall back to token for legacy
+    let group = await prisma.guestGroup.findUnique({
+      where: { groupCode: identifier },
       include: { rsvpResponse: true },
     });
+    if (!group) {
+      group = await prisma.guestGroup.findUnique({
+        where: { token: identifier },
+        include: { rsvpResponse: true },
+      });
+    }
 
     if (!group) {
       return NextResponse.json({ error: 'Invalid invitation link' }, { status: 404 });

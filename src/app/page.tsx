@@ -4,24 +4,24 @@ import WeddingPage from '@/components/WeddingPage';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
+export default async function Home({ searchParams }: { searchParams: Promise<{ g?: string; token?: string }> }) {
   const params = await searchParams;
   const settings = await getSettings();
 
-  // If there's a token, load group info
+  // Support both ?g=<groupCode> (new short link) and ?token=<uuid> (legacy)
+  const groupCode = params.g;
+  const legacyToken = params.token;
   let rsvpData = null;
-  if (params.token) {
+  if (groupCode || legacyToken) {
     try {
-      const group = await prisma.guestGroup.findUnique({
-        where: { token: params.token },
-        include: { rsvpResponse: true },
-      });
+      const group = groupCode
+        ? await prisma.guestGroup.findUnique({ where: { groupCode }, include: { rsvpResponse: true } })
+        : await prisma.guestGroup.findUnique({ where: { token: legacyToken! }, include: { rsvpResponse: true } });
       if (group) {
         const guests = await prisma.guest.findMany({
           where: { groupCode: group.groupCode },
         });
         rsvpData = {
-          token: params.token,
           groupCode: group.groupCode,
           maxGuests: group.maxGuests,
           side: group.side,
