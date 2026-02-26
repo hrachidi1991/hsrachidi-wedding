@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     url: 'https://www.therachidis.com',
     siteName: 'www.therachidis.com',
     locale: 'en_GB',
-    images: 'https://www.therachidis.com/images/og-preview-wide.jpg',
+    images: 'https://www.therachidis.com/images/og-small.jpg',
   },
 };
 
