@@ -370,94 +370,90 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             {/* Invitation Text */}
             {(() => {
               const text = isRtl ? settings.invitationTextAr : settings.invitationTextEn;
-              // Detect Arabic two-family layout: split by blank lines into blocks
+              // Detect two-family layout: split by blank lines into blocks
               const blocks = text.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+
+              // Split prefix (title) from name: "Al Haj Mohamad Rida" → ["Al Haj", "Mohamad Rida"]
+              const splitPrefix = (line: string): { prefix: string; name: string } => {
+                const arPrefixes = ['الحاج', 'السيد', 'الشيخ', 'الدكتور'];
+                const enPrefixes = ['Al Haj', 'Al-Haj', 'Mr.', 'Mr', 'Mrs.', 'Mrs', 'Dr.', 'Dr', 'Sheikh'];
+                const prefixes = isRtl ? arPrefixes : enPrefixes;
+                for (const p of prefixes) {
+                  if (line.startsWith(p + ' ')) {
+                    return { prefix: p, name: line.slice(p.length + 1).trim() };
+                  }
+                }
+                return { prefix: '', name: line };
+              };
+
               const hasTwoFamilies = isRtl && blocks.length >= 3
                 && blocks[0].includes('وعقيلته') && blocks[1].includes('وعقيلته');
 
-              if (hasTwoFamilies) {
-                const family1Lines = blocks[0].split('\n').map((l) => l.trim());
-                const family2Lines = blocks[1].split('\n').map((l) => l.trim());
-                const rest = blocks.slice(2);
-
-                return (
-                  <div className="font-arabic space-y-6" dir="rtl">
-                    {/* Two families side by side */}
-                    <div className="grid grid-cols-2 gap-4 sm:gap-8">
-                      <div className="text-center">
-                        <p className="text-xl sm:text-2xl font-semibold text-black font-arabicDisplay">{family1Lines[0]}</p>
-                        {family1Lines.slice(1).map((l, i) => (
-                          <p key={i} className="text-base sm:text-lg text-black/60 mt-1">{l}</p>
-                        ))}
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xl sm:text-2xl font-semibold text-black font-arabicDisplay">{family2Lines[0]}</p>
-                        {family2Lines.slice(1).map((l, i) => (
-                          <p key={i} className="text-base sm:text-lg text-black/60 mt-1">{l}</p>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Remaining lines centered */}
-                    {rest.map((block, i) => {
-                      const isBoldLine = block.includes('حسين') || block.includes('سوزان');
-                      return (
-                        <p key={i} className={isBoldLine
-                          ? 'text-2xl sm:text-3xl font-semibold text-black font-arabicDisplay'
-                          : 'text-lg sm:text-xl text-black/80'
-                        }>
-                          {block}
-                        </p>
-                      );
-                    })}
-                  </div>
-                );
-              }
-
-              // English two-family layout: detect "and his wife" / "and her husband"
               const enTwoFamilies = !isRtl && blocks.length >= 3
                 && (blocks[0].toLowerCase().includes('and his wife') || blocks[0].toLowerCase().includes('and her husband'))
                 && (blocks[1].toLowerCase().includes('and his wife') || blocks[1].toLowerCase().includes('and her husband'));
 
-              if (enTwoFamilies) {
+              // Render a family column (works for both AR and EN)
+              const renderFamily = (lines: string[], fontClass: string) => {
+                const { prefix, name } = splitPrefix(lines[0]);
+                return (
+                  <div className="text-center">
+                    {prefix && (
+                      <p className={`text-sm sm:text-base uppercase tracking-[0.15em] text-black/50 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>{prefix}</p>
+                    )}
+                    <p className={`text-xl sm:text-2xl font-semibold text-black ${fontClass}`}>{name}</p>
+                    {lines.slice(1).map((l, i) => (
+                      <p key={i} className="text-base sm:text-lg text-black/60 mt-1">{l}</p>
+                    ))}
+                  </div>
+                );
+              };
+
+              if (hasTwoFamilies || enTwoFamilies) {
                 const family1Lines = blocks[0].split('\n').map((l) => l.trim());
                 const family2Lines = blocks[1].split('\n').map((l) => l.trim());
                 const rest = blocks.slice(2);
+                const fontClass = isRtl ? 'font-arabicDisplay' : 'font-display';
+                const wrapClass = isRtl ? 'font-arabic' : 'font-body';
+                const boldCheck = isRtl
+                  ? (b: string) => b.includes('حسين') || b.includes('سوزان')
+                  : (b: string) => b.includes('Hussein') || b.includes('Suzan');
 
                 return (
-                  <div className="font-body space-y-6">
+                  <div className={`${wrapClass} space-y-6`} dir={isRtl ? 'rtl' : 'ltr'}>
                     {/* Two families side by side */}
                     <div className="grid grid-cols-2 gap-4 sm:gap-8">
-                      <div className="text-center">
-                        <p className="text-xl sm:text-2xl font-semibold text-black font-display">{family1Lines[0]}</p>
-                        {family1Lines.slice(1).map((l, i) => (
-                          <p key={i} className="text-base sm:text-lg text-black/60 mt-1">{l}</p>
-                        ))}
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xl sm:text-2xl font-semibold text-black font-display">{family2Lines[0]}</p>
-                        {family2Lines.slice(1).map((l, i) => (
-                          <p key={i} className="text-base sm:text-lg text-black/60 mt-1">{l}</p>
-                        ))}
-                      </div>
+                      {renderFamily(family1Lines, fontClass)}
+                      {renderFamily(family2Lines, fontClass)}
                     </div>
 
                     {/* Remaining lines centered */}
-                    {rest.map((block, i) => {
-                      const isBoldLine = block.includes('Hussein') || block.includes('Suzan');
-                      return (
-                        <p key={i} className={isBoldLine
-                          ? 'text-2xl sm:text-3xl font-semibold text-black font-display'
-                          : 'text-lg sm:text-xl text-black/80'
-                        }>
-                          {block}
-                        </p>
-                      );
-                    })}
+                    {rest.map((block, i) => (
+                      <p key={i} className={boldCheck(block)
+                        ? `text-2xl sm:text-3xl font-semibold text-black ${fontClass}`
+                        : 'text-lg sm:text-xl text-black/80'
+                      }>
+                        {block}
+                      </p>
+                    ))}
                   </div>
                 );
               }
 
+              // Default: simple line-by-line rendering
+              return (
+                <div className={`space-y-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                  {text.split('\n').map((line, i) => (
+                    <p key={i} className={`text-black/80 ${
+                      line.includes('Hussein') || line.includes('حسين')
+                        ? `text-2xl sm:text-3xl font-semibold text-black my-3 ${isRtl ? 'font-arabicDisplay' : 'font-display'}`
+                        : 'text-lg sm:text-xl'
+                    }`}>
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              );
               // Default: simple line-by-line rendering
               return (
                 <div className={`space-y-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
