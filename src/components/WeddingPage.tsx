@@ -370,14 +370,14 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             {/* Invitation Text */}
             {(() => {
               const text = isRtl ? settings.invitationTextAr : settings.invitationTextEn;
-              // Detect two-family layout: split by blank lines into blocks
               const blocks = text.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+              const calligraphy = isRtl ? 'font-arabicDisplay' : 'font-script';
 
-              // Split prefix (title) from name: "Al Haj Mohamad Rida" → ["Al Haj", "Mohamad Rida"]
+              // Split prefix (Al Haj / Mr. / الحاج / السيد) from father name
               const splitPrefix = (line: string): { prefix: string; name: string } => {
-                const arPrefixes = ['الحاج', 'السيد', 'الشيخ', 'الدكتور'];
-                const enPrefixes = ['Al Haj', 'Al-Haj', 'Mr.', 'Mr', 'Mrs.', 'Mrs', 'Dr.', 'Dr', 'Sheikh'];
-                const prefixes = isRtl ? arPrefixes : enPrefixes;
+                const prefixes = isRtl
+                  ? ['الحاج', 'السيد', 'الشيخ', 'الدكتور']
+                  : ['Al Haj', 'Al-Haj', 'Mr.', 'Mr', 'Mrs.', 'Mrs', 'Dr.', 'Dr', 'Sheikh'];
                 for (const p of prefixes) {
                   if (line.startsWith(p + ' ')) {
                     return { prefix: p, name: line.slice(p.length + 1).trim() };
@@ -386,51 +386,74 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                 return { prefix: '', name: line };
               };
 
-              const hasTwoFamilies = isRtl && blocks.length >= 3
-                && blocks[0].includes('وعقيلته') && blocks[1].includes('وعقيلته');
-
-              const enTwoFamilies = !isRtl && blocks.length >= 3
-                && (blocks[0].toLowerCase().includes('and his wife') || blocks[0].toLowerCase().includes('and her husband'))
-                && (blocks[1].toLowerCase().includes('and his wife') || blocks[1].toLowerCase().includes('and her husband'));
-
-              // Render a family column (works for both AR and EN)
-              const renderFamily = (lines: string[], fontClass: string) => {
-                const { prefix, name } = splitPrefix(lines[0]);
-                return (
-                  <div className="text-center">
-                    {prefix && (
-                      <p className={`text-sm sm:text-base uppercase tracking-[0.15em] text-black/50 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>{prefix}</p>
-                    )}
-                    <p className={`text-xl sm:text-2xl font-semibold text-black ${fontClass}`}>{name}</p>
-                    {lines.slice(1).map((l, i) => (
-                      <p key={i} className="text-base sm:text-lg text-black/60 mt-1">{l}</p>
-                    ))}
-                  </div>
-                );
+              // Split "and his wife Leila" → { connector, motherName }
+              const splitWifeLine = (line: string): { connector: string; motherName: string } => {
+                const connectors = isRtl
+                  ? ['وعقيلته', 'وعقيلتها']
+                  : ['and his wife', 'and her husband'];
+                for (const c of connectors) {
+                  if (line.startsWith(c + ' ') || line.startsWith(c)) {
+                    const rest = line.slice(c.length).trim();
+                    return { connector: c, motherName: rest };
+                  }
+                }
+                return { connector: '', motherName: line };
               };
 
-              if (hasTwoFamilies || enTwoFamilies) {
-                const family1Lines = blocks[0].split('\n').map((l) => l.trim());
-                const family2Lines = blocks[1].split('\n').map((l) => l.trim());
+              const hasTwoFamilies = blocks.length >= 3
+                && (isRtl
+                  ? blocks[0].includes('وعقيلته') && blocks[1].includes('وعقيلته')
+                  : (blocks[0].toLowerCase().includes('and his wife') || blocks[0].toLowerCase().includes('and her husband'))
+                    && (blocks[1].toLowerCase().includes('and his wife') || blocks[1].toLowerCase().includes('and her husband')));
+
+              if (hasTwoFamilies) {
+                const f1Lines = blocks[0].split('\n').map((l) => l.trim());
+                const f2Lines = blocks[1].split('\n').map((l) => l.trim());
                 const rest = blocks.slice(2);
-                const fontClass = isRtl ? 'font-arabicDisplay' : 'font-display';
-                const wrapClass = isRtl ? 'font-arabic' : 'font-body';
+
+                const f1 = splitPrefix(f1Lines[0]);
+                const f2 = splitPrefix(f2Lines[0]);
+                const w1 = f1Lines[1] ? splitWifeLine(f1Lines[1]) : null;
+                const w2 = f2Lines[1] ? splitWifeLine(f2Lines[1]) : null;
+
                 const boldCheck = isRtl
                   ? (b: string) => b.includes('حسين') || b.includes('سوزان')
                   : (b: string) => b.includes('Hussein') || b.includes('Suzan');
 
                 return (
-                  <div className={`${wrapClass} space-y-6`} dir={isRtl ? 'rtl' : 'ltr'}>
-                    {/* Two families side by side */}
+                  <div className={`${isRtl ? 'font-arabic' : 'font-body'} space-y-5`} dir={isRtl ? 'rtl' : 'ltr'}>
+                    {/* Row 1: Prefixes aligned */}
+                    {(f1.prefix || f2.prefix) && (
+                      <div className="grid grid-cols-2 gap-4 sm:gap-8">
+                        <p className={`text-center text-sm sm:text-base tracking-[0.15em] text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{f1.prefix}</p>
+                        <p className={`text-center text-sm sm:text-base tracking-[0.15em] text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{f2.prefix}</p>
+                      </div>
+                    )}
+
+                    {/* Row 2: Father names — bold calligraphy */}
                     <div className="grid grid-cols-2 gap-4 sm:gap-8">
-                      {renderFamily(family1Lines, fontClass)}
-                      {renderFamily(family2Lines, fontClass)}
+                      <p className={`text-center text-xl sm:text-2xl font-bold text-black ${calligraphy}`}>{f1.name}</p>
+                      <p className={`text-center text-xl sm:text-2xl font-bold text-black ${calligraphy}`}>{f2.name}</p>
                     </div>
 
-                    {/* Remaining lines centered */}
+                    {/* Row 3: "and his wife" + mother name bold calligraphy */}
+                    {(w1 || w2) && (
+                      <div className="grid grid-cols-2 gap-4 sm:gap-8">
+                        <p className="text-center text-base sm:text-lg text-black/60">
+                          {w1 && <>{w1.connector} <span className={`font-bold text-black ${calligraphy}`}>{w1.motherName}</span></>}
+                        </p>
+                        <p className="text-center text-base sm:text-lg text-black/60">
+                          {w2 && <>{w2.connector} <span className={`font-bold text-black ${calligraphy}`}>{w2.motherName}</span></>}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="divider-gold" />
+
+                    {/* Remaining blocks: sentence, couple name, date */}
                     {rest.map((block, i) => (
                       <p key={i} className={boldCheck(block)
-                        ? `text-2xl sm:text-3xl font-semibold text-black ${fontClass}`
+                        ? `text-3xl sm:text-4xl font-bold text-black ${calligraphy}`
                         : 'text-lg sm:text-xl text-black/80'
                       }>
                         {block}
@@ -440,20 +463,6 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                 );
               }
 
-              // Default: simple line-by-line rendering
-              return (
-                <div className={`space-y-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                  {text.split('\n').map((line, i) => (
-                    <p key={i} className={`text-black/80 ${
-                      line.includes('Hussein') || line.includes('حسين')
-                        ? `text-2xl sm:text-3xl font-semibold text-black my-3 ${isRtl ? 'font-arabicDisplay' : 'font-display'}`
-                        : 'text-lg sm:text-xl'
-                    }`}>
-                      {line}
-                    </p>
-                  ))}
-                </div>
-              );
               // Default: simple line-by-line rendering
               return (
                 <div className={`space-y-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
