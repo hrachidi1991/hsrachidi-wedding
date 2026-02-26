@@ -340,7 +340,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                 <span className={`block font-light text-black leading-tight ${isRtl ? 'text-5xl sm:text-6xl md:text-7xl' : 'text-6xl sm:text-7xl md:text-8xl'}`}>
                   {isRtl ? settings.groomNameAr : settings.groomNameEn}
                 </span>
-                <span className="block text-3xl sm:text-4xl text-[#C9A96E]/80 my-2 font-display">&</span>
+                <span className="block text-3xl sm:text-4xl text-[#546A50]/80 my-2 font-display">&</span>
                 <span className={`block font-light text-black leading-tight ${isRtl ? 'text-5xl sm:text-6xl md:text-7xl' : 'text-6xl sm:text-7xl md:text-8xl'}`}>
                   {isRtl ? settings.brideNameAr : settings.brideNameEn}
                 </span>
@@ -530,11 +530,11 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   </p>
 
                   <div className="flex items-center justify-center gap-3 sm:gap-5 mb-3">
-                    <span className="text-[#C9A96E] text-4xl sm:text-5xl font-light select-none">|</span>
+                    <span className="text-[#546A50] text-4xl sm:text-5xl font-light select-none">|</span>
                     <span className={`text-6xl sm:text-8xl md:text-9xl font-light text-black leading-none ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
                       {dayNum}
                     </span>
-                    <span className="text-[#C9A96E] text-4xl sm:text-5xl font-light select-none">|</span>
+                    <span className="text-[#546A50] text-4xl sm:text-5xl font-light select-none">|</span>
                   </div>
 
                   <p className={`text-base sm:text-lg uppercase tracking-[0.2em] text-black/60 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
@@ -563,7 +563,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                           <div className={`countdown-label ${isRtl ? 'font-arabic' : ''}`}>{unit.label}</div>
                         </div>
                         {i < 3 && (
-                          <span className="text-[#C9A96E]/50 text-xl sm:text-2xl font-light select-none mx-1 sm:mx-2 -mt-4">:</span>
+                          <span className="text-[#546A50]/50 text-xl sm:text-2xl font-light select-none mx-1 sm:mx-2 -mt-4">:</span>
                         )}
                       </div>
                     ))}
