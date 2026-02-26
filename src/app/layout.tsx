@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/images/og-preview.JPG',
+        url: '/images/og-preview-wide.jpg',
         width: 1200,
         height: 630,
         alt: 'Hussein & Suzan Wedding Invitation',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Hussein & Suzan — Wedding',
     description: 'You are cordially invited to celebrate our wedding',
-    images: ['/images/og-preview.JPG'],
+    images: ['/images/og-preview-wide.jpg'],
   },
 };
 
