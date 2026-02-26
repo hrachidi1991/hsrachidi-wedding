@@ -16,7 +16,30 @@ export interface SiteContent {
   // Quran Aya
   quranBg: string;
 
-  // Invitation
+  // Invitation (structured fields)
+  invPrefix1En: string;
+  invPrefix1Ar: string;
+  invFather1En: string;
+  invFather1Ar: string;
+  invConnector1En: string;
+  invConnector1Ar: string;
+  invMother1En: string;
+  invMother1Ar: string;
+  invPrefix2En: string;
+  invPrefix2Ar: string;
+  invFather2En: string;
+  invFather2Ar: string;
+  invConnector2En: string;
+  invConnector2Ar: string;
+  invMother2En: string;
+  invMother2Ar: string;
+  invBodyEn: string;
+  invBodyAr: string;
+  invCoupleEn: string;
+  invCoupleAr: string;
+  invDateEn: string;
+  invDateAr: string;
+  // Legacy (kept for backward compat)
   invitationTextEn: string;
   invitationTextAr: string;
   invitationBg: string;
@@ -74,8 +97,30 @@ export const defaultSettings: SiteContent = {
 
   quranBg: '',
 
-  invitationTextEn: 'With joyous hearts,\nTogether with their families,\nHussein & Suzan\nrequest the honor of your presence\nat their wedding celebration\nJune 12, 2026',
-  invitationTextAr: 'بقلوب مليئة بالفرح،\nبرفقة عائلتيهما،\nحسين و سوزان\nيتشرفان بدعوتكم لحضور\nحفل زفافهما\n١٢ يونيو ٢٠٢٦',
+  invPrefix1En: 'Al-Haj',
+  invPrefix1Ar: 'الحاج',
+  invFather1En: 'Mohamad Rida Rachidi',
+  invFather1Ar: 'محمد رضا رشيدي',
+  invConnector1En: '& his wife',
+  invConnector1Ar: 'وعقيلته',
+  invMother1En: 'Leila',
+  invMother1Ar: 'ليلى',
+  invPrefix2En: 'Mr.',
+  invPrefix2Ar: 'السيد',
+  invFather2En: 'Faysal Rachidi',
+  invFather2Ar: 'فيصل رشيدي',
+  invConnector2En: '& his wife',
+  invConnector2Ar: 'وعقيلته',
+  invMother2En: 'Hubaba',
+  invMother2Ar: 'حبابة',
+  invBodyEn: 'cordially invite you to attend\nthe wedding celebration of their children',
+  invBodyAr: 'يدعونكم لحضور حفل زفاف ولديهما',
+  invCoupleEn: 'Hussein & Suzan',
+  invCoupleAr: 'حسين وسوزان',
+  invDateEn: 'on June 12, 2026',
+  invDateAr: 'في الثاني عشر من حزيران 2026',
+  invitationTextEn: '',
+  invitationTextAr: '',
   invitationBg: '',
 
   eventDate: 'June 12, 2026',

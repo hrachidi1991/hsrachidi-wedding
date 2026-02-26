@@ -149,10 +149,52 @@ export default function ContentEditor() {
 
         {/* FORMAL INVITATION */}
         {activeTab === 'invitation' && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <h2 className="text-lg font-semibold mb-2">Formal Invitation</h2>
-            <TextArea label="Invitation Text (EN)" value={settings.invitationTextEn} onChange={(v) => update('invitationTextEn', v)} rows={6} />
-            <TextArea label="Invitation Text (AR)" value={settings.invitationTextAr} onChange={(v) => update('invitationTextAr', v)} rows={6} dir="rtl" />
+
+            {/* Family 1 */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Family 1 (Left side)</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Title / Prefix (EN)" value={settings.invPrefix1En} onChange={(v) => update('invPrefix1En', v)} />
+                <Field label="Title / Prefix (AR)" value={settings.invPrefix1Ar} onChange={(v) => update('invPrefix1Ar', v)} dir="rtl" />
+                <Field label="Father Name (EN)" value={settings.invFather1En} onChange={(v) => update('invFather1En', v)} />
+                <Field label="Father Name (AR)" value={settings.invFather1Ar} onChange={(v) => update('invFather1Ar', v)} dir="rtl" />
+                <Field label="Connector (EN)" value={settings.invConnector1En} onChange={(v) => update('invConnector1En', v)} />
+                <Field label="Connector (AR)" value={settings.invConnector1Ar} onChange={(v) => update('invConnector1Ar', v)} dir="rtl" />
+                <Field label="Mother Name (EN)" value={settings.invMother1En} onChange={(v) => update('invMother1En', v)} />
+                <Field label="Mother Name (AR)" value={settings.invMother1Ar} onChange={(v) => update('invMother1Ar', v)} dir="rtl" />
+              </div>
+            </div>
+
+            {/* Family 2 */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Family 2 (Right side)</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Title / Prefix (EN)" value={settings.invPrefix2En} onChange={(v) => update('invPrefix2En', v)} />
+                <Field label="Title / Prefix (AR)" value={settings.invPrefix2Ar} onChange={(v) => update('invPrefix2Ar', v)} dir="rtl" />
+                <Field label="Father Name (EN)" value={settings.invFather2En} onChange={(v) => update('invFather2En', v)} />
+                <Field label="Father Name (AR)" value={settings.invFather2Ar} onChange={(v) => update('invFather2Ar', v)} dir="rtl" />
+                <Field label="Connector (EN)" value={settings.invConnector2En} onChange={(v) => update('invConnector2En', v)} />
+                <Field label="Connector (AR)" value={settings.invConnector2Ar} onChange={(v) => update('invConnector2Ar', v)} dir="rtl" />
+                <Field label="Mother Name (EN)" value={settings.invMother2En} onChange={(v) => update('invMother2En', v)} />
+                <Field label="Mother Name (AR)" value={settings.invMother2Ar} onChange={(v) => update('invMother2Ar', v)} dir="rtl" />
+              </div>
+            </div>
+
+            {/* Invitation body, couple, date */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Invitation Text</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <TextArea label="Body Text (EN)" value={settings.invBodyEn} onChange={(v) => update('invBodyEn', v)} rows={2} />
+                <TextArea label="Body Text (AR)" value={settings.invBodyAr} onChange={(v) => update('invBodyAr', v)} rows={2} dir="rtl" />
+                <Field label="Couple Names (EN)" value={settings.invCoupleEn} onChange={(v) => update('invCoupleEn', v)} />
+                <Field label="Couple Names (AR)" value={settings.invCoupleAr} onChange={(v) => update('invCoupleAr', v)} dir="rtl" />
+                <Field label="Date Line (EN)" value={settings.invDateEn} onChange={(v) => update('invDateEn', v)} />
+                <Field label="Date Line (AR)" value={settings.invDateAr} onChange={(v) => update('invDateAr', v)} dir="rtl" />
+              </div>
+            </div>
+
             <FileUpload label="Invitation Background" current={settings.invitationBg} onUpload={(f) => uploadFile(f, 'invitationBg')} onRemove={() => update('invitationBg', '')} />
           </div>
         )}
