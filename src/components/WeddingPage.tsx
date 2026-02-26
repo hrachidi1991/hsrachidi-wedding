@@ -414,7 +414,51 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                 );
               }
 
-              // Default: simple line-by-line rendering (English + fallback)
+              // English two-family layout: detect "and his wife" / "and her husband"
+              const enTwoFamilies = !isRtl && blocks.length >= 3
+                && (blocks[0].toLowerCase().includes('and his wife') || blocks[0].toLowerCase().includes('and her husband'))
+                && (blocks[1].toLowerCase().includes('and his wife') || blocks[1].toLowerCase().includes('and her husband'));
+
+              if (enTwoFamilies) {
+                const family1Lines = blocks[0].split('\n').map((l) => l.trim());
+                const family2Lines = blocks[1].split('\n').map((l) => l.trim());
+                const rest = blocks.slice(2);
+
+                return (
+                  <div className="font-body space-y-6">
+                    {/* Two families side by side */}
+                    <div className="grid grid-cols-2 gap-4 sm:gap-8">
+                      <div className="text-center">
+                        <p className="text-xl sm:text-2xl font-semibold text-black font-display">{family1Lines[0]}</p>
+                        {family1Lines.slice(1).map((l, i) => (
+                          <p key={i} className="text-base sm:text-lg text-black/60 mt-1">{l}</p>
+                        ))}
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xl sm:text-2xl font-semibold text-black font-display">{family2Lines[0]}</p>
+                        {family2Lines.slice(1).map((l, i) => (
+                          <p key={i} className="text-base sm:text-lg text-black/60 mt-1">{l}</p>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Remaining lines centered */}
+                    {rest.map((block, i) => {
+                      const isBoldLine = block.includes('Hussein') || block.includes('Suzan');
+                      return (
+                        <p key={i} className={isBoldLine
+                          ? 'text-2xl sm:text-3xl font-semibold text-black font-display'
+                          : 'text-lg sm:text-xl text-black/80'
+                        }>
+                          {block}
+                        </p>
+                      );
+                    })}
+                  </div>
+                );
+              }
+
+              // Default: simple line-by-line rendering
               return (
                 <div className={`space-y-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                   {text.split('\n').map((line, i) => (
