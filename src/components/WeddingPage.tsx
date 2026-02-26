@@ -421,9 +421,9 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                     <p key={i} className="text-lg sm:text-xl text-black/80">{line}</p>
                   ))}
 
-                  {/* Couple names — large bold calligraphy */}
+                  {/* Couple names — large bold calligraphy in gold */}
                   {couple && (
-                    <p className={`font-bold text-black ${nameFont} ${isRtl ? 'text-3xl sm:text-4xl' : 'text-4xl sm:text-5xl'}`}>{couple}</p>
+                    <p className={`font-bold text-[#C9A96E] ${nameFont} ${isRtl ? 'text-3xl sm:text-4xl' : 'text-4xl sm:text-5xl'}`}>{couple}</p>
                   )}
 
                   {/* Date */}
