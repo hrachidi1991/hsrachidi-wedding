@@ -23,6 +23,16 @@ interface Props {
   rsvpData: RsvpData | null;
 }
 
+function ScrollArrow() {
+  return (
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 animate-float">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-black/30">
+        <path d="M12 5v14M5 12l7 7 7-7" />
+      </svg>
+    </div>
+  );
+}
+
 export default function WeddingPage({ settings, rsvpData }: Props) {
   const [locale, setLocale] = useState<Locale>('en');
   const [envelopeOpened, setEnvelopeOpened] = useState(false);
@@ -312,6 +322,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               {t(locale, 'quranPairsRef')}
             </p>
           </div>
+          <ScrollArrow />
         </section>
 
         {/* ═══ SECTION 3 — HERO ═══ */}
@@ -343,16 +354,8 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               {settings.weddingDate}
             </p>
 
-            {/* Scroll indicator */}
-            <div className="mt-12 animate-float">
-              <p className={`text-sm uppercase tracking-[0.2em] text-black/40 mb-2 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                {t(locale, 'scrollDown')}
-              </p>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-black/40">
-                <path d="M12 5v14M5 12l7 7 7-7" />
-              </svg>
-            </div>
           </div>
+          <ScrollArrow />
         </section>
 
         {/* ═══ SECTION 4 — FORMAL INVITATION ═══ */}
@@ -435,6 +438,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
             <div className="divider-gold mt-8" />
           </div>
+          <ScrollArrow />
         </section>
 
         {/* ═══ SECTION 5 — COUNTDOWN (Calendar Style) ═══ */}
@@ -533,6 +537,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               );
             })()}
           </div>
+          <ScrollArrow />
         </section>
 
         {/* ═══ SECTION 6 — LOCATION ═══ */}
@@ -607,6 +612,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               )}
             </div>
           </div>
+          <ScrollArrow />
         </section>
 
         {/* ═══ SECTION 7 — GIFT REGISTRY ═══ */}
@@ -692,6 +698,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               </div>
             </div>
           </div>
+          <ScrollArrow />
         </section>
 
         {/* ═══ SECTION 8 — RSVP ═══ */}
