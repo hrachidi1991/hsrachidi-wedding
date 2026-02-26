@@ -68,12 +68,6 @@ body {
   background: url('/images/new_bg.png') center / cover no-repeat;
 }
 
-/* Floral corner decorations removed — using full photo background */
-.scroll-section::before,
-.scroll-section::after {
-  display: none;
-}
-
 /* Section backgrounds */
 .section-bg {
   position: absolute;
@@ -85,12 +79,6 @@ body {
   z-index: 0;
 }
 
-/* Alternating sections — same paper background */
-.section-olive {
-  background: url('/images/new_bg.png') center / cover no-repeat !important;
-}
-
-/* When section has a bg image, push overlay above florals so florals stay behind */
 .section-bg + .section-overlay {
   z-index: 2;
 }
@@ -100,13 +88,6 @@ body {
   position: absolute;
   inset: 0;
   background: rgba(248, 249, 250, 0.6);
-  z-index: 1;
-}
-
-.section-overlay-dark {
-  position: absolute;
-  inset: 0;
-  background: rgba(248, 249, 250, 0.5);
   z-index: 1;
 }
 
@@ -144,22 +125,6 @@ body {
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--gold), transparent);
   margin: 2rem auto;
-}
-
-/* Arabic Typography */
-.arabic-calligraphy {
-  font-family: 'Aref Ruqaa', 'Amiri', serif;
-  line-height: 2;
-  letter-spacing: 0;
-}
-
-.quran-verse {
-  font-family: 'Amiri', serif;
-  font-size: clamp(1.3rem, 3.5vw, 2rem);
-  line-height: 2.2;
-  color: rgba(42, 42, 42, 0.9);
-  direction: rtl;
-  text-align: center;
 }
 
 /* Calendar mini-grid */
@@ -357,24 +322,6 @@ body {
   transform: translateY(-1px);
 }
 
-.btn-outline-gold {
-  background: transparent;
-  color: var(--gold);
-  padding: 0.75rem 2rem;
-  border-radius: 4px;
-  font-family: 'Lora', serif;
-  font-size: 0.9rem;
-  letter-spacing: 0.05em;
-  transition: all 0.3s ease;
-  border: 1px solid var(--gold);
-  cursor: pointer;
-}
-
-.btn-outline-gold:hover {
-  background: rgba(201, 169, 110, 0.15);
-  color: var(--charcoal);
-}
-
 /* Floating Audio Button */
 .audio-btn {
   position: fixed;
@@ -477,7 +424,13 @@ body {
   transition: all 0.3s ease;
   border: 2px solid transparent;
   cursor: pointer;
-  min-width: 140px;
+  min-width: 110px;
+}
+
+@media (min-width: 640px) {
+  .rsvp-btn {
+    min-width: 140px;
+  }
 }
 
 .rsvp-btn-attending {
@@ -502,17 +455,6 @@ body {
   background: #dc2626;
   color: white;
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-}
-
-/* Mobile-friendly RSVP buttons */
-.rsvp-btn {
-  min-width: 110px;
-}
-
-@media (min-width: 640px) {
-  .rsvp-btn {
-    min-width: 140px;
-  }
 }
 
 /* Mobile-friendly fixed UI */

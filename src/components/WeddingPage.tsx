@@ -152,15 +152,6 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
   const handleOpenEnvelope = useCallback(() => {
     setSealBreaking(true);
-    // Play SFX
-    if (settings.sfxEnabled) {
-      try {
-        const sfx = new Audio('/audio/seal-open.mp3');
-        sfx.volume = 0.5;
-        sfx.play().catch(() => {});
-      } catch {}
-    }
-
     // Start music immediately on interaction
     if (currentMusicSrc && audioRef.current) {
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
@@ -242,7 +233,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
     <div dir={isRtl ? 'rtl' : 'ltr'}>
       {/* Audio */}
       {currentMusicSrc && (
-        <audio ref={audioRef} src={currentMusicSrc} loop preload="auto" />
+        <audio ref={audioRef} src={currentMusicSrc} loop preload="metadata" />
       )}
 
       {/* Language toggle */}
