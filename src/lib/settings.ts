@@ -8,6 +8,7 @@ export interface SiteContent {
   brideNameAr: string;
   weddingDate: string;
   heroImage: string;
+  showHeroNames: boolean;
 
   // Countdown
   countdownDate: string;
@@ -91,6 +92,7 @@ export const defaultSettings: SiteContent = {
   brideNameAr: 'سوزان',
   weddingDate: 'June 12, 2026',
   heroImage: '',
+  showHeroNames: true,
 
   countdownDate: '2026-06-12T20:00:00',
   countdownBg: '',

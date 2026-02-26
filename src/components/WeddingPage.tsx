@@ -329,15 +329,17 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               {t(locale, 'weddingOf')}
             </p>
 
-            <h1 className={`mb-4 ${isRtl ? 'font-arabicDisplay' : 'font-script'}`}>
-              <span className={`block font-light text-black leading-tight ${isRtl ? 'text-5xl sm:text-6xl md:text-7xl' : 'text-6xl sm:text-7xl md:text-8xl'}`}>
-                {isRtl ? settings.groomNameAr : settings.groomNameEn}
-              </span>
-              <span className="block text-3xl sm:text-4xl text-[#C9A96E]/80 my-2 font-display">&</span>
-              <span className={`block font-light text-black leading-tight ${isRtl ? 'text-5xl sm:text-6xl md:text-7xl' : 'text-6xl sm:text-7xl md:text-8xl'}`}>
-                {isRtl ? settings.brideNameAr : settings.brideNameEn}
-              </span>
-            </h1>
+            {settings.showHeroNames !== false && (
+              <h1 className={`mb-4 ${isRtl ? 'font-arabicDisplay' : 'font-script'}`}>
+                <span className={`block font-light text-black leading-tight ${isRtl ? 'text-5xl sm:text-6xl md:text-7xl' : 'text-6xl sm:text-7xl md:text-8xl'}`}>
+                  {isRtl ? settings.groomNameAr : settings.groomNameEn}
+                </span>
+                <span className="block text-3xl sm:text-4xl text-[#C9A96E]/80 my-2 font-display">&</span>
+                <span className={`block font-light text-black leading-tight ${isRtl ? 'text-5xl sm:text-6xl md:text-7xl' : 'text-6xl sm:text-7xl md:text-8xl'}`}>
+                  {isRtl ? settings.brideNameAr : settings.brideNameEn}
+                </span>
+              </h1>
+            )}
 
             <div className="divider-gold-wide" />
 

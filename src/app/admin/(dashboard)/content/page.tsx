@@ -116,6 +116,18 @@ export default function ContentEditor() {
               <Field label="Bride Name (AR)" value={settings.brideNameAr} onChange={(v) => update('brideNameAr', v)} dir="rtl" />
             </div>
             <Field label="Wedding Date Display" value={settings.weddingDate} onChange={(v) => update('weddingDate', v)} />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => update('showHeroNames', !settings.showHeroNames)}
+                className={`relative w-11 h-6 rounded-full transition-colors ${settings.showHeroNames ? 'bg-blue-600' : 'bg-gray-300'}`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.showHeroNames ? 'translate-x-5' : ''}`} />
+              </button>
+              <span className="text-sm text-gray-700">Show Hero Names</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${settings.showHeroNames ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                {settings.showHeroNames ? 'Active' : 'Hidden'}
+              </span>
+            </div>
             <FileUpload label="Hero Background Image" current={settings.heroImage} onUpload={(f) => uploadFile(f, 'heroImage')} onRemove={() => update('heroImage', '')} />
           </div>
         )}
