@@ -25,7 +25,7 @@ html {
 
 body {
   font-family: 'Lora', serif;
-  background-color: #f0ebe4;
+  background-color: #F8F9FA;
   color: #2a2a2a;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -65,7 +65,7 @@ body {
   align-items: center;
   justify-content: center;
   /* Cream paper texture background */
-  background: url('/images/paper-bg.png') center / cover no-repeat;
+  background: #F8F9FA;
 }
 
 /* Floral corner decorations removed — using full photo background */
@@ -81,13 +81,13 @@ body {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-color: #f0ebe4;
+  background-color: #F8F9FA;
   z-index: 0;
 }
 
 /* Alternating sections — same paper background */
 .section-olive {
-  background: url('/images/paper-bg.png') center / cover no-repeat !important;
+  background: #F8F9FA !important;
 }
 
 /* When section has a bg image, push overlay above florals so florals stay behind */
@@ -99,14 +99,14 @@ body {
 .section-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(240, 235, 228, 0.6);
+  background: rgba(248, 249, 250, 0.6);
   z-index: 1;
 }
 
 .section-overlay-dark {
   position: absolute;
   inset: 0;
-  background: rgba(240, 235, 228, 0.5);
+  background: rgba(248, 249, 250, 0.5);
   z-index: 1;
 }
 
@@ -236,7 +236,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: #6b6b6b;
+  background: #F8F9FA;
   display: flex;
   flex-direction: column;
   align-items: center;
