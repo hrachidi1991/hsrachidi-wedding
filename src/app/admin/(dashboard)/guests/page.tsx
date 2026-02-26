@@ -66,6 +66,14 @@ export default function GuestsPage() {
   const [guestSearch, setGuestSearch] = useState('');
   const [copiedGroupCode, setCopiedGroupCode] = useState<string | null>(null);
 
+  // Confirm modal
+  const [confirmModal, setConfirmModal] = useState<{
+    title: string;
+    message: string;
+    details: { code: string; count: number }[];
+    onConfirm: () => void;
+  } | null>(null);
+
   // CSV/Excel import
   const [csvText, setCsvText] = useState('');
   const [importResult, setImportResult] = useState('');
@@ -124,26 +132,13 @@ export default function GuestsPage() {
     reload();
   };
 
-  const addGuest = async () => {
-    if (!newGuest.name || !newGuest.groupCode) return;
-
-    // Check if group already exists
-    const existingGroup = groups.find(g => g.groupCode === newGuest.groupCode);
-    if (existingGroup) {
-      const guestCount = existingGroup.guests?.length || 0;
-      const ok = confirm(
-        `Group "${newGuest.groupCode}" already exists with ${guestCount} guest${guestCount !== 1 ? 's' : ''}.\n\nDo you want to add "${newGuest.name}" to this group?`
-      );
-      if (!ok) return;
-    }
-
+  const saveGuest = async (existingGroup: Group | undefined) => {
     const res = await fetch('/api/guests', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...newGuest, relation: 'Friend' }),
     });
     if (res.ok) {
-      // Update maxGuests on the group if it exists
       if (existingGroup) {
         await fetch('/api/groups', {
           method: 'PUT',
@@ -154,6 +149,27 @@ export default function GuestsPage() {
       setNewGuest({ name: '', phone: '', side: 'groom', groupCode: '' });
       reload();
     }
+  };
+
+  const addGuest = async () => {
+    if (!newGuest.name || !newGuest.groupCode) return;
+
+    const existingGroup = groups.find(g => g.groupCode === newGuest.groupCode);
+    if (existingGroup) {
+      const guestCount = existingGroup.guests?.length || 0;
+      setConfirmModal({
+        title: 'Group Already Exists',
+        message: `Do you want to add "${newGuest.name}" to this existing group?`,
+        details: [{ code: existingGroup.groupCode, count: guestCount }],
+        onConfirm: () => {
+          setConfirmModal(null);
+          saveGuest(existingGroup);
+        },
+      });
+      return;
+    }
+
+    saveGuest(undefined);
   };
 
   const deleteGuest = async (id: string) => {
@@ -387,16 +403,26 @@ export default function GuestsPage() {
     );
 
     if (existingCodes.length > 0) {
-      const details = existingCodes.map(code => {
+      const detailItems = existingCodes.map(code => {
         const group = groups.find(g => g.groupCode.toUpperCase() === code.toUpperCase())!;
-        return `  • ${code} (${group.guests?.length || 0} existing guest${(group.guests?.length || 0) !== 1 ? 's' : ''})`;
-      }).join('\n');
-      const ok = confirm(
-        `The following group(s) already exist:\n\n${details}\n\nDo you want to add the new guests to these existing groups?`
-      );
-      if (!ok) return;
+        return { code, count: group.guests?.length || 0 };
+      });
+      setConfirmModal({
+        title: 'Groups Already Exist',
+        message: 'Do you want to add the new guests to these existing groups?',
+        details: detailItems,
+        onConfirm: () => {
+          setConfirmModal(null);
+          proceedWithImport(selectedRows);
+        },
+      });
+      return;
     }
 
+    proceedWithImport(selectedRows);
+  };
+
+  const proceedWithImport = async (selectedRows: Record<string, string>[]) => {
     setImportStep('saving');
     setImportResult('');
     setImportProgress(10);
@@ -970,6 +996,56 @@ export default function GuestsPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+      {/* ═══ CONFIRM MODAL ═══ */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
+          {/* Modal card */}
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            {/* Header */}
+            <div className="bg-amber-50 border-b border-amber-200 px-6 py-4 flex items-center gap-3">
+              <div className="bg-amber-100 rounded-full p-2">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-600">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">{confirmModal.title}</h3>
+            </div>
+            {/* Body */}
+            <div className="px-6 py-5">
+              <p className="text-sm text-gray-600 mb-4">{confirmModal.message}</p>
+              <div className="bg-gray-50 rounded-lg border border-gray-200 divide-y divide-gray-200">
+                {confirmModal.details.map(({ code, count }) => (
+                  <div key={code} className="flex items-center justify-between px-4 py-2.5">
+                    <span className="text-sm font-medium text-gray-800">{code}</span>
+                    <span className="text-xs text-gray-500 bg-gray-200 rounded-full px-2.5 py-0.5">
+                      {count} guest{count !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Footer */}
+            <div className="border-t border-gray-100 px-6 py-4 flex justify-end gap-3 bg-gray-50">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="px-4 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-200 border border-gray-300 font-medium transition-colors"
+              >
+                No, Cancel
+              </button>
+              <button
+                onClick={confirmModal.onConfirm}
+                className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 font-medium transition-colors"
+              >
+                Yes, Add to Group
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
