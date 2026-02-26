@@ -386,31 +386,31 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                 <div className={`${isRtl ? 'font-arabic' : 'font-body'} space-y-4`} dir={isRtl ? 'rtl' : 'ltr'}>
                   {/* Row 1: Prefixes aligned */}
                   {(prefix1 || prefix2) && (
-                    <div className="grid grid-cols-2 gap-4 sm:gap-8">
-                      <p className={`text-center text-base sm:text-lg font-bold text-black ${isRtl ? 'font-arabic' : 'font-body'}`}>{prefix1}</p>
-                      <p className={`text-center text-base sm:text-lg font-bold text-black ${isRtl ? 'font-arabic' : 'font-body'}`}>{prefix2}</p>
+                    <div className="grid grid-cols-2 gap-2 sm:gap-8">
+                      <p className={`text-center text-sm sm:text-lg font-bold text-black ${isRtl ? 'font-arabic' : 'font-body'}`}>{prefix1}</p>
+                      <p className={`text-center text-sm sm:text-lg font-bold text-black ${isRtl ? 'font-arabic' : 'font-body'}`}>{prefix2}</p>
                     </div>
                   )}
 
                   {/* Row 2: Father names — bold, hero calligraphy font */}
-                  <div className="grid grid-cols-2 gap-4 sm:gap-8 -mt-2">
-                    <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'}`}>{father1}</p>
-                    <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'}`}>{father2}</p>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-8 -mt-2">
+                    <p className={`text-center font-bold text-black whitespace-nowrap ${nameFont} ${isRtl ? 'text-xl sm:text-3xl' : 'text-[clamp(1rem,4.5vw,2.25rem)]'}`}>{father1}</p>
+                    <p className={`text-center font-bold text-black whitespace-nowrap ${nameFont} ${isRtl ? 'text-xl sm:text-3xl' : 'text-[clamp(1rem,4.5vw,2.25rem)]'}`}>{father2}</p>
                   </div>
 
                   {/* Row 3: Connectors */}
                   {(conn1 || conn2) && (
-                    <div className="grid grid-cols-2 gap-4 sm:gap-8 -mt-2">
-                      <p className={`text-center text-sm sm:text-base text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{conn1}</p>
-                      <p className={`text-center text-sm sm:text-base text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{conn2}</p>
+                    <div className="grid grid-cols-2 gap-2 sm:gap-8 -mt-2">
+                      <p className={`text-center text-xs sm:text-base text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{conn1}</p>
+                      <p className={`text-center text-xs sm:text-base text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{conn2}</p>
                     </div>
                   )}
 
                   {/* Row 4: Mother names — bold calligraphy, smaller than father */}
                   {(mother1 || mother2) && (
-                    <div className="grid grid-cols-2 gap-4 sm:gap-8 -mt-2">
-                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'}`}>{mother1}</p>
-                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'}`}>{mother2}</p>
+                    <div className="grid grid-cols-2 gap-2 sm:gap-8 -mt-2">
+                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-lg sm:text-2xl' : 'text-[clamp(1rem,4vw,1.875rem)]'}`}>{mother1}</p>
+                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-lg sm:text-2xl' : 'text-[clamp(1rem,4vw,1.875rem)]'}`}>{mother2}</p>
                     </div>
                   )}
 
