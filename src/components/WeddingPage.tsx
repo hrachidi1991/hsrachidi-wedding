@@ -360,7 +360,12 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             </>
           )}
           <div className={`section-content max-w-2xl transition-all duration-1000 delay-200 ${sectionVisible(4) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <div className="divider-gold mb-8" />
+            {/* Top ornamental gold line */}
+            <div className="flex items-center justify-center gap-3 mb-8">
+              <span className="text-[#C9A96E] text-xs">&#9830;</span>
+              <div className="h-px w-24 sm:w-36 bg-gradient-to-r from-transparent via-[#C9A96E] to-transparent" />
+              <span className="text-[#C9A96E] text-xs">&#9830;</span>
+            </div>
 
             {/* Invitation — structured fields */}
             {(() => {
@@ -382,8 +387,8 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   {/* Row 1: Prefixes — smallest text */}
                   {(prefix1 || prefix2) && (
                     <div className="grid grid-cols-2 gap-2 sm:gap-8">
-                      <p className={`text-center font-bold text-black ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-[0.7rem] sm:text-base'}`}>{prefix1}</p>
-                      <p className={`text-center font-bold text-black ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-[0.7rem] sm:text-base'}`}>{prefix2}</p>
+                      <p className={`text-center font-bold text-[#C9A96E] ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-[0.7rem] sm:text-base'}`}>{prefix1}</p>
+                      <p className={`text-center font-bold text-[#C9A96E] ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-[0.7rem] sm:text-base'}`}>{prefix2}</p>
                     </div>
                   )}
 
@@ -409,7 +414,12 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                     </div>
                   )}
 
-                  <div className="divider-gold" />
+                  {/* Middle ornamental gold line */}
+                  <div className="flex items-center justify-center gap-3 my-2">
+                    <span className="text-[#C9A96E] text-xs">&#9830;</span>
+                    <div className="h-px w-24 sm:w-36 bg-gradient-to-r from-transparent via-[#C9A96E] to-transparent" />
+                    <span className="text-[#C9A96E] text-xs">&#9830;</span>
+                  </div>
 
                   {/* Body text */}
                   {body && body.split('\n').map((line, i) => (
@@ -429,7 +439,12 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               );
             })()}
 
-            <div className="divider-gold mt-8" />
+            {/* Bottom ornamental gold line */}
+            <div className="flex items-center justify-center gap-3 mt-8">
+              <span className="text-[#C9A96E] text-xs">&#9830;</span>
+              <div className="h-px w-24 sm:w-36 bg-gradient-to-r from-transparent via-[#C9A96E] to-transparent" />
+              <span className="text-[#C9A96E] text-xs">&#9830;</span>
+            </div>
           </div>
           <ScrollArrow />
         </section>
