@@ -64,8 +64,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  /* Cream paper texture background */
-  background: #F8F9FA;
+  /* Paper texture background */
+  background: url('/images/new_bg.png') center / cover no-repeat;
 }
 
 /* Floral corner decorations removed — using full photo background */
@@ -87,7 +87,7 @@ body {
 
 /* Alternating sections — same paper background */
 .section-olive {
-  background: #F8F9FA !important;
+  background: url('/images/new_bg.png') center / cover no-repeat !important;
 }
 
 /* When section has a bg image, push overlay above florals so florals stay behind */
@@ -236,7 +236,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: #F8F9FA;
+  background: #f5f3f0;
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -888,7 +888,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/images/envelope-iphone2.png"
+            src="/images/new_env.png"
             alt="Wedding envelope"
             className="envelope-photo"
             draggable={false}
