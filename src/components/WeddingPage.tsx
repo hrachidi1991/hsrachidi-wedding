@@ -312,6 +312,11 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             <p className={`text-xs sm:text-sm uppercase tracking-[0.15em] text-black/35 ${isRtl ? 'font-arabic' : 'font-body'}`}>
               {t(locale, 'quranPairsRef')}
             </p>
+
+            {/* Sadaqa Allah Al-Azeem */}
+            <p className="font-arabicDisplay text-2xl sm:text-3xl md:text-4xl text-black/70 mt-6" dir="rtl">
+              صدق الله العظيم
+            </p>
           </div>
           <ScrollArrow />
         </section>
