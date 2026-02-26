@@ -382,8 +382,8 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   {/* Row 1: Prefixes aligned */}
                   {(prefix1 || prefix2) && (
                     <div className="grid grid-cols-2 gap-2 sm:gap-8">
-                      <p className={`text-center font-bold text-black ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'text-sm sm:text-lg font-body'}`}>{prefix1}</p>
-                      <p className={`text-center font-bold text-black ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'text-sm sm:text-lg font-body'}`}>{prefix2}</p>
+                      <p className={`text-center font-bold text-black ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-sm sm:text-lg'}`}>{prefix1}</p>
+                      <p className={`text-center font-bold text-black ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-sm sm:text-lg'}`}>{prefix2}</p>
                     </div>
                   )}
 
@@ -404,8 +404,8 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   {/* Row 4: Mother names — bold calligraphy, smaller than father */}
                   {(mother1 || mother2) && (
                     <div className="grid grid-cols-2 gap-2 sm:gap-8 -mt-2">
-                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-xl sm:text-3xl' : 'text-[clamp(1rem,4vw,1.875rem)]'}`}>{mother1}</p>
-                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-xl sm:text-3xl' : 'text-[clamp(1rem,4vw,1.875rem)]'}`}>{mother2}</p>
+                      <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-xl sm:text-3xl' : 'font-trajan text-[clamp(0.75rem,3.2vw,1.35rem)]'}`}>{mother1}</p>
+                      <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-xl sm:text-3xl' : 'font-trajan text-[clamp(0.75rem,3.2vw,1.35rem)]'}`}>{mother2}</p>
                     </div>
                   )}
 
