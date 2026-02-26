@@ -72,6 +72,7 @@ const config: Config = {
         arabic: ['Amiri', 'serif'],
         arabicDisplay: ['Aref Ruqaa', 'serif'],
         script: ['Great Vibes', 'cursive'],
+        trajan: ['Cinzel', 'serif'],
       },
       animation: {
         'fade-in': 'fadeIn 1s ease-out forwards',
