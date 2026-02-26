@@ -371,7 +371,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             {(() => {
               const text = isRtl ? settings.invitationTextAr : settings.invitationTextEn;
               const blocks = text.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
-              const calligraphy = isRtl ? 'font-arabicDisplay' : 'font-script';
+              const nameFont = isRtl ? 'font-arabicDisplay' : 'font-script';
 
               // Split prefix (Al Haj / Mr. / الحاج / السيد) from father name
               const splitPrefix = (line: string): { prefix: string; name: string } => {
@@ -421,7 +421,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   : (b: string) => b.includes('Hussein') || b.includes('Suzan');
 
                 return (
-                  <div className={`${isRtl ? 'font-arabic' : 'font-body'} space-y-5`} dir={isRtl ? 'rtl' : 'ltr'}>
+                  <div className={`${isRtl ? 'font-arabic' : 'font-body'} space-y-4`} dir={isRtl ? 'rtl' : 'ltr'}>
                     {/* Row 1: Prefixes aligned */}
                     {(f1.prefix || f2.prefix) && (
                       <div className="grid grid-cols-2 gap-4 sm:gap-8">
@@ -430,21 +430,31 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                       </div>
                     )}
 
-                    {/* Row 2: Father names — bold calligraphy */}
+                    {/* Row 2: Father names — bold, hero font */}
                     <div className="grid grid-cols-2 gap-4 sm:gap-8">
-                      <p className={`text-center text-xl sm:text-2xl font-bold text-black ${calligraphy}`}>{f1.name}</p>
-                      <p className={`text-center text-xl sm:text-2xl font-bold text-black ${calligraphy}`}>{f2.name}</p>
+                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'}`}>{f1.name}</p>
+                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'}`}>{f2.name}</p>
                     </div>
 
-                    {/* Row 3: "and his wife" + mother name bold calligraphy */}
+                    {/* Row 3: "and his wife" + mother name beneath in smaller font */}
                     {(w1 || w2) && (
-                      <div className="grid grid-cols-2 gap-4 sm:gap-8">
-                        <p className="text-center text-base sm:text-lg text-black/60">
-                          {w1 && <>{w1.connector} <span className={`font-bold text-black ${calligraphy}`}>{w1.motherName}</span></>}
-                        </p>
-                        <p className="text-center text-base sm:text-lg text-black/60">
-                          {w2 && <>{w2.connector} <span className={`font-bold text-black ${calligraphy}`}>{w2.motherName}</span></>}
-                        </p>
+                      <div className="grid grid-cols-2 gap-4 sm:gap-8 -mt-2">
+                        <div className="text-center">
+                          {w1 && (
+                            <>
+                              <p className={`text-sm sm:text-base text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{w1.connector}</p>
+                              <p className={`font-bold text-black ${nameFont} ${isRtl ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'}`}>{w1.motherName}</p>
+                            </>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          {w2 && (
+                            <>
+                              <p className={`text-sm sm:text-base text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{w2.connector}</p>
+                              <p className={`font-bold text-black ${nameFont} ${isRtl ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'}`}>{w2.motherName}</p>
+                            </>
+                          )}
+                        </div>
                       </div>
                     )}
 
@@ -453,7 +463,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                     {/* Remaining blocks: sentence, couple name, date */}
                     {rest.map((block, i) => (
                       <p key={i} className={boldCheck(block)
-                        ? `text-3xl sm:text-4xl font-bold text-black ${calligraphy}`
+                        ? `font-bold text-black ${nameFont} ${isRtl ? 'text-3xl sm:text-4xl' : 'text-4xl sm:text-5xl'}`
                         : 'text-lg sm:text-xl text-black/80'
                       }>
                         {block}
