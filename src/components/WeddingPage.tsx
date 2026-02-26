@@ -368,19 +368,67 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             <div className="divider-gold mb-8" />
 
             {/* Invitation Text */}
-            <div className={`space-y-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-              {(isRtl ? settings.invitationTextAr : settings.invitationTextEn)
-                .split('\n')
-                .map((line, i) => (
-                  <p key={i} className={`text-black/80 ${
-                    line.includes('Hussein') || line.includes('حسين')
-                      ? `text-2xl sm:text-3xl font-semibold text-black my-3 ${isRtl ? 'font-arabicDisplay' : 'font-display'}`
-                      : 'text-lg sm:text-xl'
-                  }`}>
-                    {line}
-                  </p>
-                ))}
-            </div>
+            {(() => {
+              const text = isRtl ? settings.invitationTextAr : settings.invitationTextEn;
+              // Detect Arabic two-family layout: split by blank lines into blocks
+              const blocks = text.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+              const hasTwoFamilies = isRtl && blocks.length >= 3
+                && blocks[0].includes('وعقيلته') && blocks[1].includes('وعقيلته');
+
+              if (hasTwoFamilies) {
+                const family1Lines = blocks[0].split('\n').map((l) => l.trim());
+                const family2Lines = blocks[1].split('\n').map((l) => l.trim());
+                const rest = blocks.slice(2);
+
+                return (
+                  <div className="font-arabic space-y-6" dir="rtl">
+                    {/* Two families side by side */}
+                    <div className="grid grid-cols-2 gap-4 sm:gap-8">
+                      <div className="text-center">
+                        <p className="text-xl sm:text-2xl font-semibold text-black font-arabicDisplay">{family1Lines[0]}</p>
+                        {family1Lines.slice(1).map((l, i) => (
+                          <p key={i} className="text-base sm:text-lg text-black/60 mt-1">{l}</p>
+                        ))}
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xl sm:text-2xl font-semibold text-black font-arabicDisplay">{family2Lines[0]}</p>
+                        {family2Lines.slice(1).map((l, i) => (
+                          <p key={i} className="text-base sm:text-lg text-black/60 mt-1">{l}</p>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Remaining lines centered */}
+                    {rest.map((block, i) => {
+                      const isBoldLine = block.includes('حسين') || block.includes('سوزان');
+                      return (
+                        <p key={i} className={isBoldLine
+                          ? 'text-2xl sm:text-3xl font-semibold text-black font-arabicDisplay'
+                          : 'text-lg sm:text-xl text-black/80'
+                        }>
+                          {block}
+                        </p>
+                      );
+                    })}
+                  </div>
+                );
+              }
+
+              // Default: simple line-by-line rendering (English + fallback)
+              return (
+                <div className={`space-y-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                  {text.split('\n').map((line, i) => (
+                    <p key={i} className={`text-black/80 ${
+                      line.includes('Hussein') || line.includes('حسين')
+                        ? `text-2xl sm:text-3xl font-semibold text-black my-3 ${isRtl ? 'font-arabicDisplay' : 'font-display'}`
+                        : 'text-lg sm:text-xl'
+                    }`}>
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              );
+            })()}
 
             <div className="divider-gold mt-8" />
           </div>
