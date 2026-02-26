@@ -286,6 +286,11 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               </p>
             </div>
 
+            {/* Sadaqa Allah Al-Azeem */}
+            <p className="font-arabicDisplay text-2xl sm:text-3xl md:text-4xl text-black/70 mb-4" dir="rtl">
+              صدق الله العظيم
+            </p>
+
             {/* English translation */}
             <p className={`text-base sm:text-lg text-black/60 leading-relaxed mb-4 px-4 ${isRtl ? 'font-arabic' : 'font-body italic'}`}>
               {t(locale, 'quranVerseTranslation')}
@@ -313,10 +318,6 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               {t(locale, 'quranPairsRef')}
             </p>
 
-            {/* Sadaqa Allah Al-Azeem */}
-            <p className="font-arabicDisplay text-2xl sm:text-3xl md:text-4xl text-black/70 mt-6" dir="rtl">
-              صدق الله العظيم
-            </p>
           </div>
           <ScrollArrow />
         </section>
