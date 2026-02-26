@@ -100,15 +100,15 @@ export default function RsvpTracking() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">RSVP Tracking</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">RSVP Tracking</h1>
         <button onClick={exportCsv} className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
           📥 Export CSV
         </button>
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center">
           <p className="text-2xl font-bold text-blue-700">{groups.length}</p>
           <p className="text-xs text-blue-500">Total Groups</p>

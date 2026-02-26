@@ -355,7 +355,7 @@ export default function GuestsPage() {
           {/* Add guest form */}
           <div className="admin-card mb-6">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Add New Guest</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
               <input type="text" value={newGuest.name} onChange={(e) => setNewGuest({ ...newGuest, name: e.target.value })} placeholder="Full Name" className="border rounded px-3 py-2 text-sm" />
               <input type="text" value={newGuest.phone} onChange={(e) => setNewGuest({ ...newGuest, phone: e.target.value })} placeholder="Phone" className="border rounded px-3 py-2 text-sm" />
               <select value={newGuest.side} onChange={(e) => setNewGuest({ ...newGuest, side: e.target.value })} className="border rounded px-3 py-2 text-sm">

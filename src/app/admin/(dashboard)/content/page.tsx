@@ -73,8 +73,8 @@ export default function ContentEditor() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Content & Settings</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Content & Settings</h1>
         <div className="flex items-center gap-3">
           {saveError && <p className="text-sm text-red-600">{saveError}</p>}
           <button
@@ -109,7 +109,7 @@ export default function ContentEditor() {
         {activeTab === 'hero' && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold mb-2">Hero Section</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Groom Name (EN)" value={settings.groomNameEn} onChange={(v) => update('groomNameEn', v)} />
               <Field label="Groom Name (AR)" value={settings.groomNameAr} onChange={(v) => update('groomNameAr', v)} dir="rtl" />
               <Field label="Bride Name (EN)" value={settings.brideNameEn} onChange={(v) => update('brideNameEn', v)} />
@@ -155,7 +155,7 @@ export default function ContentEditor() {
             {/* Family 1 */}
             <div className="bg-gray-50 rounded-lg p-4 space-y-3">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Family 1 (Left side)</h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="Title / Prefix (EN)" value={settings.invPrefix1En} onChange={(v) => update('invPrefix1En', v)} />
                 <Field label="Title / Prefix (AR)" value={settings.invPrefix1Ar} onChange={(v) => update('invPrefix1Ar', v)} dir="rtl" />
                 <Field label="Father Name (EN)" value={settings.invFather1En} onChange={(v) => update('invFather1En', v)} />
@@ -170,7 +170,7 @@ export default function ContentEditor() {
             {/* Family 2 */}
             <div className="bg-gray-50 rounded-lg p-4 space-y-3">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Family 2 (Right side)</h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="Title / Prefix (EN)" value={settings.invPrefix2En} onChange={(v) => update('invPrefix2En', v)} />
                 <Field label="Title / Prefix (AR)" value={settings.invPrefix2Ar} onChange={(v) => update('invPrefix2Ar', v)} dir="rtl" />
                 <Field label="Father Name (EN)" value={settings.invFather2En} onChange={(v) => update('invFather2En', v)} />
@@ -185,7 +185,7 @@ export default function ContentEditor() {
             {/* Invitation body, couple, date */}
             <div className="bg-gray-50 rounded-lg p-4 space-y-3">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Invitation Text</h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <TextArea label="Body Text (EN)" value={settings.invBodyEn} onChange={(v) => update('invBodyEn', v)} rows={2} />
                 <TextArea label="Body Text (AR)" value={settings.invBodyAr} onChange={(v) => update('invBodyAr', v)} rows={2} dir="rtl" />
                 <Field label="Couple Names (EN)" value={settings.invCoupleEn} onChange={(v) => update('invCoupleEn', v)} />
@@ -212,7 +212,7 @@ export default function ContentEditor() {
         {activeTab === 'location' && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold mb-2">Location Section</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Event Date" value={settings.eventDate} onChange={(v) => update('eventDate', v)} />
               <Field label="Event Time" value={settings.eventTime} onChange={(v) => update('eventTime', v)} />
               <Field label="Venue Name (EN)" value={settings.venueNameEn} onChange={(v) => update('venueNameEn', v)} />
