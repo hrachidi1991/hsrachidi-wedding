@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
 
     let created = 0;
     let groupsCreated = 0;
+    const existingGroupCodes: string[] = [];
 
     for (const g of guests) {
       if (!g.name || !g.groupCode) continue;
@@ -32,6 +33,8 @@ export async function POST(request: NextRequest) {
           },
         });
         groupsCreated++;
+      } else if (!existingGroupCodes.includes(g.groupCode)) {
+        existingGroupCodes.push(g.groupCode);
       }
 
       await prisma.guest.create({
@@ -46,7 +49,17 @@ export async function POST(request: NextRequest) {
       created++;
     }
 
-    return NextResponse.json({ created, groupsCreated });
+    // Update maxGuests for groups that had guests added
+    const allAffectedCodes = [...new Set(guests.map((g: any) => g.groupCode).filter(Boolean))];
+    for (const code of allAffectedCodes) {
+      const count = await prisma.guest.count({ where: { groupCode: code } });
+      await prisma.guestGroup.update({
+        where: { groupCode: code },
+        data: { maxGuests: count },
+      });
+    }
+
+    return NextResponse.json({ created, groupsCreated, existingGroupCodes });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
