@@ -646,9 +646,12 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             <div className="divider-gold mb-8" />
 
             <div className="bg-black/5 backdrop-blur-sm rounded-lg p-4 sm:p-6 max-w-sm mx-auto border border-black/10">
-              <p className={`text-xl sm:text-2xl font-semibold text-black mb-4 ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
-                {settings.giftProviderName}
-              </p>
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <img src="/images/whish.png" alt="Whish Money" className="h-9 sm:h-10 w-auto object-contain" />
+                <p className={`text-xl sm:text-2xl font-semibold text-black ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
+                  {settings.giftProviderName}
+                </p>
+              </div>
               <div className={`space-y-3 text-base ${isRtl ? 'text-right font-arabic' : 'text-left font-body'}`}>
                 <div className="flex justify-between items-center">
                   <span className="text-black/40">Account ID</span>
