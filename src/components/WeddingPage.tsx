@@ -365,12 +365,15 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             </>
           )}
           <div className={`section-content max-w-2xl transition-all duration-1000 delay-200 ${sectionVisible(4) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            {/* Top ornamental gold line */}
-            <div className="flex items-center justify-center gap-3 mb-8">
-              <span className="text-[#C9A96E] text-xs">&#9830;</span>
-              <div className="h-px w-24 sm:w-36 bg-gradient-to-r from-transparent via-[#C9A96E] to-transparent" />
-              <span className="text-[#C9A96E] text-xs">&#9830;</span>
-            </div>
+            {/* Top ornamental gold crown line */}
+            <svg className="w-48 sm:w-64 h-6 mx-auto mb-8" viewBox="0 0 200 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="0" y1="12" x2="75" y2="12" stroke="#C9A96E" strokeWidth="0.5" />
+              <line x1="125" y1="12" x2="200" y2="12" stroke="#C9A96E" strokeWidth="0.5" />
+              <path d="M80 12 Q85 4 90 8 Q95 2 100 6 Q105 2 110 8 Q115 4 120 12" stroke="#C9A96E" strokeWidth="0.8" fill="none" />
+              <path d="M85 12 Q90 8 95 10 Q100 6 105 10 Q110 8 115 12" stroke="#C9A96E" strokeWidth="0.6" fill="none" />
+              <circle cx="100" cy="5" r="1" fill="#C9A96E" />
+              <path d="M80 12 Q85 20 90 16 Q95 22 100 18 Q105 22 110 16 Q115 20 120 12" stroke="#C9A96E" strokeWidth="0.5" fill="none" opacity="0.4" />
+            </svg>
 
             {/* Invitation — structured fields */}
             {(() => {
@@ -419,12 +422,15 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                     </div>
                   )}
 
-                  {/* Middle ornamental gold line */}
-                  <div className="flex items-center justify-center gap-3 my-2">
-                    <span className="text-[#C9A96E] text-xs">&#9830;</span>
-                    <div className="h-px w-24 sm:w-36 bg-gradient-to-r from-transparent via-[#C9A96E] to-transparent" />
-                    <span className="text-[#C9A96E] text-xs">&#9830;</span>
-                  </div>
+                  {/* Middle ornamental gold crown line */}
+                  <svg className="w-48 sm:w-64 h-6 mx-auto my-2" viewBox="0 0 200 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="0" y1="12" x2="75" y2="12" stroke="#C9A96E" strokeWidth="0.5" />
+                    <line x1="125" y1="12" x2="200" y2="12" stroke="#C9A96E" strokeWidth="0.5" />
+                    <path d="M80 12 Q85 4 90 8 Q95 2 100 6 Q105 2 110 8 Q115 4 120 12" stroke="#C9A96E" strokeWidth="0.8" fill="none" />
+                    <path d="M85 12 Q90 8 95 10 Q100 6 105 10 Q110 8 115 12" stroke="#C9A96E" strokeWidth="0.6" fill="none" />
+                    <circle cx="100" cy="5" r="1" fill="#C9A96E" />
+                    <path d="M80 12 Q85 20 90 16 Q95 22 100 18 Q105 22 110 16 Q115 20 120 12" stroke="#C9A96E" strokeWidth="0.5" fill="none" opacity="0.4" />
+                  </svg>
 
                   {/* Body text */}
                   {body && body.split('\n').map((line, i) => (
@@ -444,12 +450,15 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               );
             })()}
 
-            {/* Bottom ornamental gold line */}
-            <div className="flex items-center justify-center gap-3 mt-8">
-              <span className="text-[#C9A96E] text-xs">&#9830;</span>
-              <div className="h-px w-24 sm:w-36 bg-gradient-to-r from-transparent via-[#C9A96E] to-transparent" />
-              <span className="text-[#C9A96E] text-xs">&#9830;</span>
-            </div>
+            {/* Bottom ornamental gold crown line (mirrored) */}
+            <svg className="w-48 sm:w-64 h-6 mx-auto mt-8 rotate-180" viewBox="0 0 200 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="0" y1="12" x2="75" y2="12" stroke="#C9A96E" strokeWidth="0.5" />
+              <line x1="125" y1="12" x2="200" y2="12" stroke="#C9A96E" strokeWidth="0.5" />
+              <path d="M80 12 Q85 4 90 8 Q95 2 100 6 Q105 2 110 8 Q115 4 120 12" stroke="#C9A96E" strokeWidth="0.8" fill="none" />
+              <path d="M85 12 Q90 8 95 10 Q100 6 105 10 Q110 8 115 12" stroke="#C9A96E" strokeWidth="0.6" fill="none" />
+              <circle cx="100" cy="5" r="1" fill="#C9A96E" />
+              <path d="M80 12 Q85 20 90 16 Q95 22 100 18 Q105 22 110 16 Q115 20 120 12" stroke="#C9A96E" strokeWidth="0.5" fill="none" opacity="0.4" />
+            </svg>
           </div>
           <ScrollArrow />
         </section>
