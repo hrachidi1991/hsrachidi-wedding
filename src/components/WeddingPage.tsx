@@ -373,48 +373,90 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               const blocks = text.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
               const nameFont = isRtl ? 'font-arabicDisplay' : 'font-script';
 
-              // Split prefix (Al Haj / Mr. / الحاج / السيد) from father name
-              const splitPrefix = (line: string): { prefix: string; name: string } => {
-                const prefixes = isRtl
-                  ? ['الحاج', 'السيد', 'الشيخ', 'الدكتور']
-                  : ['Al Haj', 'Al-Haj', 'Mr.', 'Mr', 'Mrs.', 'Mrs', 'Dr.', 'Dr', 'Sheikh'];
-                for (const p of prefixes) {
-                  if (line.startsWith(p + ' ')) {
-                    return { prefix: p, name: line.slice(p.length + 1).trim() };
+              // Known title prefixes
+              const prefixes = isRtl
+                ? ['الحاج', 'السيد', 'الشيخ', 'الدكتور']
+                : ['Al Haj', 'Al-Haj', 'Mr.', 'Mr', 'Mrs.', 'Mrs', 'Dr.', 'Dr', 'Sheikh'];
+
+              // Wife/husband connector patterns
+              const wifePatterns = isRtl
+                ? ['وعقيلته', 'وعقيلتها']
+                : ['& his wife', '& her husband', 'and his wife', 'and her husband'];
+
+              // Check if a line is a prefix
+              const isPrefix = (line: string) => prefixes.some((p) => line === p || line === p + '.');
+
+              // Check if a line is a wife connector
+              const isWifeConnector = (line: string) => wifePatterns.some((w) => line.toLowerCase() === w.toLowerCase());
+
+              // Check if a line starts with a wife connector (connector + name on same line)
+              const startsWithWife = (line: string) => wifePatterns.some((w) => line.toLowerCase().startsWith(w.toLowerCase()));
+
+              // Parse a family block into { prefix, fatherName, connector, motherName }
+              const parseFamily = (block: string) => {
+                const lines = block.split('\n').map((l) => l.trim());
+                let prefix = '';
+                let fatherName = '';
+                let connector = '';
+                let motherName = '';
+
+                let idx = 0;
+                // Line could be prefix alone
+                if (idx < lines.length && isPrefix(lines[idx])) {
+                  prefix = lines[idx];
+                  idx++;
+                }
+                // Or prefix + name on same line
+                if (!prefix && idx < lines.length) {
+                  for (const p of prefixes) {
+                    if (lines[idx].startsWith(p + ' ')) {
+                      prefix = p;
+                      fatherName = lines[idx].slice(p.length + 1).trim();
+                      idx++;
+                      break;
+                    }
                   }
                 }
-                return { prefix: '', name: line };
-              };
-
-              // Split "and his wife Leila" → { connector, motherName }
-              const splitWifeLine = (line: string): { connector: string; motherName: string } => {
-                const connectors = isRtl
-                  ? ['وعقيلته', 'وعقيلتها']
-                  : ['and his wife', 'and her husband'];
-                for (const c of connectors) {
-                  if (line.startsWith(c + ' ') || line.startsWith(c)) {
-                    const rest = line.slice(c.length).trim();
-                    return { connector: c, motherName: rest };
+                // Father name on its own line
+                if (!fatherName && idx < lines.length) {
+                  fatherName = lines[idx];
+                  idx++;
+                }
+                // Connector + mother: could be "& his wife\nLeila" or "& his wife Leila" or "وعقيلته ليلى"
+                if (idx < lines.length) {
+                  if (isWifeConnector(lines[idx])) {
+                    connector = lines[idx];
+                    idx++;
+                    if (idx < lines.length) {
+                      motherName = lines[idx];
+                    }
+                  } else if (startsWithWife(lines[idx])) {
+                    for (const w of wifePatterns) {
+                      if (lines[idx].toLowerCase().startsWith(w.toLowerCase())) {
+                        connector = lines[idx].slice(0, w.length);
+                        motherName = lines[idx].slice(w.length).trim();
+                        break;
+                      }
+                    }
+                    // If mother name is on next line
+                    if (!motherName && idx + 1 < lines.length) {
+                      idx++;
+                      motherName = lines[idx];
+                    }
                   }
                 }
-                return { connector: '', motherName: line };
+
+                return { prefix, fatherName, connector, motherName };
               };
 
-              const hasTwoFamilies = blocks.length >= 3
-                && (isRtl
-                  ? blocks[0].includes('وعقيلته') && blocks[1].includes('وعقيلته')
-                  : (blocks[0].toLowerCase().includes('and his wife') || blocks[0].toLowerCase().includes('and her husband'))
-                    && (blocks[1].toLowerCase().includes('and his wife') || blocks[1].toLowerCase().includes('and her husband')));
+              // Detect two-family layout
+              const hasWifePattern = (block: string) => wifePatterns.some((w) => block.toLowerCase().includes(w.toLowerCase()));
+              const hasTwoFamilies = blocks.length >= 3 && hasWifePattern(blocks[0]) && hasWifePattern(blocks[1]);
 
               if (hasTwoFamilies) {
-                const f1Lines = blocks[0].split('\n').map((l) => l.trim());
-                const f2Lines = blocks[1].split('\n').map((l) => l.trim());
+                const f1 = parseFamily(blocks[0]);
+                const f2 = parseFamily(blocks[1]);
                 const rest = blocks.slice(2);
-
-                const f1 = splitPrefix(f1Lines[0]);
-                const f2 = splitPrefix(f2Lines[0]);
-                const w1 = f1Lines[1] ? splitWifeLine(f1Lines[1]) : null;
-                const w2 = f2Lines[1] ? splitWifeLine(f2Lines[1]) : null;
 
                 const boldCheck = isRtl
                   ? (b: string) => b.includes('حسين') || b.includes('سوزان')
@@ -425,36 +467,30 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                     {/* Row 1: Prefixes aligned */}
                     {(f1.prefix || f2.prefix) && (
                       <div className="grid grid-cols-2 gap-4 sm:gap-8">
-                        <p className={`text-center text-sm sm:text-base tracking-[0.15em] text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{f1.prefix}</p>
-                        <p className={`text-center text-sm sm:text-base tracking-[0.15em] text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{f2.prefix}</p>
+                        <p className={`text-center text-base sm:text-lg font-bold text-black ${isRtl ? 'font-arabic' : 'font-body'}`}>{f1.prefix}</p>
+                        <p className={`text-center text-base sm:text-lg font-bold text-black ${isRtl ? 'font-arabic' : 'font-body'}`}>{f2.prefix}</p>
                       </div>
                     )}
 
-                    {/* Row 2: Father names — bold, hero font */}
-                    <div className="grid grid-cols-2 gap-4 sm:gap-8">
-                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'}`}>{f1.name}</p>
-                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'}`}>{f2.name}</p>
+                    {/* Row 2: Father names — bold, hero calligraphy font */}
+                    <div className="grid grid-cols-2 gap-4 sm:gap-8 -mt-2">
+                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'}`}>{f1.fatherName}</p>
+                      <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'}`}>{f2.fatherName}</p>
                     </div>
 
-                    {/* Row 3: "and his wife" + mother name beneath in smaller font */}
-                    {(w1 || w2) && (
+                    {/* Row 3: connector ("& his wife") */}
+                    {(f1.connector || f2.connector) && (
                       <div className="grid grid-cols-2 gap-4 sm:gap-8 -mt-2">
-                        <div className="text-center">
-                          {w1 && (
-                            <>
-                              <p className={`text-sm sm:text-base text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{w1.connector}</p>
-                              <p className={`font-bold text-black ${nameFont} ${isRtl ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'}`}>{w1.motherName}</p>
-                            </>
-                          )}
-                        </div>
-                        <div className="text-center">
-                          {w2 && (
-                            <>
-                              <p className={`text-sm sm:text-base text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{w2.connector}</p>
-                              <p className={`font-bold text-black ${nameFont} ${isRtl ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'}`}>{w2.motherName}</p>
-                            </>
-                          )}
-                        </div>
+                        <p className={`text-center text-sm sm:text-base text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{f1.connector}</p>
+                        <p className={`text-center text-sm sm:text-base text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>{f2.connector}</p>
+                      </div>
+                    )}
+
+                    {/* Row 4: Mother names — bold calligraphy, smaller than father */}
+                    {(f1.motherName || f2.motherName) && (
+                      <div className="grid grid-cols-2 gap-4 sm:gap-8 -mt-2">
+                        <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'}`}>{f1.motherName}</p>
+                        <p className={`text-center font-bold text-black ${nameFont} ${isRtl ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'}`}>{f2.motherName}</p>
                       </div>
                     )}
 
