@@ -389,8 +389,8 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
                   {/* Row 2: Father names — bold, Trajan Pro style for EN, Arabic calligraphy for AR */}
                   <div className="grid grid-cols-2 gap-2 sm:gap-8 -mt-2">
-                    <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-2xl sm:text-4xl' : 'font-trajan text-[clamp(1rem,4.5vw,2.25rem)]'}`}>{father1}</p>
-                    <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-2xl sm:text-4xl' : 'font-trajan text-[clamp(1rem,4.5vw,2.25rem)]'}`}>{father2}</p>
+                    <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-2xl sm:text-4xl' : 'font-trajan text-[clamp(0.75rem,3.2vw,1.35rem)]'}`}>{father1}</p>
+                    <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-2xl sm:text-4xl' : 'font-trajan text-[clamp(0.75rem,3.2vw,1.35rem)]'}`}>{father2}</p>
                   </div>
 
                   {/* Row 3: Connectors */}
