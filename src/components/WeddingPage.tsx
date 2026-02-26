@@ -366,14 +366,38 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             </>
           )}
           <div className={`section-content max-w-2xl transition-all duration-1000 delay-200 ${sectionVisible(4) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            {/* Top ornamental gold crown line */}
-            <svg className="w-48 sm:w-64 h-6 mx-auto mb-8" viewBox="0 0 200 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <line x1="0" y1="12" x2="75" y2="12" stroke="#C9A96E" strokeWidth="0.5" />
-              <line x1="125" y1="12" x2="200" y2="12" stroke="#C9A96E" strokeWidth="0.5" />
-              <path d="M80 12 Q85 4 90 8 Q95 2 100 6 Q105 2 110 8 Q115 4 120 12" stroke="#C9A96E" strokeWidth="0.8" fill="none" />
-              <path d="M85 12 Q90 8 95 10 Q100 6 105 10 Q110 8 115 12" stroke="#C9A96E" strokeWidth="0.6" fill="none" />
-              <circle cx="100" cy="5" r="1" fill="#C9A96E" />
-              <path d="M80 12 Q85 20 90 16 Q95 22 100 18 Q105 22 110 16 Q115 20 120 12" stroke="#C9A96E" strokeWidth="0.5" fill="none" opacity="0.4" />
+            {/* Top ornamental gold crown */}
+            <svg className="w-56 sm:w-72 h-10 mx-auto mb-6" viewBox="0 0 280 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Left extending line with taper */}
+              <line x1="0" y1="22" x2="90" y2="22" stroke="#C9A96E" strokeWidth="0.4" opacity="0.6" />
+              <line x1="60" y1="22" x2="95" y2="22" stroke="#C9A96E" strokeWidth="0.7" />
+              {/* Right extending line with taper */}
+              <line x1="190" y1="22" x2="280" y2="22" stroke="#C9A96E" strokeWidth="0.4" opacity="0.6" />
+              <line x1="185" y1="22" x2="220" y2="22" stroke="#C9A96E" strokeWidth="0.7" />
+              {/* Left scroll — outer curl */}
+              <path d="M95 22 C90 22 86 18 88 14 C90 10 96 10 98 14 C99 16 97 18 95 17" stroke="#C9A96E" strokeWidth="0.7" fill="none" />
+              {/* Left scroll — inner spiral */}
+              <path d="M95 17 C93 16 93 14 95 13 C97 12 98 14 97 15" stroke="#C9A96E" strokeWidth="0.5" fill="none" />
+              {/* Right scroll — outer curl (mirrored) */}
+              <path d="M185 22 C190 22 194 18 192 14 C190 10 184 10 182 14 C181 16 183 18 185 17" stroke="#C9A96E" strokeWidth="0.7" fill="none" />
+              {/* Right scroll — inner spiral */}
+              <path d="M185 17 C187 16 187 14 185 13 C183 12 182 14 183 15" stroke="#C9A96E" strokeWidth="0.5" fill="none" />
+              {/* Center fleur — left petal */}
+              <path d="M130 22 C128 18 125 14 128 10 C130 7 134 6 136 9 C138 12 136 16 140 14" stroke="#C9A96E" strokeWidth="0.7" fill="none" />
+              {/* Center fleur — right petal (mirrored) */}
+              <path d="M150 22 C152 18 155 14 152 10 C150 7 146 6 144 9 C142 12 144 16 140 14" stroke="#C9A96E" strokeWidth="0.7" fill="none" />
+              {/* Center spike */}
+              <path d="M140 14 L140 5" stroke="#C9A96E" strokeWidth="0.6" />
+              <circle cx="140" cy="4" r="1.2" fill="#C9A96E" />
+              {/* Small leaf flourishes from center */}
+              <path d="M137 10 C135 8 133 9 134 11" stroke="#C9A96E" strokeWidth="0.4" fill="none" />
+              <path d="M143 10 C145 8 147 9 146 11" stroke="#C9A96E" strokeWidth="0.4" fill="none" />
+              {/* Connecting arcs from scrolls to center */}
+              <path d="M98 20 C110 16 125 20 130 22" stroke="#C9A96E" strokeWidth="0.5" fill="none" />
+              <path d="M182 20 C170 16 155 20 150 22" stroke="#C9A96E" strokeWidth="0.5" fill="none" />
+              {/* Tiny dots accent */}
+              <circle cx="108" cy="19" r="0.6" fill="#C9A96E" opacity="0.5" />
+              <circle cx="172" cy="19" r="0.6" fill="#C9A96E" opacity="0.5" />
             </svg>
 
             {/* Invitation — structured fields */}
@@ -423,14 +447,12 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                     </div>
                   )}
 
-                  {/* Middle ornamental gold crown line */}
-                  <svg className="w-48 sm:w-64 h-6 mx-auto my-2" viewBox="0 0 200 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="0" y1="12" x2="75" y2="12" stroke="#C9A96E" strokeWidth="0.5" />
-                    <line x1="125" y1="12" x2="200" y2="12" stroke="#C9A96E" strokeWidth="0.5" />
-                    <path d="M80 12 Q85 4 90 8 Q95 2 100 6 Q105 2 110 8 Q115 4 120 12" stroke="#C9A96E" strokeWidth="0.8" fill="none" />
-                    <path d="M85 12 Q90 8 95 10 Q100 6 105 10 Q110 8 115 12" stroke="#C9A96E" strokeWidth="0.6" fill="none" />
-                    <circle cx="100" cy="5" r="1" fill="#C9A96E" />
-                    <path d="M80 12 Q85 20 90 16 Q95 22 100 18 Q105 22 110 16 Q115 20 120 12" stroke="#C9A96E" strokeWidth="0.5" fill="none" opacity="0.4" />
+                  {/* Middle ornamental gold divider — simpler flourish */}
+                  <svg className="w-40 sm:w-56 h-6 mx-auto my-2" viewBox="0 0 220 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="0" y1="12" x2="80" y2="12" stroke="#C9A96E" strokeWidth="0.4" opacity="0.6" />
+                    <line x1="140" y1="12" x2="220" y2="12" stroke="#C9A96E" strokeWidth="0.4" opacity="0.6" />
+                    <path d="M80 12 C85 12 90 8 95 8 C100 8 105 12 110 12 C115 12 120 8 125 8 C130 8 135 12 140 12" stroke="#C9A96E" strokeWidth="0.7" fill="none" />
+                    <circle cx="110" cy="8" r="1" fill="#C9A96E" />
                   </svg>
 
                   {/* Body text */}
@@ -451,14 +473,26 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               );
             })()}
 
-            {/* Bottom ornamental gold crown line (mirrored) */}
-            <svg className="w-48 sm:w-64 h-6 mx-auto mt-8 rotate-180" viewBox="0 0 200 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <line x1="0" y1="12" x2="75" y2="12" stroke="#C9A96E" strokeWidth="0.5" />
-              <line x1="125" y1="12" x2="200" y2="12" stroke="#C9A96E" strokeWidth="0.5" />
-              <path d="M80 12 Q85 4 90 8 Q95 2 100 6 Q105 2 110 8 Q115 4 120 12" stroke="#C9A96E" strokeWidth="0.8" fill="none" />
-              <path d="M85 12 Q90 8 95 10 Q100 6 105 10 Q110 8 115 12" stroke="#C9A96E" strokeWidth="0.6" fill="none" />
-              <circle cx="100" cy="5" r="1" fill="#C9A96E" />
-              <path d="M80 12 Q85 20 90 16 Q95 22 100 18 Q105 22 110 16 Q115 20 120 12" stroke="#C9A96E" strokeWidth="0.5" fill="none" opacity="0.4" />
+            {/* Bottom ornamental gold crown (flipped) */}
+            <svg className="w-56 sm:w-72 h-10 mx-auto mt-6 rotate-180" viewBox="0 0 280 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="0" y1="22" x2="90" y2="22" stroke="#C9A96E" strokeWidth="0.4" opacity="0.6" />
+              <line x1="60" y1="22" x2="95" y2="22" stroke="#C9A96E" strokeWidth="0.7" />
+              <line x1="190" y1="22" x2="280" y2="22" stroke="#C9A96E" strokeWidth="0.4" opacity="0.6" />
+              <line x1="185" y1="22" x2="220" y2="22" stroke="#C9A96E" strokeWidth="0.7" />
+              <path d="M95 22 C90 22 86 18 88 14 C90 10 96 10 98 14 C99 16 97 18 95 17" stroke="#C9A96E" strokeWidth="0.7" fill="none" />
+              <path d="M95 17 C93 16 93 14 95 13 C97 12 98 14 97 15" stroke="#C9A96E" strokeWidth="0.5" fill="none" />
+              <path d="M185 22 C190 22 194 18 192 14 C190 10 184 10 182 14 C181 16 183 18 185 17" stroke="#C9A96E" strokeWidth="0.7" fill="none" />
+              <path d="M185 17 C187 16 187 14 185 13 C183 12 182 14 183 15" stroke="#C9A96E" strokeWidth="0.5" fill="none" />
+              <path d="M130 22 C128 18 125 14 128 10 C130 7 134 6 136 9 C138 12 136 16 140 14" stroke="#C9A96E" strokeWidth="0.7" fill="none" />
+              <path d="M150 22 C152 18 155 14 152 10 C150 7 146 6 144 9 C142 12 144 16 140 14" stroke="#C9A96E" strokeWidth="0.7" fill="none" />
+              <path d="M140 14 L140 5" stroke="#C9A96E" strokeWidth="0.6" />
+              <circle cx="140" cy="4" r="1.2" fill="#C9A96E" />
+              <path d="M137 10 C135 8 133 9 134 11" stroke="#C9A96E" strokeWidth="0.4" fill="none" />
+              <path d="M143 10 C145 8 147 9 146 11" stroke="#C9A96E" strokeWidth="0.4" fill="none" />
+              <path d="M98 20 C110 16 125 20 130 22" stroke="#C9A96E" strokeWidth="0.5" fill="none" />
+              <path d="M182 20 C170 16 155 20 150 22" stroke="#C9A96E" strokeWidth="0.5" fill="none" />
+              <circle cx="108" cy="19" r="0.6" fill="#C9A96E" opacity="0.5" />
+              <circle cx="172" cy="19" r="0.6" fill="#C9A96E" opacity="0.5" />
             </svg>
           </div>
           <ScrollArrow />
