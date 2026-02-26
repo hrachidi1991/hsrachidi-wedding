@@ -379,33 +379,33 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
               return (
                 <div className={`${isRtl ? 'font-arabic' : 'font-body'} space-y-4`} dir={isRtl ? 'rtl' : 'ltr'}>
-                  {/* Row 1: Prefixes aligned */}
+                  {/* Row 1: Prefixes — smallest text */}
                   {(prefix1 || prefix2) && (
                     <div className="grid grid-cols-2 gap-2 sm:gap-8">
-                      <p className={`text-center font-bold text-black ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-sm sm:text-lg'}`}>{prefix1}</p>
-                      <p className={`text-center font-bold text-black ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-sm sm:text-lg'}`}>{prefix2}</p>
+                      <p className={`text-center font-bold text-black ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-[0.7rem] sm:text-base'}`}>{prefix1}</p>
+                      <p className={`text-center font-bold text-black ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-[0.7rem] sm:text-base'}`}>{prefix2}</p>
                     </div>
                   )}
 
-                  {/* Row 2: Father names — bold, Trajan Pro style for EN, Arabic calligraphy for AR */}
+                  {/* Row 2: Father names — largest, Trajan/Cinzel */}
                   <div className="grid grid-cols-2 gap-2 sm:gap-8 -mt-2">
-                    <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-2xl sm:text-4xl' : 'font-trajan text-[clamp(0.75rem,3.2vw,1.35rem)]'}`}>{father1}</p>
-                    <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-2xl sm:text-4xl' : 'font-trajan text-[clamp(0.75rem,3.2vw,1.35rem)]'}`}>{father2}</p>
+                    <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-2xl sm:text-4xl' : 'font-trajan text-[clamp(0.8rem,3.5vw,1.4rem)]'}`}>{father1}</p>
+                    <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-2xl sm:text-4xl' : 'font-trajan text-[clamp(0.8rem,3.5vw,1.4rem)]'}`}>{father2}</p>
                   </div>
 
                   {/* Row 3: Connectors */}
                   {(conn1 || conn2) && (
                     <div className="grid grid-cols-2 gap-2 sm:gap-8 -mt-2">
-                      <p className={`text-center text-black/50 ${isRtl ? 'text-base sm:text-lg font-arabic' : 'text-xs sm:text-base font-body'}`}>{conn1}</p>
-                      <p className={`text-center text-black/50 ${isRtl ? 'text-base sm:text-lg font-arabic' : 'text-xs sm:text-base font-body'}`}>{conn2}</p>
+                      <p className={`text-center text-black/50 ${isRtl ? 'text-base sm:text-lg font-arabic' : 'text-xs sm:text-sm font-body'}`}>{conn1}</p>
+                      <p className={`text-center text-black/50 ${isRtl ? 'text-base sm:text-lg font-arabic' : 'text-xs sm:text-sm font-body'}`}>{conn2}</p>
                     </div>
                   )}
 
-                  {/* Row 4: Mother names — bold calligraphy, smaller than father */}
+                  {/* Row 4: Mother names — slightly smaller than father */}
                   {(mother1 || mother2) && (
                     <div className="grid grid-cols-2 gap-2 sm:gap-8 -mt-2">
-                      <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-xl sm:text-3xl' : 'font-trajan text-[clamp(0.75rem,3.2vw,1.35rem)]'}`}>{mother1}</p>
-                      <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-xl sm:text-3xl' : 'font-trajan text-[clamp(0.75rem,3.2vw,1.35rem)]'}`}>{mother2}</p>
+                      <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-xl sm:text-3xl' : 'font-trajan text-[clamp(0.75rem,3.2vw,1.25rem)]'}`}>{mother1}</p>
+                      <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-xl sm:text-3xl' : 'font-trajan text-[clamp(0.75rem,3.2vw,1.25rem)]'}`}>{mother2}</p>
                     </div>
                   )}
 
