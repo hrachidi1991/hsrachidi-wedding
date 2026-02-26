@@ -281,7 +281,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
             {/* Quran Verse — Ar-Rum 30:21 */}
             <div className="my-6 sm:my-8 px-4">
-              <p className="quran-verse" dir="rtl">
+              <p className="quran-verse font-arabicDisplay text-black/70 leading-relaxed" style={{ fontSize: '110%' }} dir="rtl">
                 {t(locale, 'quranVerse')}
               </p>
             </div>
