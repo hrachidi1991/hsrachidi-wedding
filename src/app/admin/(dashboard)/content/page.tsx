@@ -123,7 +123,7 @@ export default function ContentEditor() {
               >
                 <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.showHeroNames ? 'translate-x-5' : ''}`} />
               </button>
-              <span className="text-sm text-gray-700">Show Hero Names</span>
+              <span className="text-sm text-gray-700">Show Hero Section</span>
               <span className={`text-xs px-2 py-0.5 rounded-full ${settings.showHeroNames ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                 {settings.showHeroNames ? 'Active' : 'Hidden'}
               </span>

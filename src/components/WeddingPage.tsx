@@ -316,20 +316,20 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
           <ScrollArrow />
         </section>
 
-        {/* ═══ SECTION 3 — HERO ═══ */}
-        <section className="scroll-section section-olive" data-section="3">
-          {settings.heroImage && (
-            <>
-              <div className="section-bg" style={{ backgroundImage: `url(${settings.heroImage})` }} />
-              <div className="section-overlay" />
-            </>
-          )}
-          <div className={`section-content transition-all duration-1000 ${sectionVisible(3) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <p className={`text-sm sm:text-base uppercase tracking-[0.15em] sm:tracking-[0.3em] text-black/50 mb-4 sm:mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-              {t(locale, 'weddingOf')}
-            </p>
+        {/* ═══ SECTION 3 — HERO (skipped entirely when toggle is off) ═══ */}
+        {settings.showHeroNames !== false && (
+          <section className="scroll-section section-olive" data-section="3">
+            {settings.heroImage && (
+              <>
+                <div className="section-bg" style={{ backgroundImage: `url(${settings.heroImage})` }} />
+                <div className="section-overlay" />
+              </>
+            )}
+            <div className={`section-content transition-all duration-1000 ${sectionVisible(3) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              <p className={`text-sm sm:text-base uppercase tracking-[0.15em] sm:tracking-[0.3em] text-black/50 mb-4 sm:mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                {t(locale, 'weddingOf')}
+              </p>
 
-            {settings.showHeroNames !== false && (
               <h1 className={`mb-4 ${isRtl ? 'font-arabicDisplay' : 'font-script'}`}>
                 <span className={`block font-light text-black leading-tight ${isRtl ? 'text-5xl sm:text-6xl md:text-7xl' : 'text-6xl sm:text-7xl md:text-8xl'}`}>
                   {isRtl ? settings.groomNameAr : settings.groomNameEn}
@@ -339,17 +339,17 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   {isRtl ? settings.brideNameAr : settings.brideNameEn}
                 </span>
               </h1>
-            )}
 
-            <div className="divider-gold-wide" />
+              <div className="divider-gold-wide" />
 
-            <p className={`text-2xl sm:text-3xl text-black/80 mt-2 font-medium ${isRtl ? 'font-arabic' : 'font-display'}`}>
-              {settings.weddingDate}
-            </p>
+              <p className={`text-2xl sm:text-3xl text-black/80 mt-2 font-medium ${isRtl ? 'font-arabic' : 'font-display'}`}>
+                {settings.weddingDate}
+              </p>
 
-          </div>
-          <ScrollArrow />
-        </section>
+            </div>
+            <ScrollArrow />
+          </section>
+        )}
 
         {/* ═══ SECTION 4 — FORMAL INVITATION ═══ */}
         <section className="scroll-section section-olive" data-section="4">
