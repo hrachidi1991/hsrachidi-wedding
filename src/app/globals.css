@@ -41,23 +41,18 @@ body {
   font-family: 'Aref Ruqaa', serif;
 }
 
-/* Scroll Snap Container */
+/* Continuous scroll container */
 .scroll-container {
   height: 100vh;
   height: 100dvh;
   overflow-y: auto;
-  scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
 
 .scroll-section {
-  height: 100vh;
-  height: 100dvh;
   min-height: 100vh;
   min-height: 100dvh;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -554,5 +549,4 @@ body {
 /* Prevent scrolling during envelope animation */
 .no-scroll {
   overflow: hidden !important;
-  scroll-snap-type: none !important;
 }
