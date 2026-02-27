@@ -304,7 +304,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             <div className="divider-gold-wide" />
 
             {/* "وخلقناكم أزواجا" — large calligraphy */}
-            <p className="font-arabicDisplay text-3xl sm:text-4xl md:text-5xl text-black/80 mt-6 mb-4" dir="rtl">
+            <p className="font-arabicDisplay text-3xl sm:text-4xl md:text-5xl text-[#546A50] mt-6 mb-4" dir="rtl">
               {t(locale, 'quranPairsVerse')}
             </p>
 
