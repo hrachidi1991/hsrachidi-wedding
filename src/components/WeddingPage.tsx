@@ -955,16 +955,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') !sealBreaking && handleOpenEnvelope(); }}
           aria-label="Open envelope"
         >
-          {/* Paper texture background — covers full viewport */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/envelope-bg.png"
-            alt=""
-            className="envelope-bg"
-            draggable={false}
-          />
-
-          {/* Envelope image — centered, keeps aspect ratio */}
+          {/* Envelope image */}
           <div className={`envelope-img-wrapper ${flapsOpening ? 'envelope-slide-down' : ''}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
