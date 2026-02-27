@@ -1008,15 +1008,6 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             draggable={false}
           />
 
-          {/* High-res seal overlay */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/seal.png"
-            alt=""
-            className={`envelope-seal-overlay ${flapsOpening ? 'envelope-start-fade' : ''}`}
-            draggable={false}
-          />
-
           {/* Light burst on break */}
           {flapsOpening && <div className="seal-light-burst" />}
 

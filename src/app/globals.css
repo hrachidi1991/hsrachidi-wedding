@@ -222,19 +222,6 @@ body {
   z-index: 0;
 }
 
-/* High-res seal overlay on top of envelope */
-.envelope-seal-overlay {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -55%);
-  width: clamp(80px, 18vw, 130px);
-  height: auto;
-  pointer-events: none;
-  z-index: 1;
-  border-radius: 50%;
-}
-
 .envelope-start-fade {
   animation: envelopeStartFade 1.2s ease-in-out forwards;
 }
