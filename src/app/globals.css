@@ -210,28 +210,6 @@ body {
   overflow: hidden;
 }
 
-/* Gradient overlays to blend envelope edges into background */
-.seal-viewport::before,
-.seal-viewport::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 20%;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.seal-viewport::before {
-  top: 0;
-  background: linear-gradient(to bottom, rgba(216, 204, 190, 0.7) 0%, rgba(216, 204, 190, 0.3) 40%, transparent 100%);
-}
-
-.seal-viewport::after {
-  bottom: 0;
-  background: linear-gradient(to top, rgba(216, 204, 190, 0.7) 0%, rgba(216, 204, 190, 0.3) 40%, transparent 100%);
-}
-
 /* Full-screen envelope image — fits entire viewport without cropping */
 .envelope-start-img {
   position: absolute;
@@ -242,6 +220,7 @@ body {
   object-position: center;
   pointer-events: none;
   z-index: 0;
+  filter: drop-shadow(0 0 40px rgba(0, 0, 0, 0.08));
 }
 
 .envelope-start-fade {
