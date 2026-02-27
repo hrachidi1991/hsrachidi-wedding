@@ -981,18 +981,24 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
         </div>
       )}
 
-      {/* ═══ WAX SEAL SPLASH — cinematic open animation ═══ */}
+      {/* ═══ ENVELOPE SPLASH — full-screen envelope image ═══ */}
       {!envelopeOpened && (
         <div
-          className={`seal-viewport ${sealBreaking ? 'seal-pressed' : ''} ${flapsOpening ? 'seal-transitioning' : ''}`}
+          className={`seal-viewport ${flapsOpening ? 'seal-transitioning' : ''}`}
           onClick={!sealBreaking ? handleOpenEnvelope : undefined}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') !sealBreaking && handleOpenEnvelope(); }}
           aria-label="Open invitation"
         >
-          {/* Ambient glow behind seal */}
-          <div className="seal-ambient-glow" />
+          {/* Full-screen envelope image */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/envelope-start.png"
+            alt="Wedding envelope"
+            className={`envelope-start-img ${flapsOpening ? 'envelope-start-fade' : ''}`}
+            draggable={false}
+          />
 
           {/* Light burst on break */}
           {flapsOpening && <div className="seal-light-burst" />}
@@ -1010,18 +1016,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             </div>
           )}
 
-          {/* The wax seal */}
-          <div className={`seal-image-wrapper ${sealBreaking && !flapsOpening ? 'seal-press-down' : ''} ${flapsOpening ? 'seal-depart' : ''}`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/seal.png"
-              alt="H&S wax seal"
-              className="seal-image"
-              draggable={false}
-            />
-          </div>
-
-          {/* Text below seal */}
+          {/* Exclusive text */}
           <div className={`seal-text ${sealBreaking ? 'seal-text-fade' : ''}`}>
             <span className="seal-text-ar" dir="rtl">هذه الدعوة حصرية لك</span>
             <span className="seal-text-en">This invitation is exclusive for you</span>
