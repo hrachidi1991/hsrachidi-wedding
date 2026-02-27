@@ -420,8 +420,8 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   {/* Row 1: Prefixes — smallest text */}
                   {(prefix1 || prefix2) && (
                     <div className="grid grid-cols-2 gap-2 sm:gap-8">
-                      <p className={`text-center font-bold text-[#546A50] ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-[0.7rem] sm:text-base'}`}>{prefix1}</p>
-                      <p className={`text-center font-bold text-[#546A50] ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-[0.7rem] sm:text-base'}`}>{prefix2}</p>
+                      <p className={`text-center font-bold text-[#546A50] ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-[clamp(0.8rem,3.5vw,1.4rem)]'}`}>{prefix1}</p>
+                      <p className={`text-center font-bold text-[#546A50] ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-[clamp(0.8rem,3.5vw,1.4rem)]'}`}>{prefix2}</p>
                     </div>
                   )}
 
