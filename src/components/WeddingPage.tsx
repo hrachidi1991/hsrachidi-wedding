@@ -38,6 +38,8 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
   const [envelopeOpened, setEnvelopeOpened] = useState(false);
   const [sealBreaking, setSealBreaking] = useState(false);
   const [flapsOpening, setFlapsOpening] = useState(false);
+  const [showRings, setShowRings] = useState(false);
+  const [ringsPhase, setRingsPhase] = useState<'falling' | 'paired' | 'fading' | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -162,14 +164,31 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
       setFlapsOpening(true);
     }, 500);
 
-    // t=2200ms: Animation complete → remove overlay, reveal invitation
+    // t=1800ms: Seal gone → start ring animation
     setTimeout(() => {
       setEnvelopeOpened(true);
+      setShowRings(true);
+      setRingsPhase('falling');
+    }, 1800);
+
+    // t=3000ms: Rings have met → show paired rings
+    setTimeout(() => {
+      setRingsPhase('paired');
+    }, 3000);
+
+    // t=4200ms: Start fading paired rings
+    setTimeout(() => {
+      setRingsPhase('fading');
+    }, 4200);
+
+    // t=5200ms: Rings done → reveal invitation content
+    setTimeout(() => {
+      setShowRings(false);
       setShowContent(true);
       setTimeout(() => {
         scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
-    }, 2200);
+    }, 5200);
   }, [settings, currentMusicSrc]);
 
   const toggleAudio = () => {
@@ -944,6 +963,42 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
         </section>
 
       </div> {/* close scroll-container */}
+
+      {/* ═══ RING ANIMATION OVERLAY ═══ */}
+      {showRings && (
+        <div className="rings-viewport">
+          {/* Ring A — falls from top-left */}
+          <div className={`ring-single ring-a ${ringsPhase === 'falling' ? 'ring-fall-left' : 'ring-hidden'}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/ring1.png" alt="" draggable={false} />
+          </div>
+
+          {/* Ring B — falls from top-right */}
+          <div className={`ring-single ring-b ${ringsPhase === 'falling' ? 'ring-fall-right' : 'ring-hidden'}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/ring1.png" alt="" draggable={false} />
+          </div>
+
+          {/* Paired rings — appear when they meet */}
+          {(ringsPhase === 'paired' || ringsPhase === 'fading') && (
+            <div className={`rings-paired ${ringsPhase === 'fading' ? 'rings-fade-out' : 'rings-bounce-in'}`}>
+              {/* Golden sparkle burst on contact */}
+              {ringsPhase === 'paired' && (
+                <div className="rings-sparkle-burst">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <span key={i} className="ring-sparkle" style={{
+                      transform: `rotate(${i * 30}deg)`,
+                      animationDelay: `${i * 0.04}s`,
+                    }} />
+                  ))}
+                </div>
+              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/images/rings.png" alt="Wedding rings" draggable={false} />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ═══ WAX SEAL SPLASH — cinematic open animation ═══ */}
       {!envelopeOpened && (
