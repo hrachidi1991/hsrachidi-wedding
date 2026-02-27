@@ -133,16 +133,22 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
     }
   }, [locale, settings.musicFile, settings.musicFileAr]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Intersection observer for section animations
+  // Intersection observer for section animations — hide/show on scroll
   useEffect(() => {
     if (!showContent) return;
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           const idx = parseInt(entry.target.getAttribute('data-section') || '0');
-          if (entry.isIntersecting) {
-            setVisibleSections((prev) => new Set(prev).add(idx));
-          }
+          setVisibleSections((prev) => {
+            const next = new Set(prev);
+            if (entry.isIntersecting) {
+              next.add(idx);
+            } else {
+              next.delete(idx);
+            }
+            return next;
+          });
         });
       },
       { threshold: 0.1 }
