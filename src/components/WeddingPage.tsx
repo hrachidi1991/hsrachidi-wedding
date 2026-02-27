@@ -164,11 +164,15 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
       setFlapsOpening(true);
     }, 500);
 
-    // t=1800ms: Seal gone → start ring animation
+    // t=1800ms: Seal gone → show Quran page + start ring animation on top
     setTimeout(() => {
       setEnvelopeOpened(true);
+      setShowContent(true);
       setShowRings(true);
       setRingsPhase('falling');
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
     }, 1800);
 
     // t=4000ms: Rings have met → show paired rings
@@ -181,13 +185,9 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
       setRingsPhase('fading');
     }, 5200);
 
-    // t=6200ms: Rings done → reveal invitation content
+    // t=6200ms: Rings done
     setTimeout(() => {
       setShowRings(false);
-      setShowContent(true);
-      setTimeout(() => {
-        scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
     }, 6200);
   }, [settings, currentMusicSrc]);
 

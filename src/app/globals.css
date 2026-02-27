@@ -414,7 +414,7 @@ body {
   height: 100vh;
   height: 100dvh;
   z-index: 55;
-  background: url('/images/new_bg.png') center / cover no-repeat;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
