@@ -1016,12 +1016,6 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             </div>
           )}
 
-          {/* Exclusive text */}
-          <div className={`seal-text ${sealBreaking ? 'seal-text-fade' : ''}`}>
-            <span className="seal-text-ar" dir="rtl">هذه الدعوة حصرية لك</span>
-            <span className="seal-text-en">This invitation is exclusive for you</span>
-          </div>
-
           {/* Tap hint */}
           {!sealBreaking && (
             <p className={`seal-tap-hint ${isRtl ? 'font-arabic' : ''}`}>
