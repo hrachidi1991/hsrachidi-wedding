@@ -201,7 +201,7 @@ body {
   height: 100vh;
   height: 100dvh;
   z-index: 50;
-  background: #1A1A1A;
+  background: url('/images/new_bg.png') center / cover no-repeat;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -217,8 +217,8 @@ body {
 }
 
 @keyframes sealBgFade {
-  0%   { opacity: 1; background: #1A1A1A; }
-  50%  { opacity: 1; background: #1A1A1A; }
+  0%   { opacity: 1; }
+  50%  { opacity: 1; }
   85%  { opacity: 1; background: #F8F9FA; }
   100% { opacity: 0; background: #F8F9FA; }
 }
@@ -366,7 +366,7 @@ body {
 .seal-text-ar {
   font-family: 'Aref Ruqaa', serif;
   font-size: clamp(0.9rem, 3.5vw, 1.05rem);
-  color: #FAF8F2;
+  color: #546A50;
   letter-spacing: 0.02em;
   font-weight: 300;
 }
@@ -374,7 +374,7 @@ body {
 .seal-text-en {
   font-family: 'Lora', serif;
   font-size: clamp(0.8rem, 3vw, 0.95rem);
-  color: #FAF8F2;
+  color: #546A50;
   letter-spacing: 0.06em;
   font-weight: 300;
 }
@@ -386,7 +386,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   font-size: clamp(0.7rem, 1.6vw, 0.85rem);
-  color: rgba(250, 248, 242, 0.5);
+  color: rgba(84, 106, 80, 0.5);
   letter-spacing: 0.15em;
   text-transform: uppercase;
   text-align: center;
