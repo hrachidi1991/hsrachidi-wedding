@@ -157,19 +157,19 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     }
 
-    // t=800ms: Seal burst done → envelope slides down, letter rises
+    // t=600ms: Seal burst done → fade out envelope
     setTimeout(() => {
       setFlapsOpening(true);
-    }, 800);
+    }, 600);
 
-    // t=2400ms: Animation complete → remove overlay, enable scrolling
+    // t=1600ms: Animation complete → remove overlay, show Quran page
     setTimeout(() => {
       setEnvelopeOpened(true);
       setShowContent(true);
       setTimeout(() => {
         scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
-    }, 2400);
+    }, 1600);
   }, [settings, currentMusicSrc]);
 
   const toggleAudio = () => {
@@ -969,15 +969,6 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
           {/* Seal-break glow effect */}
           {sealBreaking && !flapsOpening && (
             <div className="seal-break-effect" />
-          )}
-
-          {/* Letter card that slides up */}
-          {flapsOpening && (
-            <div className="letter-reveal">
-              <div className="letter-content">
-                <p className="font-arabic text-2xl text-[#546A50]" dir="rtl">بسم الله الرحمن الرحيم</p>
-              </div>
-            </div>
           )}
 
           {/* Exclusive text — Arabic first, English beneath */}
