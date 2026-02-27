@@ -416,8 +416,9 @@ body {
   z-index: 55;
   background: transparent;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  padding-top: 12%;
   overflow: hidden;
   pointer-events: none;
 }
@@ -451,7 +452,7 @@ body {
 @keyframes ringFallLeft {
   0%   { top: -30%; left: -20%; transform: rotate(0deg); opacity: 1; }
   60%  { opacity: 1; }
-  100% { top: calc(50% - 80px); left: calc(50% - 60px); transform: rotate(20deg); opacity: 1; }
+  100% { top: 10%; left: calc(50% - 60px); transform: rotate(20deg); opacity: 1; }
 }
 
 /* Ring B — falls from top-right to center */
@@ -467,7 +468,7 @@ body {
 @keyframes ringFallRight {
   0%   { top: -30%; right: -20%; transform: rotate(0deg) scaleX(-1); opacity: 1; }
   60%  { opacity: 1; }
-  100% { top: calc(50% - 80px); right: calc(50% - 60px); transform: rotate(-20deg) scaleX(-1); opacity: 1; }
+  100% { top: 10%; right: calc(50% - 60px); transform: rotate(-20deg) scaleX(-1); opacity: 1; }
 }
 
 /* Paired rings — center */
