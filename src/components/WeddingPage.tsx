@@ -157,19 +157,19 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     }
 
-    // t=600ms: Seal burst done → fade out envelope
+    // t=500ms: Seal press done → light burst + seal departure + bg transition
     setTimeout(() => {
       setFlapsOpening(true);
-    }, 600);
+    }, 500);
 
-    // t=1600ms: Animation complete → remove overlay, show Quran page
+    // t=2200ms: Animation complete → remove overlay, reveal invitation
     setTimeout(() => {
       setEnvelopeOpened(true);
       setShowContent(true);
       setTimeout(() => {
         scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
-    }, 1600);
+    }, 2200);
   }, [settings, currentMusicSrc]);
 
   const toggleAudio = () => {
@@ -945,41 +945,55 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
       </div> {/* close scroll-container */}
 
-      {/* ═══ ENVELOPE OVERLAY — realistic open animation ═══ */}
+      {/* ═══ WAX SEAL SPLASH — cinematic open animation ═══ */}
       {!envelopeOpened && (
         <div
-          className={`envelope-viewport ${flapsOpening ? 'envelope-animating' : ''}`}
+          className={`seal-viewport ${sealBreaking ? 'seal-pressed' : ''} ${flapsOpening ? 'seal-transitioning' : ''}`}
           onClick={!sealBreaking ? handleOpenEnvelope : undefined}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') !sealBreaking && handleOpenEnvelope(); }}
-          aria-label="Open envelope"
+          aria-label="Open invitation"
         >
-          {/* Envelope image */}
-          <div className={`envelope-img-wrapper ${flapsOpening ? 'envelope-slide-down' : ''}`}>
+          {/* Ambient glow behind seal */}
+          <div className="seal-ambient-glow" />
+
+          {/* Light burst on break */}
+          {flapsOpening && <div className="seal-light-burst" />}
+
+          {/* Shimmer particles */}
+          {flapsOpening && (
+            <div className="seal-particles">
+              {Array.from({ length: 15 }).map((_, i) => (
+                <span key={i} className="seal-particle" style={{
+                  left: `${10 + Math.random() * 80}%`,
+                  animationDelay: `${Math.random() * 0.8}s`,
+                  animationDuration: `${1 + Math.random() * 1}s`,
+                }} />
+              ))}
+            </div>
+          )}
+
+          {/* The wax seal */}
+          <div className={`seal-image-wrapper ${sealBreaking && !flapsOpening ? 'seal-press-down' : ''} ${flapsOpening ? 'seal-depart' : ''}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/images/envelope.png"
-              alt="Wedding envelope"
-              className="envelope-photo-new"
+              src="/images/seal.png"
+              alt="H&S wax seal"
+              className="seal-image"
               draggable={false}
             />
           </div>
 
-          {/* Seal-break glow effect */}
-          {sealBreaking && !flapsOpening && (
-            <div className="seal-break-effect" />
-          )}
-
-          {/* Exclusive text — Arabic first, English beneath */}
-          <div className={`envelope-exclusive-text ${sealBreaking ? 'text-fading' : ''}`}>
-            <span className="exclusive-ar" dir="rtl">هذه الدعوة حصرية لك</span>
-            <span className="exclusive-en">This invitation is exclusive for you</span>
+          {/* Text below seal */}
+          <div className={`seal-text ${sealBreaking ? 'seal-text-fade' : ''}`}>
+            <span className="seal-text-ar" dir="rtl">هذه الدعوة حصرية لك</span>
+            <span className="seal-text-en">This invitation is exclusive for you</span>
           </div>
 
           {/* Tap hint */}
           {!sealBreaking && (
-            <p className={`envelope-tap-hint ${isRtl ? 'font-arabic' : ''}`}>
+            <p className={`seal-tap-hint ${isRtl ? 'font-arabic' : ''}`}>
               {isRtl ? 'انقر لفتح الدعوة' : 'Tap to open'}
             </p>
           )}

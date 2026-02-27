@@ -190,8 +190,8 @@ body {
   margin-top: 0.5rem;
 }
 
-/* ═══ Full-Viewport Envelope — Realistic Open Animation ═══ */
-.envelope-viewport {
+/* ═══ Wax Seal Splash Page ═══ */
+.seal-viewport {
   position: fixed;
   top: 0;
   left: 0;
@@ -201,116 +201,156 @@ body {
   height: 100vh;
   height: 100dvh;
   z-index: 50;
-  background: #ffffff;
+  background: #1A1A1A;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   overflow: hidden;
+  transition: background 0.8s ease-in-out;
 }
 
-/* Whole viewport fades to white then disappears */
-.envelope-viewport.envelope-animating {
-  animation: envelopeToWhite 1.6s ease-in-out forwards;
+/* Background crossfade to light on transition */
+.seal-viewport.seal-transitioning {
+  animation: sealBgFade 1.7s ease-in-out forwards;
 }
 
-@keyframes envelopeToWhite {
-  0%   { opacity: 1; }
-  60%  { opacity: 1; }
-  100% { opacity: 0; }
+@keyframes sealBgFade {
+  0%   { opacity: 1; background: #1A1A1A; }
+  50%  { opacity: 1; background: #1A1A1A; }
+  85%  { opacity: 1; background: #F8F9FA; }
+  100% { opacity: 0; background: #F8F9FA; }
 }
 
-/* Envelope image wrapper — fills entire viewport, white background for gaps */
-.envelope-img-wrapper {
+/* Ambient pulsing glow behind the seal */
+.seal-ambient-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 340px;
+  height: 340px;
+  transform: translate(-50%, -55%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(58, 74, 46, 0.25) 0%, transparent 70%);
+  animation: sealGlowPulse 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.seal-transitioning .seal-ambient-glow {
+  animation: none;
+  opacity: 0;
+  transition: opacity 0.4s ease-out;
+}
+
+@keyframes sealGlowPulse {
+  0%, 100% { opacity: 0.4; transform: translate(-50%, -55%) scale(1); }
+  50%      { opacity: 0.8; transform: translate(-50%, -55%) scale(1.08); }
+}
+
+/* Golden light burst on break */
+.seal-light-burst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  transform: translate(-50%, -55%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(184, 150, 90, 0.35) 0%, transparent 70%);
+  z-index: 1;
+  animation: lightBurst 0.9s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes lightBurst {
+  0%   { transform: translate(-50%, -55%) scale(0.5); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translate(-50%, -55%) scale(18); opacity: 0; }
+}
+
+/* Seal image wrapper — floating + hover */
+.seal-image-wrapper {
+  position: relative;
+  z-index: 2;
+  width: clamp(200px, 55vw, 260px);
+  animation: sealFloat 5s ease-in-out infinite;
+  transition: transform 0.4s ease;
+}
+
+.seal-image-wrapper:hover {
+  transform: scale(1.06);
+}
+
+@keyframes sealFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+/* Press-down feedback on tap */
+.seal-press-down {
+  animation: sealPressDown 0.15s ease-in forwards !important;
+}
+
+@keyframes sealPressDown {
+  0%   { transform: scale(1); }
+  100% { transform: scale(0.93); }
+}
+
+/* Seal departs — scales up, rotates, fades */
+.seal-depart {
+  animation: sealDepart 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+@keyframes sealDepart {
+  0%   { transform: scale(0.93); opacity: 1; }
+  100% { transform: scale(1.4) rotate(7deg); opacity: 0; }
+}
+
+/* The seal image itself */
+.seal-image {
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 24px rgba(0, 0, 0, 0.4));
+}
+
+/* Shimmer particles */
+.seal-particles {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  background: #ffffff;
-  z-index: 1;
-  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* The envelope photo — cover fills entire viewport, seal stays centered */
-.envelope-photo-new {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  pointer-events: none;
-}
-
-/* Slide-down + fade when flaps opening */
-.envelope-slide-down {
-  transform: translateY(30vh);
-  opacity: 0;
-}
-
-/* Seal-break glow effect — olive radial burst at center */
-.seal-break-effect {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 180px;
-  height: 180px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(84, 106, 80, 0.6) 0%, rgba(84, 106, 80, 0) 70%);
   z-index: 3;
-  animation: sealBurst 0.8s ease-out forwards;
   pointer-events: none;
+  overflow: hidden;
 }
 
-@keyframes sealBurst {
-  0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
-  30%  { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
-  60%  { transform: translate(-50%, -50%) scale(1.5); opacity: 0.7; }
-  100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
-}
-
-/* Letter card that slides up from below */
-.letter-reveal {
+.seal-particle {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2;
-  animation: letterSlideUp 1.0s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  top: 45%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(184, 150, 90, 0.7);
+  animation: particleDrift 1.5s ease-out forwards;
 }
 
-@keyframes letterSlideUp {
-  0%   { transform: translate(-50%, 40vh); opacity: 0; }
-  40%  { opacity: 1; }
-  100% { transform: translate(-50%, -50%); opacity: 1; }
+@keyframes particleDrift {
+  0%   { transform: translateY(0) scale(1); opacity: 0.8; }
+  100% { transform: translateY(-120px) translateX(var(--drift, 20px)) scale(0); opacity: 0; }
 }
 
-.letter-content {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 2.5rem 2rem;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12);
-  text-align: center;
-  min-width: 260px;
-  animation: letterFadeEnd 1.6s ease-in 0.6s forwards;
-}
+.seal-particle:nth-child(odd)  { --drift: -30px; }
+.seal-particle:nth-child(even) { --drift: 25px; }
+.seal-particle:nth-child(3n)   { --drift: -50px; width: 3px; height: 3px; }
+.seal-particle:nth-child(4n)   { --drift: 45px; width: 5px; height: 5px; }
+.seal-particle:nth-child(5n)   { --drift: -15px; }
 
-@keyframes letterFadeEnd {
-  0%   { opacity: 1; }
-  70%  { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-/* "This invitation is exclusive for you" text over the image */
-.envelope-exclusive-text {
-  position: absolute;
-  bottom: clamp(7rem, 16vh, 12rem);
-  left: 50%;
-  transform: translateX(-50%);
+/* Text below the seal */
+.seal-text {
+  margin-top: 2.5rem;
   text-align: center;
   pointer-events: none;
-  opacity: 1;
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -319,49 +359,45 @@ body {
   transition: opacity 0.5s ease-out;
 }
 
-.envelope-exclusive-text.text-fading {
+.seal-text.seal-text-fade {
   opacity: 0;
 }
 
-.envelope-exclusive-text .exclusive-ar {
+.seal-text-ar {
   font-family: 'Aref Ruqaa', serif;
-  font-size: clamp(1.6rem, 5vw, 2.2rem);
-  color: #546A50;
+  font-size: clamp(0.9rem, 3.5vw, 1.05rem);
+  color: #FAF8F2;
   letter-spacing: 0.02em;
-  text-shadow: 0 1px 8px rgba(255, 255, 255, 0.9);
-  white-space: nowrap;
+  font-weight: 300;
 }
 
-.envelope-exclusive-text .exclusive-en {
-  font-family: 'Great Vibes', cursive;
-  font-size: clamp(1.5rem, 4.5vw, 2.1rem);
-  font-weight: 600;
-  color: #546A50;
-  letter-spacing: 0.04em;
-  text-shadow: 0 1px 8px rgba(255, 255, 255, 0.9);
-  white-space: nowrap;
+.seal-text-en {
+  font-family: 'Lora', serif;
+  font-size: clamp(0.8rem, 3vw, 0.95rem);
+  color: #FAF8F2;
+  letter-spacing: 0.06em;
+  font-weight: 300;
 }
 
-/* Subtle tap hint text */
-.envelope-tap-hint {
+/* Tap hint */
+.seal-tap-hint {
   position: absolute;
-  bottom: clamp(2rem, 5vh, 4rem);
+  bottom: clamp(2rem, 5vh, 3.5rem);
   left: 50%;
   transform: translateX(-50%);
-  font-size: clamp(0.75rem, 1.8vw, 0.9rem);
-  color: rgba(100, 90, 70, 0.7);
+  font-size: clamp(0.7rem, 1.6vw, 0.85rem);
+  color: rgba(250, 248, 242, 0.5);
   letter-spacing: 0.15em;
   text-transform: uppercase;
   text-align: center;
   pointer-events: none;
   z-index: 2;
-  text-shadow: 0 1px 6px rgba(255, 255, 255, 0.8);
   animation: hintPulse 2.5s ease-in-out infinite;
 }
 
 @keyframes hintPulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 0.8; }
 }
 
 
