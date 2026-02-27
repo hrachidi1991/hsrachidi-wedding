@@ -175,20 +175,11 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
       }, 100);
     }, 1800);
 
-    // t=4000ms: Rings have met → show paired rings
+    // t=4000ms: Rings have met → move to divider
     setTimeout(() => {
       setRingsPhase('paired');
-    }, 4000);
-
-    // t=5200ms: Start fading paired rings
-    setTimeout(() => {
-      setRingsPhase('fading');
-    }, 5200);
-
-    // t=6200ms: Rings done
-    setTimeout(() => {
       setShowRings(false);
-    }, 6200);
+    }, 4000);
   }, [settings, currentMusicSrc]);
 
   const toggleAudio = () => {
@@ -296,7 +287,18 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               {t(locale, 'bismillah')}
             </p>
 
-            <div className="divider-gold" />
+            {/* Rings rest on the divider after animation */}
+            <div className="rings-divider-wrapper">
+              {ringsPhase === 'paired' && (
+                <div className="rings-on-divider">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/images/ring1.png" alt="" className="ring-on-line ring-on-line-left" draggable={false} />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/images/ring1.png" alt="" className="ring-on-line ring-on-line-right" draggable={false} />
+                </div>
+              )}
+              <div className="divider-gold" />
+            </div>
 
             {/* Quran Verse — Ar-Rum 30:21 */}
             <div className="my-6 sm:my-8 px-4">
@@ -968,13 +970,13 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
       {showRings && (
         <div className="rings-viewport">
           {/* Ring A — falls from top-left */}
-          <div className={`ring-single ring-a ${ringsPhase === 'falling' ? 'ring-fall-left' : ''} ${ringsPhase === 'paired' ? 'ring-landed-left' : ''} ${ringsPhase === 'fading' ? 'ring-fade-out' : ''}`}>
+          <div className={`ring-single ring-a ${ringsPhase === 'falling' ? 'ring-fall-left' : 'ring-hidden'}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/images/ring1.png" alt="" draggable={false} />
           </div>
 
           {/* Ring B — falls from top-right */}
-          <div className={`ring-single ring-b ${ringsPhase === 'falling' ? 'ring-fall-right' : ''} ${ringsPhase === 'paired' ? 'ring-landed-right' : ''} ${ringsPhase === 'fading' ? 'ring-fade-out' : ''}`}>
+          <div className={`ring-single ring-b ${ringsPhase === 'falling' ? 'ring-fall-right' : 'ring-hidden'}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/images/ring1.png" alt="" draggable={false} />
           </div>
