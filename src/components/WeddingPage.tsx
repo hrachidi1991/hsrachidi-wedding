@@ -143,7 +143,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
           }
         });
       },
-      { threshold: 0.3 }
+      { threshold: 0.1 }
     );
 
     document.querySelectorAll('[data-section]').forEach((el) => observer.observe(el));
