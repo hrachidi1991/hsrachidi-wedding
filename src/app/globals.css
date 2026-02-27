@@ -210,13 +210,13 @@ body {
   overflow: hidden;
 }
 
-/* Full-screen envelope image — covers entire viewport */
+/* Full-screen envelope image — fits entire viewport without cropping */
 .envelope-start-img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
   pointer-events: none;
   z-index: 0;
