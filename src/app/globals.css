@@ -251,19 +251,35 @@ body {
 /* "This invitation is exclusive for you" text over the image */
 .envelope-exclusive-text {
   position: absolute;
-  bottom: clamp(4rem, 10vh, 7rem);
+  bottom: clamp(5rem, 12vh, 9rem);
   left: 50%;
   transform: translateX(-50%);
-  font-family: 'Lora', serif;
-  font-style: italic;
-  font-size: clamp(0.9rem, 2.5vw, 1.15rem);
-  color: #8a7a5a;
-  letter-spacing: 0.1em;
   text-align: center;
   pointer-events: none;
   opacity: 1;
   z-index: 2;
-  text-shadow: 0 1px 6px rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.envelope-exclusive-text .exclusive-ar {
+  font-family: 'Aref Ruqaa', serif;
+  font-size: clamp(1.3rem, 4vw, 1.8rem);
+  color: #546A50;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 8px rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+}
+
+.envelope-exclusive-text .exclusive-en {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: clamp(1rem, 3vw, 1.4rem);
+  color: #546A50;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 8px rgba(255, 255, 255, 0.9);
   white-space: nowrap;
 }
 

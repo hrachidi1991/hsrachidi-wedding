@@ -962,10 +962,11 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             className="envelope-photo"
             draggable={false}
           />
-          {/* Exclusive text */}
-          <p className={`envelope-exclusive-text ${isRtl ? 'font-arabic' : ''}`}>
-            {isRtl ? 'هذه الدعوة حصرية لك' : 'This invitation is exclusive for you'}
-          </p>
+          {/* Exclusive text — Arabic first, English beneath */}
+          <div className="envelope-exclusive-text">
+            <span className="exclusive-ar" dir="rtl">هذه الدعوة حصرية لك</span>
+            <span className="exclusive-en">This invitation is exclusive for you</span>
+          </div>
           {/* Tap hint */}
           {!sealBreaking && (
             <p className={`envelope-tap-hint ${isRtl ? 'font-arabic' : ''}`}>
