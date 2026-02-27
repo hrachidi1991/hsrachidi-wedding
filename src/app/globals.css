@@ -239,11 +239,11 @@ body {
               opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* The envelope photo — contain keeps aspect ratio, white fills the rest */
+/* The envelope photo — cover fills entire viewport, seal stays centered */
 .envelope-photo-new {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
   pointer-events: none;
 }
