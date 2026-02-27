@@ -968,35 +968,16 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
       {showRings && (
         <div className="rings-viewport">
           {/* Ring A — falls from top-left */}
-          <div className={`ring-single ring-a ${ringsPhase === 'falling' ? 'ring-fall-left' : 'ring-hidden'}`}>
+          <div className={`ring-single ring-a ${ringsPhase === 'falling' ? 'ring-fall-left' : ''} ${ringsPhase === 'paired' ? 'ring-landed-left' : ''} ${ringsPhase === 'fading' ? 'ring-fade-out' : ''}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/images/ring1.png" alt="" draggable={false} />
           </div>
 
           {/* Ring B — falls from top-right */}
-          <div className={`ring-single ring-b ${ringsPhase === 'falling' ? 'ring-fall-right' : 'ring-hidden'}`}>
+          <div className={`ring-single ring-b ${ringsPhase === 'falling' ? 'ring-fall-right' : ''} ${ringsPhase === 'paired' ? 'ring-landed-right' : ''} ${ringsPhase === 'fading' ? 'ring-fade-out' : ''}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/images/ring1.png" alt="" draggable={false} />
           </div>
-
-          {/* Paired rings — appear when they meet */}
-          {(ringsPhase === 'paired' || ringsPhase === 'fading') && (
-            <div className={`rings-paired ${ringsPhase === 'fading' ? 'rings-fade-out' : 'rings-bounce-in'}`}>
-              {/* Golden sparkle burst on contact */}
-              {ringsPhase === 'paired' && (
-                <div className="rings-sparkle-burst">
-                  {Array.from({ length: 12 }).map((_, i) => (
-                    <span key={i} className="ring-sparkle" style={{
-                      transform: `rotate(${i * 30}deg)`,
-                      animationDelay: `${i * 0.04}s`,
-                    }} />
-                  ))}
-                </div>
-              )}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/rings.png" alt="Wedding rings" draggable={false} />
-            </div>
-          )}
         </div>
       )}
 
