@@ -171,24 +171,24 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
       setRingsPhase('falling');
     }, 1800);
 
-    // t=3000ms: Rings have met → show paired rings
+    // t=4000ms: Rings have met → show paired rings
     setTimeout(() => {
       setRingsPhase('paired');
-    }, 3000);
+    }, 4000);
 
-    // t=4200ms: Start fading paired rings
+    // t=5200ms: Start fading paired rings
     setTimeout(() => {
       setRingsPhase('fading');
-    }, 4200);
+    }, 5200);
 
-    // t=5200ms: Rings done → reveal invitation content
+    // t=6200ms: Rings done → reveal invitation content
     setTimeout(() => {
       setShowRings(false);
       setShowContent(true);
       setTimeout(() => {
         scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
-    }, 5200);
+    }, 6200);
   }, [settings, currentMusicSrc]);
 
   const toggleAudio = () => {

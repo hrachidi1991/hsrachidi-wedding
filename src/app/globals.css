@@ -445,7 +445,7 @@ body {
 }
 
 .ring-fall-left {
-  animation: ringFallLeft 1.2s cubic-bezier(0.4, 0, 0.65, 1) forwards;
+  animation: ringFallLeft 2.2s cubic-bezier(0.25, 0, 0.5, 1) forwards;
 }
 
 @keyframes ringFallLeft {
@@ -461,7 +461,7 @@ body {
 }
 
 .ring-fall-right {
-  animation: ringFallRight 1.2s cubic-bezier(0.4, 0, 0.65, 1) forwards;
+  animation: ringFallRight 2.2s cubic-bezier(0.25, 0, 0.5, 1) forwards;
 }
 
 @keyframes ringFallRight {
