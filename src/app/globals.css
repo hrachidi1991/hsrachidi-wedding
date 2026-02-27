@@ -270,42 +270,48 @@ body {
   100% { transform: translate(-50%, -55%) scale(18); opacity: 0; }
 }
 
-/* Seal image wrapper — floating + hover */
+/* Seal image wrapper — 3D floating + hover */
 .seal-image-wrapper {
   position: relative;
   z-index: 2;
   width: clamp(200px, 55vw, 260px);
-  animation: sealFloat 5s ease-in-out infinite;
+  perspective: 800px;
+  animation: sealFloat3D 5s ease-in-out infinite;
   transition: transform 0.4s ease;
+  transform-style: preserve-3d;
 }
 
 .seal-image-wrapper:hover {
-  transform: scale(1.06);
+  transform: scale(1.06) rotateX(2deg);
 }
 
-@keyframes sealFloat {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-8px); }
+@keyframes sealFloat3D {
+  0%   { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
+  25%  { transform: translateY(-5px) rotateX(3deg) rotateY(-2deg); }
+  50%  { transform: translateY(-8px) rotateX(0deg) rotateY(3deg); }
+  75%  { transform: translateY(-4px) rotateX(-2deg) rotateY(-1deg); }
+  100% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
 }
 
-/* Press-down feedback on tap */
+/* Press-down feedback on tap — 3D press into screen */
 .seal-press-down {
-  animation: sealPressDown 0.15s ease-in forwards !important;
+  animation: sealPressDown3D 0.15s ease-in forwards !important;
 }
 
-@keyframes sealPressDown {
-  0%   { transform: scale(1); }
-  100% { transform: scale(0.93); }
+@keyframes sealPressDown3D {
+  0%   { transform: scale(1) rotateX(0deg); }
+  100% { transform: scale(0.93) rotateX(8deg) translateZ(-20px); }
 }
 
-/* Seal departs — scales up, rotates, fades */
+/* Seal departs — 3D scale up, tilt, rotate, fade */
 .seal-depart {
-  animation: sealDepart 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+  animation: sealDepart3D 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
 }
 
-@keyframes sealDepart {
-  0%   { transform: scale(0.93); opacity: 1; }
-  100% { transform: scale(1.4) rotate(7deg); opacity: 0; }
+@keyframes sealDepart3D {
+  0%   { transform: scale(0.93) rotateX(8deg); opacity: 1; }
+  40%  { transform: scale(1.1) rotateX(-5deg) rotateY(4deg) translateZ(40px); opacity: 0.9; }
+  100% { transform: scale(1.4) rotateX(-15deg) rotateY(8deg) translateZ(100px); opacity: 0; }
 }
 
 /* The seal image itself */
@@ -313,7 +319,8 @@ body {
   width: 100%;
   height: auto;
   pointer-events: none;
-  filter: drop-shadow(0 4px 24px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 8px 30px rgba(0, 0, 0, 0.35));
+  transform-style: preserve-3d;
 }
 
 /* Shimmer particles */
@@ -365,18 +372,17 @@ body {
 
 .seal-text-ar {
   font-family: 'Aref Ruqaa', serif;
-  font-size: clamp(0.9rem, 3.5vw, 1.05rem);
+  font-size: clamp(1.3rem, 5vw, 1.8rem);
   color: #546A50;
   letter-spacing: 0.02em;
-  font-weight: 300;
 }
 
 .seal-text-en {
-  font-family: 'Lora', serif;
-  font-size: clamp(0.8rem, 3vw, 0.95rem);
+  font-family: 'Great Vibes', cursive;
+  font-size: clamp(1.2rem, 4.5vw, 1.7rem);
   color: #546A50;
-  letter-spacing: 0.06em;
-  font-weight: 300;
+  letter-spacing: 0.04em;
+  font-weight: 600;
 }
 
 /* Tap hint */
