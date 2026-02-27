@@ -220,6 +220,7 @@ body {
   object-position: center;
   pointer-events: none;
   z-index: 0;
+  filter: drop-shadow(0 0 40px rgba(0, 0, 0, 0.08));
 }
 
 .envelope-start-fade {
@@ -349,8 +350,9 @@ body {
   bottom: clamp(2rem, 5vh, 3.5rem);
   left: 50%;
   transform: translateX(-50%);
-  font-size: clamp(0.7rem, 1.6vw, 0.85rem);
-  color: rgba(84, 106, 80, 0.5);
+  font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+  font-weight: 700;
+  color: rgba(84, 106, 80, 0.8);
   letter-spacing: 0.15em;
   text-transform: uppercase;
   text-align: center;
