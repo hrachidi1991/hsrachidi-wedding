@@ -275,9 +275,10 @@ body {
 
 .envelope-exclusive-text .exclusive-en {
   font-family: 'Great Vibes', cursive;
-  font-size: clamp(1.2rem, 3.5vw, 1.7rem);
+  font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+  font-weight: 600;
   color: #546A50;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   text-shadow: 0 1px 8px rgba(255, 255, 255, 0.9);
   white-space: nowrap;
 }
