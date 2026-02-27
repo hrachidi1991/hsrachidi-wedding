@@ -157,19 +157,19 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     }
 
-    // t=400ms: Start the fade-out of the entire overlay
+    // t=800ms: Seal burst done → envelope slides down, letter rises
     setTimeout(() => {
       setFlapsOpening(true);
-    }, 400);
+    }, 800);
 
-    // t=2000ms: Animation complete → remove overlay, enable scrolling
+    // t=2400ms: Animation complete → remove overlay, enable scrolling
     setTimeout(() => {
       setEnvelopeOpened(true);
       setShowContent(true);
       setTimeout(() => {
         scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
-    }, 2000);
+    }, 2400);
   }, [settings, currentMusicSrc]);
 
   const toggleAudio = () => {
@@ -945,28 +945,47 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
       </div> {/* close scroll-container */}
 
-      {/* ═══ ENVELOPE OVERLAY — single photo, click to open ═══ */}
+      {/* ═══ ENVELOPE OVERLAY — realistic open animation ═══ */}
       {!envelopeOpened && (
         <div
-          className={`envelope-viewport ${flapsOpening ? 'envelope-fading' : ''} ${sealBreaking ? 'envelope-opening' : ''}`}
+          className={`envelope-viewport ${flapsOpening ? 'envelope-animating' : ''}`}
           onClick={!sealBreaking ? handleOpenEnvelope : undefined}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') !sealBreaking && handleOpenEnvelope(); }}
           aria-label="Open envelope"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/new_env.png"
-            alt="Wedding envelope"
-            className="envelope-photo"
-            draggable={false}
-          />
+          {/* Envelope image */}
+          <div className={`envelope-img-wrapper ${flapsOpening ? 'envelope-slide-down' : ''}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/envelope.png"
+              alt="Wedding envelope"
+              className="envelope-photo-new"
+              draggable={false}
+            />
+          </div>
+
+          {/* Seal-break glow effect */}
+          {sealBreaking && !flapsOpening && (
+            <div className="seal-break-effect" />
+          )}
+
+          {/* Letter card that slides up */}
+          {flapsOpening && (
+            <div className="letter-reveal">
+              <div className="letter-content">
+                <p className="font-arabic text-2xl text-[#546A50]" dir="rtl">بسم الله الرحمن الرحيم</p>
+              </div>
+            </div>
+          )}
+
           {/* Exclusive text — Arabic first, English beneath */}
-          <div className="envelope-exclusive-text">
+          <div className={`envelope-exclusive-text ${sealBreaking ? 'text-fading' : ''}`}>
             <span className="exclusive-ar" dir="rtl">هذه الدعوة حصرية لك</span>
             <span className="exclusive-en">This invitation is exclusive for you</span>
           </div>
+
           {/* Tap hint */}
           {!sealBreaking && (
             <p className={`envelope-tap-hint ${isRtl ? 'font-arabic' : ''}`}>
