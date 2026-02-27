@@ -1002,9 +1002,6 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             draggable={false}
           />
 
-          {/* H&S initials on the wax seal */}
-          <span className={`seal-initials ${flapsOpening ? 'envelope-start-fade' : ''}`}>H&S</span>
-
           {/* Light burst on break */}
           {flapsOpening && <div className="seal-light-burst" />}
 
