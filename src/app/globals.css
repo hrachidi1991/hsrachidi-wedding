@@ -274,8 +274,7 @@ body {
 }
 
 .envelope-exclusive-text .exclusive-en {
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
+  font-family: 'Great Vibes', cursive;
   font-size: clamp(1.2rem, 3.5vw, 1.7rem);
   color: #546A50;
   letter-spacing: 0.08em;
