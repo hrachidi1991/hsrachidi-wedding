@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body className="bg-[#f0ede8]">{children}</body>
+      <body className="bg-[#F7F7F5]">{children}</body>
     </html>
   );
 }

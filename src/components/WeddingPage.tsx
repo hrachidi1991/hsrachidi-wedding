@@ -1,9 +1,18 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import type { SiteContent } from '@/lib/settings';
 import type { Locale } from '@/lib/i18n';
 import { t } from '@/lib/i18n';
+import {
+  Item,
+  WordsReveal,
+  MediaCard,
+  initChapterScroll,
+  type ChapterScrollHandle,
+} from './scrollMotion';
+
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 interface GuestAttendance {
   name: string;
@@ -23,9 +32,12 @@ interface Props {
   rsvpData: RsvpData | null;
 }
 
-function ScrollArrow() {
+function ScrollArrow({ cue }: { cue?: boolean }) {
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 animate-float">
+    <div
+      className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 animate-float"
+      {...(cue ? { 'data-scroll-cue': '' } : {})}
+    >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-black/30">
         <path d="M12 5v14M5 12l7 7 7-7" />
       </svg>
@@ -38,12 +50,15 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
   const [envelopeOpened, setEnvelopeOpened] = useState(false);
   const [sealBreaking, setSealBreaking] = useState(false);
   const [flapsOpening, setFlapsOpening] = useState(false);
-  const [showRings, setShowRings] = useState(false);
-  const [ringsPhase, setRingsPhase] = useState<'falling' | 'paired' | 'fading' | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const chapterScrollRef = useRef<ChapterScrollHandle | null>(null);
+
+  // Active chapter (for the minimal chapter nav)
+  const [activeChapter, setActiveChapter] = useState<number>(2);
 
   // RSVP State — per-guest attendance toggles
   const initAttendance = (): GuestAttendance[] => {
@@ -94,9 +109,6 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
   // Countdown
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
-  // Visibility observer for animations
-  const [visibleSections, setVisibleSections] = useState<Set<number>>(new Set());
-
   useEffect(() => {
     const target = new Date(settings.countdownDate).getTime();
     const tick = () => {
@@ -133,31 +145,6 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
     }
   }, [locale, settings.musicFile, settings.musicFileAr]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Intersection observer for section animations — hide/show on scroll
-  useEffect(() => {
-    if (!showContent) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const idx = parseInt(entry.target.getAttribute('data-section') || '0');
-          setVisibleSections((prev) => {
-            const next = new Set(prev);
-            if (entry.isIntersecting) {
-              next.add(idx);
-            } else {
-              next.delete(idx);
-            }
-            return next;
-          });
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    document.querySelectorAll('[data-section]').forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, [showContent]);
-
   const handleOpenEnvelope = useCallback(() => {
     setSealBreaking(true);
     // Start music immediately on interaction
@@ -165,28 +152,20 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     }
 
-    // t=500ms: Seal press done → light burst + seal departure + bg transition
+    // t=500ms: Seal press done → light burst + film departure
     setTimeout(() => {
       setFlapsOpening(true);
     }, 500);
 
-    // t=1800ms: Seal gone → show Quran page + start ring animation on top
+    // t=1800ms: Film gone → reveal content at the top (Blessing)
     setTimeout(() => {
       setEnvelopeOpened(true);
       setShowContent(true);
-      setShowRings(true);
-      setRingsPhase('falling');
       setTimeout(() => {
-        scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'auto' });
       }, 100);
     }, 1800);
-
-    // t=4000ms: Rings have met → move to divider
-    setTimeout(() => {
-      setRingsPhase('paired');
-      setShowRings(false);
-    }, 4000);
-  }, [settings, currentMusicSrc]);
+  }, [currentMusicSrc]);
 
   const toggleAudio = () => {
     if (!audioRef.current) return;
@@ -203,6 +182,90 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
   };
 
   const isRtl = locale === 'ar';
+
+  // Document-level lang/dir follow the language toggle
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
+  }, [locale, isRtl]);
+
+  // Respect reduced-motion for the entrance film autoplay + scroll engine
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mq.matches);
+    const onChange = () => setPrefersReducedMotion(mq.matches);
+    mq.addEventListener?.('change', onChange);
+    return () => mq.removeEventListener?.('change', onChange);
+  }, []);
+
+  // Lock the document while the entrance gate is up
+  useEffect(() => {
+    document.documentElement.classList.toggle('no-scroll', !showContent);
+    return () => document.documentElement.classList.remove('no-scroll');
+  }, [showContent]);
+
+  // GSAP ScrollTrigger + Lenis engine (window scroller). Skipped under
+  // reduced-motion so content renders static. Re-inits on locale change (RTL
+  // re-splits word spans). useLayoutEffect avoids a build/flash on mount.
+  useIsoLayoutEffect(() => {
+    if (!showContent || prefersReducedMotion) return;
+    const el = contentRef.current;
+    if (!el) return;
+    const handle = initChapterScroll({ content: el });
+    chapterScrollRef.current = handle;
+    return () => {
+      handle.destroy();
+      chapterScrollRef.current = null;
+    };
+  }, [showContent, prefersReducedMotion, locale]);
+
+  // Active-chapter tracking for the nav — independent of the motion engine
+  // (works under reduced-motion too).
+  useEffect(() => {
+    if (!showContent) return;
+    const root = contentRef.current;
+    if (!root) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = Number((entry.target as HTMLElement).dataset.section);
+            if (id) setActiveChapter(id);
+          }
+        });
+      },
+      { rootMargin: '-45% 0px -45% 0px', threshold: 0 }
+    );
+    root.querySelectorAll('[data-section]').forEach((s) => observer.observe(s));
+    return () => observer.disconnect();
+  }, [showContent]);
+
+  const scrollToChapter = useCallback((id: number) => {
+    const el = contentRef.current?.querySelector<HTMLElement>(`[data-section="${id}"]`);
+    if (!el) return;
+    if (chapterScrollRef.current) chapterScrollRef.current.scrollTo(el);
+    else el.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  const chapters = [2, ...(settings.showHeroNames !== false ? [3] : []), 4, 5, 6, 7, 8];
+
+  // Localized short chapter labels for the pill nav (local map, not i18n keys)
+  const chapterLabel = (id: number): string => {
+    const roman = ['', '', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][id] || '';
+    const romanAr = ['', '', '١', '٢', '٣', '٤', '٥', '٦', '٧'][id] || '';
+    const names: Record<number, [string, string]> = {
+      2: ['Blessing', 'بركة'],
+      3: ['The Couple', 'العروسان'],
+      4: ['Invitation', 'دعوة'],
+      5: ['Countdown', 'العد التنازلي'],
+      6: ['Location', 'المكان'],
+      7: ['Gift', 'هدية'],
+      8: ['RSVP', 'الحضور'],
+    };
+    const nm = names[id] || ['', ''];
+    return isRtl ? `الفصل ${romanAr} · ${nm[1]}` : `${roman} · ${nm[0]}`;
+  };
 
   const toggleGuestAttendance = (index: number) => {
     setGuestAttendance((prev) =>
@@ -240,8 +303,6 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
     }
   };
 
-  const sectionVisible = (idx: number) => visibleSections.has(idx);
-
   // ═══════════════════════════════════════════════════
   // RENDER — Envelope overlay + content card behind it
   // ═══════════════════════════════════════════════════
@@ -276,158 +337,180 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
         </button>
       )}
 
-      {/* Main content — always present, envelope overlay sits on top */}
-      <div ref={scrollRef} className={`scroll-container${!showContent ? ' no-scroll' : ''}`}>
+      {/* Sliding title lockup — persistent emerald monogram (à la CAPITOLIUM) */}
+      {showContent && (
+        <div className="title-lockup" aria-hidden="true">
+          <span className={`title-lockup-inner${isRtl ? ' ar' : ''}`}>
+            {isRtl
+              ? `${settings.groomNameAr} · ${settings.brideNameAr}`
+              : `${settings.groomNameEn} · ${settings.brideNameEn}`}
+          </span>
+        </div>
+      )}
 
-        {/* ═══ SECTION 2 — QURAN AYA ═══ */}
-        <section className="scroll-section" data-section="2">
-          {settings.quranBg && (
-            <>
-              <div className="section-bg" style={{ backgroundImage: `url(${settings.quranBg})` }} />
-              <div className="section-overlay" />
-            </>
-          )}
-          <div className={`section-content max-w-2xl transition-all duration-1000 ${sectionVisible(2) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+      {/* Chapter pill nav — current label + direct dots (RTL mirrored) */}
+      {showContent && (
+        <nav className={`chapter-pill${isRtl ? ' rtl' : ''}`} aria-label="Chapters">
+          <span className="chapter-pill-label">{chapterLabel(activeChapter)}</span>
+          <span className="chapter-pill-dots">
+            {chapters.map((id) => (
+              <button
+                key={id}
+                type="button"
+                className={`chapter-dot${activeChapter === id ? ' active' : ''}`}
+                onClick={() => scrollToChapter(id)}
+                aria-label={chapterLabel(id)}
+                aria-current={activeChapter === id ? 'true' : undefined}
+              />
+            ))}
+          </span>
+        </nav>
+      )}
+
+      {/* Main content — always present, entrance overlay sits on top */}
+      <div ref={scrollRef} className="scroll-container">
+        <div ref={contentRef} className="lenis-content">
+
+        {/* ═══ SECTION 2 — QURAN AYA (clean light paper) ═══ */}
+        {/* Entrance hero — the entrance film that shrinks into a card on the paper */}
+        <section className="hero-shrink" data-hero aria-hidden="true">
+          <div className="hero-media">
+            <video
+              className="media-el"
+              src="/video/entrance.mp4"
+              poster="/images/grayscale/entrance-poster.webp"
+              muted
+              loop
+              playsInline
+              autoPlay
+              preload="metadata"
+            />
+          </div>
+        </section>
+
+        {/* ═══ SECTION 2 — QURAN AYA (charcoal text on paper) ═══ */}
+        <section className="scroll-section" data-section="2" data-enter="bottom">
+          <div className="section-rest" data-rest>
             {/* Bismillah */}
-            <p className="font-arabicDisplay text-2xl sm:text-3xl md:text-4xl text-black/70 mb-4 sm:mb-6" dir="rtl">
+            <Item as="p" className="font-arabicDisplay text-2xl sm:text-3xl md:text-4xl text-black/70 mb-4 sm:mb-6" style={{ direction: 'rtl' }}>
               {t(locale, 'bismillah')}
-            </p>
-
-            {/* Rings rest on the divider after animation */}
-            <div className="rings-divider-wrapper">
-              {ringsPhase === 'paired' && (
-                <div className="rings-on-divider">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/images/ring1.png" alt="" className="ring-on-line ring-on-line-left" draggable={false} />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/images/ring1.png" alt="" className="ring-on-line ring-on-line-right" draggable={false} />
-                </div>
-              )}
+            </Item>
+            <Item>
               <div className="divider-gold" />
-            </div>
+            </Item>
 
-            {/* Quran Verse — Ar-Rum 30:21 */}
+            {/* Ar-Rum 30:21 — per-word reveal */}
             <div className="my-6 sm:my-8 px-4">
-              <p className="quran-verse font-arabicDisplay text-black/70 leading-relaxed" style={{ fontSize: '110%' }} dir="rtl">
-                {t(locale, 'quranVerse')}
+              <p className="quran-verse font-arabicDisplay text-black/70 leading-relaxed" style={{ fontSize: '110%', direction: 'rtl' }}>
+                <WordsReveal text={t(locale, 'quranVerse')} stagger={0.035} />
               </p>
             </div>
 
-            {/* Sadaqa Allah Al-Azeem */}
-            <p className="font-arabicDisplay text-2xl sm:text-3xl md:text-4xl text-black/70 mb-4" dir="rtl">
+            {/* sadaqa + translation + reference */}
+            <Item as="p" className="font-arabicDisplay text-2xl sm:text-3xl md:text-4xl text-black/70 mb-4" style={{ direction: 'rtl' }}>
               صدق الله العظيم
-            </p>
-
-            {/* English translation */}
-            <p className={`text-base sm:text-lg text-black/60 leading-relaxed mb-4 px-4 ${isRtl ? 'font-arabic' : 'font-body italic'}`}>
+            </Item>
+            <Item as="p" className={`text-base sm:text-lg text-black/60 leading-relaxed mb-4 px-4 ${isRtl ? 'font-arabic' : 'font-body italic'}`}>
               {t(locale, 'quranVerseTranslation')}
-            </p>
-
-            {/* Verse reference */}
-            <p className={`text-sm uppercase tracking-[0.2em] text-black/40 mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+            </Item>
+            <Item as="p" className={`text-sm uppercase tracking-[0.2em] text-black/40 mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
               {t(locale, 'quranVerseRef')}
+            </Item>
+
+            {/* pairs verse + translation + ref */}
+            <Item>
+              <div className="divider-gold-wide" />
+            </Item>
+            <p className="font-arabicDisplay text-3xl sm:text-4xl md:text-5xl text-[#1F4A3A] mt-6 mb-4" style={{ direction: 'rtl' }}>
+              <WordsReveal text={t(locale, 'quranPairsVerse')} stagger={0.06} />
             </p>
-
-            <div className="divider-gold-wide" />
-
-            {/* "وخلقناكم أزواجا" — large calligraphy */}
-            <p className="font-arabicDisplay text-3xl sm:text-4xl md:text-5xl text-[#546A50] mt-6 mb-4" dir="rtl">
-              {t(locale, 'quranPairsVerse')}
-            </p>
-
-            {/* English translation of pairs verse */}
-            <p className={`text-sm sm:text-base uppercase tracking-[0.2em] text-black/50 mb-3 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+            <Item as="p" className={`text-sm sm:text-base uppercase tracking-[0.2em] text-black/50 mb-3 ${isRtl ? 'font-arabic' : 'font-body'}`}>
               {t(locale, 'quranPairsTranslation')}
-            </p>
-
-            {/* Pairs verse reference */}
-            <p className={`text-xs sm:text-sm uppercase tracking-[0.15em] text-black/35 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+            </Item>
+            <Item as="p" className={`text-xs sm:text-sm uppercase tracking-[0.15em] text-black/35 ${isRtl ? 'font-arabic' : 'font-body'}`}>
               {t(locale, 'quranPairsRef')}
-            </p>
-
+            </Item>
           </div>
-          <ScrollArrow />
+          <ScrollArrow cue />
         </section>
+
 
         {/* ═══ SECTION 3 — HERO (skipped entirely when toggle is off) ═══ */}
         {settings.showHeroNames !== false && (
-          <section className="scroll-section section-olive" data-section="3">
-            {settings.heroImage && (
-              <>
-                <div className="section-bg" style={{ backgroundImage: `url(${settings.heroImage})` }} />
-                <div className="section-overlay" />
-              </>
-            )}
-            <div className={`section-content transition-all duration-1000 ${sectionVisible(3) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <p className={`text-sm sm:text-base uppercase tracking-[0.15em] sm:tracking-[0.3em] text-black/50 mb-4 sm:mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+          <section className="scroll-section" data-section="3" data-enter="bottom">
+            <div className="chapter-dock" data-dock>
+              <MediaCard kind="still" src="/images/grayscale/couple-dance-new.webp" poster="/images/grayscale/couple-dance-new.webp" ratio="portrait" shape="arch" />
+            </div>
+            <div className="section-rest" data-rest>
+              <Item as="p" className={`text-sm sm:text-base uppercase tracking-[0.15em] sm:tracking-[0.3em] text-black/50 mb-4 sm:mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                 {t(locale, 'weddingOf')}
-              </p>
+              </Item>
 
               <h1 className={`mb-4 ${isRtl ? 'font-arabicDisplay' : 'font-script'}`}>
                 <span className={`block font-light text-black leading-tight ${isRtl ? 'text-5xl sm:text-6xl md:text-7xl' : 'text-6xl sm:text-7xl md:text-8xl'}`}>
-                  {isRtl ? settings.groomNameAr : settings.groomNameEn}
+                  <WordsReveal text={isRtl ? settings.groomNameAr : settings.groomNameEn} />
                 </span>
-                <span className="block text-3xl sm:text-4xl text-[#546A50]/80 my-2 font-display">&</span>
+                <span className="block text-3xl sm:text-4xl text-[#1F4A3A]/80 my-2 font-display">&</span>
                 <span className={`block font-light text-black leading-tight ${isRtl ? 'text-5xl sm:text-6xl md:text-7xl' : 'text-6xl sm:text-7xl md:text-8xl'}`}>
-                  {isRtl ? settings.brideNameAr : settings.brideNameEn}
+                  <WordsReveal text={isRtl ? settings.brideNameAr : settings.brideNameEn} />
                 </span>
               </h1>
 
-              <div className="divider-gold-wide" />
+              <Item>
+                <div className="divider-gold-wide" />
+              </Item>
 
-              <p className={`text-2xl sm:text-3xl text-black/80 mt-2 font-medium ${isRtl ? 'font-arabic' : 'font-display'}`}>
+              <Item as="p" className={`text-2xl sm:text-3xl text-black/80 mt-2 font-medium ${isRtl ? 'font-arabic' : 'font-display'}`}>
                 {settings.weddingDate}
-              </p>
-
+              </Item>
             </div>
-            <ScrollArrow />
           </section>
         )}
 
+
         {/* ═══ SECTION 4 — FORMAL INVITATION ═══ */}
-        <section className="scroll-section section-olive" data-section="4">
-          {settings.invitationBg && (
-            <>
-              <div className="section-bg" style={{ backgroundImage: `url(${settings.invitationBg})` }} />
-              <div className="section-overlay" />
-            </>
-          )}
-          <div className={`section-content max-w-2xl transition-all duration-1000 delay-200 ${sectionVisible(4) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <section className="scroll-section" data-section="4" data-enter="bottom">
+          <div className="chapter-dock" data-dock>
+            <MediaCard kind="video" src="/video/scene-mountain.mp4" poster="/images/grayscale/scene-mountain.webp" ratio="portrait" />
+          </div>
+          <div className="section-rest" data-rest>
             {/* Top ornamental gold crown */}
+            <Item>
             <svg className="w-56 sm:w-72 h-10 mx-auto mb-6" viewBox="0 0 280 40" fill="none" xmlns="http://www.w3.org/2000/svg">
               {/* Left extending line with taper */}
-              <line x1="0" y1="22" x2="90" y2="22" stroke="#546A50" strokeWidth="0.4" opacity="0.6" />
-              <line x1="60" y1="22" x2="95" y2="22" stroke="#546A50" strokeWidth="0.7" />
+              <line x1="0" y1="22" x2="90" y2="22" stroke="currentColor" strokeWidth="0.4" opacity="0.6" />
+              <line x1="60" y1="22" x2="95" y2="22" stroke="currentColor" strokeWidth="0.7" />
               {/* Right extending line with taper */}
-              <line x1="190" y1="22" x2="280" y2="22" stroke="#546A50" strokeWidth="0.4" opacity="0.6" />
-              <line x1="185" y1="22" x2="220" y2="22" stroke="#546A50" strokeWidth="0.7" />
+              <line x1="190" y1="22" x2="280" y2="22" stroke="currentColor" strokeWidth="0.4" opacity="0.6" />
+              <line x1="185" y1="22" x2="220" y2="22" stroke="currentColor" strokeWidth="0.7" />
               {/* Left scroll — outer curl */}
-              <path d="M95 22 C90 22 86 18 88 14 C90 10 96 10 98 14 C99 16 97 18 95 17" stroke="#546A50" strokeWidth="0.7" fill="none" />
+              <path d="M95 22 C90 22 86 18 88 14 C90 10 96 10 98 14 C99 16 97 18 95 17" stroke="currentColor" strokeWidth="0.7" fill="none" />
               {/* Left scroll — inner spiral */}
-              <path d="M95 17 C93 16 93 14 95 13 C97 12 98 14 97 15" stroke="#546A50" strokeWidth="0.5" fill="none" />
+              <path d="M95 17 C93 16 93 14 95 13 C97 12 98 14 97 15" stroke="currentColor" strokeWidth="0.5" fill="none" />
               {/* Right scroll — outer curl (mirrored) */}
-              <path d="M185 22 C190 22 194 18 192 14 C190 10 184 10 182 14 C181 16 183 18 185 17" stroke="#546A50" strokeWidth="0.7" fill="none" />
+              <path d="M185 22 C190 22 194 18 192 14 C190 10 184 10 182 14 C181 16 183 18 185 17" stroke="currentColor" strokeWidth="0.7" fill="none" />
               {/* Right scroll — inner spiral */}
-              <path d="M185 17 C187 16 187 14 185 13 C183 12 182 14 183 15" stroke="#546A50" strokeWidth="0.5" fill="none" />
+              <path d="M185 17 C187 16 187 14 185 13 C183 12 182 14 183 15" stroke="currentColor" strokeWidth="0.5" fill="none" />
               {/* Center fleur — left petal */}
-              <path d="M130 22 C128 18 125 14 128 10 C130 7 134 6 136 9 C138 12 136 16 140 14" stroke="#546A50" strokeWidth="0.7" fill="none" />
+              <path d="M130 22 C128 18 125 14 128 10 C130 7 134 6 136 9 C138 12 136 16 140 14" stroke="currentColor" strokeWidth="0.7" fill="none" />
               {/* Center fleur — right petal (mirrored) */}
-              <path d="M150 22 C152 18 155 14 152 10 C150 7 146 6 144 9 C142 12 144 16 140 14" stroke="#546A50" strokeWidth="0.7" fill="none" />
+              <path d="M150 22 C152 18 155 14 152 10 C150 7 146 6 144 9 C142 12 144 16 140 14" stroke="currentColor" strokeWidth="0.7" fill="none" />
               {/* Center spike */}
-              <path d="M140 14 L140 5" stroke="#546A50" strokeWidth="0.6" />
-              <circle cx="140" cy="4" r="1.2" fill="#546A50" />
+              <path d="M140 14 L140 5" stroke="currentColor" strokeWidth="0.6" />
+              <circle cx="140" cy="4" r="1.2" fill="currentColor" />
               {/* Small leaf flourishes from center */}
-              <path d="M137 10 C135 8 133 9 134 11" stroke="#546A50" strokeWidth="0.4" fill="none" />
-              <path d="M143 10 C145 8 147 9 146 11" stroke="#546A50" strokeWidth="0.4" fill="none" />
+              <path d="M137 10 C135 8 133 9 134 11" stroke="currentColor" strokeWidth="0.4" fill="none" />
+              <path d="M143 10 C145 8 147 9 146 11" stroke="currentColor" strokeWidth="0.4" fill="none" />
               {/* Connecting arcs from scrolls to center */}
-              <path d="M98 20 C110 16 125 20 130 22" stroke="#546A50" strokeWidth="0.5" fill="none" />
-              <path d="M182 20 C170 16 155 20 150 22" stroke="#546A50" strokeWidth="0.5" fill="none" />
+              <path d="M98 20 C110 16 125 20 130 22" stroke="currentColor" strokeWidth="0.5" fill="none" />
+              <path d="M182 20 C170 16 155 20 150 22" stroke="currentColor" strokeWidth="0.5" fill="none" />
               {/* Tiny dots accent */}
-              <circle cx="108" cy="19" r="0.6" fill="#546A50" opacity="0.5" />
-              <circle cx="172" cy="19" r="0.6" fill="#546A50" opacity="0.5" />
+              <circle cx="108" cy="19" r="0.6" fill="currentColor" opacity="0.5" />
+              <circle cx="172" cy="19" r="0.6" fill="currentColor" opacity="0.5" />
             </svg>
+            </Item>
 
-            {/* Invitation — structured fields */}
+            {/* Invitation — revealed ROW BY ROW (each a direct rest child) */}
             {(() => {
               const nameFont = isRtl ? 'font-arabicDisplay' : 'font-script';
               const prefix1 = isRtl ? settings.invPrefix1Ar : settings.invPrefix1En;
@@ -443,24 +526,24 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               const date = isRtl ? settings.invDateAr : settings.invDateEn;
 
               return (
-                <div className={`${isRtl ? 'font-arabic' : 'font-body'} space-y-4`} dir={isRtl ? 'rtl' : 'ltr'}>
+                <>
                   {/* Row 1: Prefixes — smallest text */}
                   {(prefix1 || prefix2) && (
-                    <div className="grid grid-cols-2 gap-2 sm:gap-8">
-                      <p className={`text-center font-bold text-[#546A50] ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-[clamp(0.8rem,3.5vw,1.4rem)]'}`}>{prefix1}</p>
-                      <p className={`text-center font-bold text-[#546A50] ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-[clamp(0.8rem,3.5vw,1.4rem)]'}`}>{prefix2}</p>
+                    <div className="grid grid-cols-2 gap-2 sm:gap-8 w-full" dir={isRtl ? 'rtl' : 'ltr'}>
+                      <p className={`text-center font-bold text-[#1F4A3A] ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-[clamp(0.8rem,3.5vw,1.4rem)]'}`}>{prefix1}</p>
+                      <p className={`text-center font-bold text-[#1F4A3A] ${isRtl ? 'text-lg sm:text-xl font-arabic' : 'font-trajan text-[clamp(0.8rem,3.5vw,1.4rem)]'}`}>{prefix2}</p>
                     </div>
                   )}
 
                   {/* Row 2: Father names — largest, Trajan/Cinzel */}
-                  <div className="grid grid-cols-2 gap-2 sm:gap-8 -mt-2">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-8 w-full" dir={isRtl ? 'rtl' : 'ltr'}>
                     <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-2xl sm:text-4xl' : 'font-trajan text-[clamp(0.8rem,3.5vw,1.4rem)]'}`}>{father1}</p>
                     <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-2xl sm:text-4xl' : 'font-trajan text-[clamp(0.8rem,3.5vw,1.4rem)]'}`}>{father2}</p>
                   </div>
 
                   {/* Row 3: Connectors */}
                   {(conn1 || conn2) && (
-                    <div className="grid grid-cols-2 gap-2 sm:gap-8 -mt-2">
+                    <div className="grid grid-cols-2 gap-2 sm:gap-8 w-full" dir={isRtl ? 'rtl' : 'ltr'}>
                       <p className={`text-center text-black/50 ${isRtl ? 'text-base sm:text-lg font-arabic' : 'text-xs sm:text-sm font-body'}`}>{conn1}</p>
                       <p className={`text-center text-black/50 ${isRtl ? 'text-base sm:text-lg font-arabic' : 'text-xs sm:text-sm font-body'}`}>{conn2}</p>
                     </div>
@@ -468,7 +551,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
                   {/* Row 4: Mother names — slightly smaller than father */}
                   {(mother1 || mother2) && (
-                    <div className="grid grid-cols-2 gap-2 sm:gap-8 -mt-2">
+                    <div className="grid grid-cols-2 gap-2 sm:gap-8 w-full" dir={isRtl ? 'rtl' : 'ltr'}>
                       <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-xl sm:text-3xl' : 'font-trajan text-[clamp(0.75rem,3.2vw,1.25rem)]'}`}>{mother1}</p>
                       <p className={`text-center font-bold text-black whitespace-nowrap ${isRtl ? 'font-arabicDisplay text-xl sm:text-3xl' : 'font-trajan text-[clamp(0.75rem,3.2vw,1.25rem)]'}`}>{mother2}</p>
                     </div>
@@ -476,64 +559,63 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
                   {/* Middle ornamental gold divider — simpler flourish */}
                   <svg className="w-40 sm:w-56 h-6 mx-auto my-2" viewBox="0 0 220 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="0" y1="12" x2="80" y2="12" stroke="#546A50" strokeWidth="0.4" opacity="0.6" />
-                    <line x1="140" y1="12" x2="220" y2="12" stroke="#546A50" strokeWidth="0.4" opacity="0.6" />
-                    <path d="M80 12 C85 12 90 8 95 8 C100 8 105 12 110 12 C115 12 120 8 125 8 C130 8 135 12 140 12" stroke="#546A50" strokeWidth="0.7" fill="none" />
-                    <circle cx="110" cy="8" r="1" fill="#546A50" />
+                    <line x1="0" y1="12" x2="80" y2="12" stroke="currentColor" strokeWidth="0.4" opacity="0.6" />
+                    <line x1="140" y1="12" x2="220" y2="12" stroke="currentColor" strokeWidth="0.4" opacity="0.6" />
+                    <path d="M80 12 C85 12 90 8 95 8 C100 8 105 12 110 12 C115 12 120 8 125 8 C130 8 135 12 140 12" stroke="currentColor" strokeWidth="0.7" fill="none" />
+                    <circle cx="110" cy="8" r="1" fill="currentColor" />
                   </svg>
 
                   {/* Body text */}
                   {body && body.split('\n').map((line, i) => (
-                    <p key={i} className={`text-black/80 ${isRtl ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl'}`}>{line}</p>
+                    <p key={i} className={`text-black/80 ${isRtl ? 'text-xl sm:text-2xl font-arabic' : 'text-lg sm:text-xl font-body'}`} dir={isRtl ? 'rtl' : 'ltr'}>{line}</p>
                   ))}
 
                   {/* Couple names — large bold calligraphy in gold */}
                   {couple && (
-                    <p className={`font-bold text-[#546A50] ${nameFont} ${isRtl ? 'text-4xl sm:text-5xl' : 'text-4xl sm:text-5xl'}`}>{couple}</p>
+                    <p className={`font-bold text-[#1F4A3A] ${nameFont} text-4xl sm:text-5xl`} dir={isRtl ? 'rtl' : 'ltr'}><WordsReveal text={couple} stagger={0.08} /></p>
                   )}
 
                   {/* Date */}
                   {date && (
-                    <p className={`text-black/80 ${isRtl ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl'}`}>{date}</p>
+                    <p className={`text-black/80 ${isRtl ? 'text-xl sm:text-2xl font-arabic' : 'text-lg sm:text-xl font-body'}`} dir={isRtl ? 'rtl' : 'ltr'}>{date}</p>
                   )}
-                </div>
+                </>
               );
             })()}
 
             {/* Bottom ornamental gold crown (flipped) */}
+            <Item>
             <svg className="w-56 sm:w-72 h-10 mx-auto mt-6 rotate-180" viewBox="0 0 280 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <line x1="0" y1="22" x2="90" y2="22" stroke="#546A50" strokeWidth="0.4" opacity="0.6" />
-              <line x1="60" y1="22" x2="95" y2="22" stroke="#546A50" strokeWidth="0.7" />
-              <line x1="190" y1="22" x2="280" y2="22" stroke="#546A50" strokeWidth="0.4" opacity="0.6" />
-              <line x1="185" y1="22" x2="220" y2="22" stroke="#546A50" strokeWidth="0.7" />
-              <path d="M95 22 C90 22 86 18 88 14 C90 10 96 10 98 14 C99 16 97 18 95 17" stroke="#546A50" strokeWidth="0.7" fill="none" />
-              <path d="M95 17 C93 16 93 14 95 13 C97 12 98 14 97 15" stroke="#546A50" strokeWidth="0.5" fill="none" />
-              <path d="M185 22 C190 22 194 18 192 14 C190 10 184 10 182 14 C181 16 183 18 185 17" stroke="#546A50" strokeWidth="0.7" fill="none" />
-              <path d="M185 17 C187 16 187 14 185 13 C183 12 182 14 183 15" stroke="#546A50" strokeWidth="0.5" fill="none" />
-              <path d="M130 22 C128 18 125 14 128 10 C130 7 134 6 136 9 C138 12 136 16 140 14" stroke="#546A50" strokeWidth="0.7" fill="none" />
-              <path d="M150 22 C152 18 155 14 152 10 C150 7 146 6 144 9 C142 12 144 16 140 14" stroke="#546A50" strokeWidth="0.7" fill="none" />
-              <path d="M140 14 L140 5" stroke="#546A50" strokeWidth="0.6" />
-              <circle cx="140" cy="4" r="1.2" fill="#546A50" />
-              <path d="M137 10 C135 8 133 9 134 11" stroke="#546A50" strokeWidth="0.4" fill="none" />
-              <path d="M143 10 C145 8 147 9 146 11" stroke="#546A50" strokeWidth="0.4" fill="none" />
-              <path d="M98 20 C110 16 125 20 130 22" stroke="#546A50" strokeWidth="0.5" fill="none" />
-              <path d="M182 20 C170 16 155 20 150 22" stroke="#546A50" strokeWidth="0.5" fill="none" />
-              <circle cx="108" cy="19" r="0.6" fill="#546A50" opacity="0.5" />
-              <circle cx="172" cy="19" r="0.6" fill="#546A50" opacity="0.5" />
+              <line x1="0" y1="22" x2="90" y2="22" stroke="currentColor" strokeWidth="0.4" opacity="0.6" />
+              <line x1="60" y1="22" x2="95" y2="22" stroke="currentColor" strokeWidth="0.7" />
+              <line x1="190" y1="22" x2="280" y2="22" stroke="currentColor" strokeWidth="0.4" opacity="0.6" />
+              <line x1="185" y1="22" x2="220" y2="22" stroke="currentColor" strokeWidth="0.7" />
+              <path d="M95 22 C90 22 86 18 88 14 C90 10 96 10 98 14 C99 16 97 18 95 17" stroke="currentColor" strokeWidth="0.7" fill="none" />
+              <path d="M95 17 C93 16 93 14 95 13 C97 12 98 14 97 15" stroke="currentColor" strokeWidth="0.5" fill="none" />
+              <path d="M185 22 C190 22 194 18 192 14 C190 10 184 10 182 14 C181 16 183 18 185 17" stroke="currentColor" strokeWidth="0.7" fill="none" />
+              <path d="M185 17 C187 16 187 14 185 13 C183 12 182 14 183 15" stroke="currentColor" strokeWidth="0.5" fill="none" />
+              <path d="M130 22 C128 18 125 14 128 10 C130 7 134 6 136 9 C138 12 136 16 140 14" stroke="currentColor" strokeWidth="0.7" fill="none" />
+              <path d="M150 22 C152 18 155 14 152 10 C150 7 146 6 144 9 C142 12 144 16 140 14" stroke="currentColor" strokeWidth="0.7" fill="none" />
+              <path d="M140 14 L140 5" stroke="currentColor" strokeWidth="0.6" />
+              <circle cx="140" cy="4" r="1.2" fill="currentColor" />
+              <path d="M137 10 C135 8 133 9 134 11" stroke="currentColor" strokeWidth="0.4" fill="none" />
+              <path d="M143 10 C145 8 147 9 146 11" stroke="currentColor" strokeWidth="0.4" fill="none" />
+              <path d="M98 20 C110 16 125 20 130 22" stroke="currentColor" strokeWidth="0.5" fill="none" />
+              <path d="M182 20 C170 16 155 20 150 22" stroke="currentColor" strokeWidth="0.5" fill="none" />
+              <circle cx="108" cy="19" r="0.6" fill="currentColor" opacity="0.5" />
+              <circle cx="172" cy="19" r="0.6" fill="currentColor" opacity="0.5" />
             </svg>
+            </Item>
           </div>
-          <ScrollArrow />
         </section>
 
+
         {/* ═══ SECTION 5 — COUNTDOWN (Calendar Style) ═══ */}
-        <section className="scroll-section" data-section="5">
-          {settings.countdownBg && (
-            <>
-              <div className="section-bg" style={{ backgroundImage: `url(${settings.countdownBg})` }} />
-              <div className="section-overlay" />
-            </>
-          )}
-          <div className={`section-content transition-all duration-1000 delay-200 ${sectionVisible(5) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <section className="scroll-section" data-section="5" data-enter="bottom">
+          <div className="chapter-dock" data-dock>
+            <MediaCard kind="still" src="/images/grayscale/scene-fireworks.webp" poster="/images/grayscale/scene-fireworks.webp" ratio="portrait" />
+          </div>
+          <div className="section-rest" data-rest>
             {(() => {
               const weddingDate = new Date(settings.countdownDate);
               const dayNum = weddingDate.getDate();
@@ -557,11 +639,11 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   </p>
 
                   <div className="flex items-center justify-center gap-3 sm:gap-5 mb-3">
-                    <span className="text-[#546A50] text-4xl sm:text-5xl font-light select-none">|</span>
+                    <span className="text-[#1F4A3A] text-4xl sm:text-5xl font-light select-none">|</span>
                     <span className={`text-6xl sm:text-8xl md:text-9xl font-light text-black leading-none ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
-                      {dayNum}
+                      <WordsReveal text={String(dayNum)} />
                     </span>
-                    <span className="text-[#546A50] text-4xl sm:text-5xl font-light select-none">|</span>
+                    <span className="text-[#1F4A3A] text-4xl sm:text-5xl font-light select-none">|</span>
                   </div>
 
                   <p className={`text-base sm:text-lg uppercase tracking-[0.2em] text-black/60 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
@@ -590,7 +672,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                           <div className={`countdown-label ${isRtl ? 'font-arabic' : ''}`}>{unit.label}</div>
                         </div>
                         {i < 3 && (
-                          <span className="text-[#546A50]/50 text-xl sm:text-2xl font-light select-none mx-1 sm:mx-2 -mt-4">:</span>
+                          <span className="text-[#1F4A3A]/50 text-xl sm:text-2xl font-light select-none mx-1 sm:mx-2 -mt-4">:</span>
                         )}
                       </div>
                     ))}
@@ -621,66 +703,65 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               );
             })()}
           </div>
-          <ScrollArrow />
         </section>
 
+
         {/* ═══ SECTION 6 — LOCATION ═══ */}
-        <section className="scroll-section section-olive" data-section="6">
-          {settings.locationBg && (
-            <>
-              <div className="section-bg" style={{ backgroundImage: `url(${settings.locationBg})` }} />
-              <div className="section-overlay" />
-            </>
-          )}
-          <div className={`section-content transition-all duration-1000 delay-200 ${sectionVisible(6) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            {/* Decorative top */}
-            <div className="mb-8">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto text-olive-400 mb-4">
+        <section className="scroll-section" data-section="6" data-enter="left">
+          <div className="chapter-dock" data-dock>
+            <MediaCard kind="video" src="/video/scene-venue-walk.mp4" poster="/images/grayscale/scene-venue-walk.webp" ratio="portrait" shape="arch" />
+          </div>
+          <div className="section-rest" data-rest>
+            {/* Decorative pin */}
+            <Item className="mb-6">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto text-olive-400 mb-2">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
-            </div>
+            </Item>
 
-            <div className="space-y-6">
-              <div>
-                <p className={`text-sm sm:text-base uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                  {t(locale, 'dateLabel')}
-                </p>
-                <p className={`text-2xl sm:text-3xl font-medium text-black ${isRtl ? 'font-arabic' : 'font-display'}`}>
-                  {settings.eventDate}
-                </p>
-              </div>
+            <Item>
+              <p className={`text-sm sm:text-base uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                {t(locale, 'dateLabel')}
+              </p>
+              <p className={`text-2xl sm:text-3xl font-medium text-black ${isRtl ? 'font-arabic' : 'font-display'}`}>
+                {settings.eventDate}
+              </p>
+            </Item>
 
-              <div>
-                <p className={`text-sm sm:text-base uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                  {t(locale, 'timeLabel')}
-                </p>
-                <p className={`text-2xl sm:text-3xl font-medium text-black ${isRtl ? 'font-arabic' : 'font-display'}`}>
-                  {settings.eventTime}
-                </p>
-              </div>
+            <Item>
+              <p className={`text-sm sm:text-base uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                {t(locale, 'timeLabel')}
+              </p>
+              <p className={`text-2xl sm:text-3xl font-medium text-black ${isRtl ? 'font-arabic' : 'font-display'}`}>
+                {settings.eventTime}
+              </p>
+            </Item>
 
+            <Item>
               <div className="divider-gold" />
+            </Item>
 
-              <div>
-                <p className={`text-sm sm:text-base uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                  {t(locale, 'venueLabel')}
-                </p>
-                <p className={`text-3xl sm:text-4xl font-semibold text-black ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
-                  {isRtl ? settings.venueNameAr : settings.venueNameEn}
-                </p>
-              </div>
+            <Item>
+              <p className={`text-sm sm:text-base uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                {t(locale, 'venueLabel')}
+              </p>
+              <p className={`text-3xl sm:text-4xl font-semibold text-black ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
+                <WordsReveal text={isRtl ? settings.venueNameAr : settings.venueNameEn} stagger={0.07} />
+              </p>
+            </Item>
 
-              <div>
-                <p className={`text-sm sm:text-base uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                  {t(locale, 'addressLabel')}
-                </p>
-                <p className={`text-lg sm:text-xl text-black/60 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                  {isRtl ? settings.venueAddressAr : settings.venueAddressEn}
-                </p>
-              </div>
+            <Item>
+              <p className={`text-sm sm:text-base uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                {t(locale, 'addressLabel')}
+              </p>
+              <p className={`text-lg sm:text-xl text-black/60 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                {isRtl ? settings.venueAddressAr : settings.venueAddressEn}
+              </p>
+            </Item>
 
-              {settings.googleMapsUrl && (
+            {settings.googleMapsUrl && (
+              <Item>
                 <a
                   href={settings.googleMapsUrl}
                   target="_blank"
@@ -693,22 +774,20 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   </svg>
                   {t(locale, 'viewMap')}
                 </a>
-              )}
-            </div>
+              </Item>
+            )}
           </div>
-          <ScrollArrow />
         </section>
 
+
         {/* ═══ SECTION 7 — GIFT REGISTRY ═══ */}
-        <section className="scroll-section" data-section="7">
-          {settings.giftBg && (
-            <>
-              <div className="section-bg" style={{ backgroundImage: `url(${settings.giftBg})` }} />
-              <div className="section-overlay" />
-            </>
-          )}
-          <div className={`section-content transition-all duration-1000 delay-200 ${sectionVisible(7) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <section className="scroll-section" data-section="7" data-enter="bottom-right">
+          <div className="chapter-dock" data-dock>
+            <MediaCard kind="video" src="/video/scene-garden.mp4" poster="/images/grayscale/scene-garden.webp" ratio="portrait" />
+          </div>
+          <div className="section-rest" data-rest>
             {/* Gift icon */}
+            <Item>
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="mx-auto text-olive-400 mb-6">
               <polyline points="20 12 20 22 4 22 4 12" />
               <rect x="2" y="7" width="20" height="5" />
@@ -716,20 +795,23 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
               <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
             </svg>
+            </Item>
 
-            <h2 className={`text-base sm:text-lg uppercase tracking-[0.3em] text-olive-400 mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+            <Item as="h2" className={`text-base sm:text-lg uppercase tracking-[0.3em] text-olive-400 mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
               {t(locale, 'giftTitle')}
-            </h2>
+            </Item>
 
-            <div className={`text-lg sm:text-xl text-black/60 mb-8 leading-relaxed ${isRtl ? 'font-arabic' : 'font-body italic'}`}>
+            <Item className={`text-lg sm:text-xl text-black/60 mb-8 leading-relaxed ${isRtl ? 'font-arabic' : 'font-body italic'}`}>
               {(isRtl ? settings.giftTextAr : settings.giftTextEn).split('\n').map((line, i) => (
                 <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
               ))}
-            </div>
+            </Item>
 
-            <div className="divider-gold mb-8" />
+            <Item>
+              <div className="divider-gold mb-8" />
+            </Item>
 
-            <div className="bg-black/5 backdrop-blur-sm rounded-lg p-4 sm:p-6 max-w-sm mx-auto border border-black/10">
+            <Item className="bg-black/5 backdrop-blur-sm rounded-lg p-4 sm:p-6 max-w-sm mx-auto border border-black/10">
               <div className="flex items-center justify-center gap-3 mb-4">
                 <img src="/images/whish.png" alt="Whish Money" className="h-9 sm:h-10 w-auto object-contain" />
                 <p className={`text-xl sm:text-2xl font-semibold text-black ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
@@ -783,22 +865,19 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   </div>
                 </div>
               </div>
-            </div>
+            </Item>
           </div>
-          <ScrollArrow />
         </section>
 
+
         {/* ═══ SECTION 8 — RSVP ═══ */}
-        <section className="scroll-section section-olive" data-section="8" style={{ minHeight: 'max(100dvh, 700px)', height: 'auto' }}>
-          {settings.rsvpBg && (
-            <>
-              <div className="section-bg" style={{ backgroundImage: `url(${settings.rsvpBg})`, position: 'fixed' }} />
-              <div className="section-overlay" style={{ position: 'fixed' }} />
-            </>
-          )}
-          <div className={`section-content py-12 transition-all duration-1000 delay-200 ${sectionVisible(8) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <section className="scroll-section" data-section="8" data-enter="bottom" style={{ minHeight: 'max(100dvh, 700px)', height: 'auto' }}>
+          <div className="chapter-dock" data-dock>
+            <MediaCard kind="still" src="/images/grayscale/couple-dance-new.webp" poster="/images/grayscale/couple-dance-new.webp" ratio="portrait" />
+          </div>
+          <div className="section-rest" data-rest>
             <h2 className={`text-base sm:text-lg uppercase tracking-[0.3em] text-black/60 mb-4 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-              {t(locale, 'rsvpTitle')}
+              <WordsReveal text={t(locale, 'rsvpTitle')} stagger={0.08} />
             </h2>
 
             {/* Deadline */}
@@ -808,6 +887,8 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               </span>
             </p>
 
+            {/* RSVP form (one interactive card — reveals once, never cycles) */}
+            <div data-reveal-as="card" data-hold>
             {!rsvpData?.groupCode ? (
               <div className="bg-black/5 backdrop-blur-sm rounded-lg p-8 border border-black/10">
                 <p className={`text-black/60 ${isRtl ? 'font-arabic' : 'font-body'}`}>
@@ -939,6 +1020,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                 )}
               </div>
             )}
+            </div>
 
             {/* WhatsApp */}
             {settings.whatsappUrl && (
@@ -950,7 +1032,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   href={settings.whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#25D366] hover:bg-[#1ebe57] text-white shadow-lg shadow-[#25D366]/30 hover:shadow-[#25D366]/50 transition-all duration-300 hover:scale-110"
+                  className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#2A2724] hover:bg-[#3a342e] text-[#F4F2EE] shadow-lg shadow-black/30 hover:shadow-black/50 transition-all duration-300 hover:scale-110"
                   aria-label="WhatsApp"
                 >
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
@@ -970,26 +1052,10 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
           </div>
         </section>
 
+        </div> {/* close lenis-content */}
       </div> {/* close scroll-container */}
 
-      {/* ═══ RING ANIMATION OVERLAY ═══ */}
-      {showRings && (
-        <div className="rings-viewport">
-          {/* Ring A — falls from top-left */}
-          <div className={`ring-single ring-a ${ringsPhase === 'falling' ? 'ring-fall-left' : 'ring-hidden'}`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/ring1.png" alt="" draggable={false} />
-          </div>
-
-          {/* Ring B — falls from top-right */}
-          <div className={`ring-single ring-b ${ringsPhase === 'falling' ? 'ring-fall-right' : 'ring-hidden'}`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/ring1.png" alt="" draggable={false} />
-          </div>
-        </div>
-      )}
-
-      {/* ═══ ENVELOPE SPLASH — full-screen envelope image ═══ */}
+      {/* ═══ ENTRANCE FILM — full-screen bright B&W wedding-mood video ═══ */}
       {!envelopeOpened && (
         <div
           className={`seal-viewport ${flapsOpening ? 'seal-transitioning' : ''}`}
@@ -999,14 +1065,31 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') !sealBreaking && handleOpenEnvelope(); }}
           aria-label="Open invitation"
         >
-          {/* Full-screen envelope image */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/envelope-start.png"
-            alt="Wedding envelope"
-            className={`envelope-start-img ${flapsOpening ? 'envelope-start-fade' : ''}`}
-            draggable={false}
+          {/* Full-screen entrance film (poster shown if autoplay is blocked / reduced motion) */}
+          <video
+            className="entrance-film"
+            src="/video/entrance.mp4"
+            poster="/images/grayscale/entrance-poster.webp"
+            muted
+            playsInline
+            loop
+            autoPlay={!prefersReducedMotion}
+            preload="metadata"
+            aria-hidden="true"
           />
+          <div className="entrance-scrim" />
+
+          {/* Couple names in gold, centred over the film */}
+          <div className="entrance-hero">
+            <span className="entrance-names">
+              {isRtl ? settings.groomNameAr : settings.groomNameEn}
+            </span>
+            <span className="entrance-amp">&amp;</span>
+            <span className="entrance-names">
+              {isRtl ? settings.brideNameAr : settings.brideNameEn}
+            </span>
+            <div className="entrance-rule" />
+          </div>
 
           {/* Light burst on break */}
           {flapsOpening && <div className="seal-light-burst" />}
@@ -1024,11 +1107,16 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             </div>
           )}
 
-          {/* Tap hint */}
+          {/* Tap hint + exclusivity line */}
           {!sealBreaking && (
-            <p className={`seal-tap-hint ${isRtl ? 'font-arabic' : ''}`}>
-              {isRtl ? 'انقر لفتح الدعوة' : 'Tap to open'}
-            </p>
+            <>
+              <p className={`seal-tap-hint ${isRtl ? 'font-arabic' : ''}`}>
+                {isRtl ? 'انقر لفتح الدعوة' : 'Tap to open'}
+              </p>
+              <p className={`seal-tap-sub ${isRtl ? 'font-arabic' : ''}`}>
+                {isRtl ? 'هذه الدعوة خاصة بك وحدك' : 'This invitation is exclusive for you'}
+              </p>
+            </>
           )}
         </div>
       )}

@@ -90,11 +90,11 @@ export const defaultSettings: SiteContent = {
   groomNameAr: 'حسين',
   brideNameEn: 'Suzan',
   brideNameAr: 'سوزان',
-  weddingDate: 'June 12, 2026',
+  weddingDate: 'August 25, 2026',
   heroImage: '',
   showHeroNames: true,
 
-  countdownDate: '2026-06-12T20:00:00',
+  countdownDate: '2026-08-25T20:00:00',
   countdownBg: '',
 
   quranBg: '',
@@ -119,13 +119,13 @@ export const defaultSettings: SiteContent = {
   invBodyAr: 'يدعونكم لحضور حفل زفاف ولديهما',
   invCoupleEn: 'Hussein & Suzan',
   invCoupleAr: 'حسين وسوزان',
-  invDateEn: 'on June 12, 2026',
-  invDateAr: 'في الثاني عشر من حزيران 2026',
+  invDateEn: 'on August 25, 2026',
+  invDateAr: 'في الخامس والعشرين من آب ٢٠٢٦',
   invitationTextEn: '',
   invitationTextAr: '',
   invitationBg: '',
 
-  eventDate: 'June 12, 2026',
+  eventDate: 'August 25, 2026',
   eventTime: '8:00 PM',
   venueNameEn: 'Plein Nature',
   venueNameAr: 'بلين ناتشر',
@@ -152,8 +152,8 @@ export const defaultSettings: SiteContent = {
   sealImage: '',
   sfxEnabled: true,
 
-  musicFile: '',
-  musicFileAr: '',
+  musicFile: '/audio/wedding-song.mp3',
+  musicFileAr: '/audio/wedding-song.mp3',
 
   primaryColor: '#7a8b69',
 };
