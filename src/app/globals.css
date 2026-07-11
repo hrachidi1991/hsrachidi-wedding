@@ -1234,3 +1234,64 @@ html.no-scroll body {
 }
 .title-lockup-inner { text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
 .calendar-grid .cal-day.highlight { text-shadow: none; }
+
+/* ═══ V1 ACCENT — sage green + lavender (gray-tables-with-lavender wedding mood) ═══ */
+:root { --sage: #8BA67F; --lavender: #C7BFD9; }
+
+/* Countdown (§5) horizontal rules → soft lavender */
+[data-section="5"] .divider-gold,
+[data-section="5"] .divider-gold-wide {
+  background: linear-gradient(90deg, transparent, var(--lavender), transparent);
+}
+
+/* Calendar highlighted wedding day → lavender pill, ink number */
+.calendar-grid .cal-day.highlight {
+  background: var(--lavender);
+  color: var(--ink);
+}
+
+/* Gift — Whish icon as a clear tappable button; account box drops open on tap */
+.gift-whish-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.8rem 1.25rem;
+  background: var(--paper-2);
+  border: 1.5px solid var(--lavender);
+  border-radius: 9999px;
+  cursor: pointer;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6), 0 6px 16px rgba(42, 39, 36, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.gift-whish-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 0 rgba(255, 255, 255, 0.6), 0 10px 22px rgba(42, 39, 36, 0.1);
+}
+.gift-whish-hint {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.gift-chevron {
+  color: var(--ink-3);
+  flex-shrink: 0;
+  transition: transform 0.35s ease;
+}
+.gift-whish-toggle.open .gift-chevron { transform: rotate(180deg); }
+.gift-details {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.55s ease, opacity 0.4s ease;
+}
+.gift-details.open { max-height: 480px; opacity: 1; }
+
+/* Gift section relocated to the very end (after RSVP) — v1 only.
+   padding-bottom gives the last section enough scroll runway for its
+   content to cross the reveal line (else the tail stays hidden). */
+.lenis-content { display: flex; flex-direction: column; }
+.lenis-content > [data-section="8"] { order: 1; }
+.lenis-content > .scroll-section[data-section="7"] { order: 2; padding-bottom: 26vh; }

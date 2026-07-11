@@ -100,6 +100,9 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
   // Copy to clipboard state
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
+  // Gift — Whish details collapsed until the icon is tapped
+  const [giftOpen, setGiftOpen] = useState(false);
+
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text).then(() => {
       setCopiedField(field);
@@ -251,12 +254,14 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
     else el.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  const chapters = [2, ...(settings.showHeroNames !== false ? [3] : []), 4, 5, 6, 7, 8];
+  // Gift (7) is visually moved to the very end (after RSVP) via CSS order in v1
+  const chapters = [2, ...(settings.showHeroNames !== false ? [3] : []), 4, 5, 6, 8, 7];
 
   // Localized short chapter labels for the pill nav (local map, not i18n keys)
   const chapterLabel = (id: number): string => {
-    const roman = ['', '', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][id] || '';
-    const romanAr = ['', '', '١', '٢', '٣', '٤', '٥', '٦', '٧'][id] || '';
+    // Gift (id 7) is displayed AFTER RSVP (id 8) in v1 → swap their numerals so the tail reads V → VI → VII
+    const roman = ['', '', 'I', 'II', 'III', 'IV', 'V', 'VII', 'VI'][id] || '';
+    const romanAr = ['', '', '١', '٢', '٣', '٤', '٥', '٧', '٦'][id] || '';
     const names: Record<number, [string, string]> = {
       2: ['Blessing', 'بركة'],
       3: ['The Couple', 'العروسان'],
@@ -411,7 +416,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             <Item>
               <div className="divider-gold-wide" />
             </Item>
-            <p className="font-arabicDisplay text-3xl sm:text-4xl md:text-5xl text-[#1F4A3A] mt-6 mb-4" style={{ direction: 'rtl' }}>
+            <p className="font-arabicDisplay text-3xl sm:text-4xl md:text-5xl text-[#8BA67F] mt-6 mb-4" style={{ direction: 'rtl' }}>
               <WordsReveal text={t(locale, 'quranPairsVerse')} stagger={0.06} />
             </p>
             <Item as="p" className={`text-sm sm:text-base uppercase tracking-[0.2em] text-black/50 mb-3 ${isRtl ? 'font-arabic' : 'font-body'}`}>
@@ -466,7 +471,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
           <div className="section-rest" data-rest>
             {/* Top ornamental gold crown */}
             <Item>
-            <svg className="w-56 sm:w-72 h-10 mx-auto mb-6" viewBox="0 0 280 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg className="w-56 sm:w-72 h-10 mx-auto mb-6 text-[#C7BFD9]" viewBox="0 0 280 40" fill="none" xmlns="http://www.w3.org/2000/svg">
               {/* Left extending line with taper */}
               <line x1="0" y1="22" x2="90" y2="22" stroke="currentColor" strokeWidth="0.4" opacity="0.6" />
               <line x1="60" y1="22" x2="95" y2="22" stroke="currentColor" strokeWidth="0.7" />
@@ -562,7 +567,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
                   {/* Couple names — large bold calligraphy in gold */}
                   {couple && (
-                    <p className={`font-bold text-[#1F4A3A] ${nameFont} text-4xl sm:text-5xl`} dir={isRtl ? 'rtl' : 'ltr'}><WordsReveal text={couple} stagger={0.08} /></p>
+                    <p className={`font-bold text-[#8BA67F] ${nameFont} text-4xl sm:text-5xl`} dir={isRtl ? 'rtl' : 'ltr'}><WordsReveal text={couple} stagger={0.08} /></p>
                   )}
 
                   {/* Date */}
@@ -575,7 +580,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
             {/* Bottom ornamental gold crown (flipped) */}
             <Item>
-            <svg className="w-56 sm:w-72 h-10 mx-auto mt-6 rotate-180" viewBox="0 0 280 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg className="w-56 sm:w-72 h-10 mx-auto mt-6 rotate-180 text-[#C7BFD9]" viewBox="0 0 280 40" fill="none" xmlns="http://www.w3.org/2000/svg">
               <line x1="0" y1="22" x2="90" y2="22" stroke="currentColor" strokeWidth="0.4" opacity="0.6" />
               <line x1="60" y1="22" x2="95" y2="22" stroke="currentColor" strokeWidth="0.7" />
               <line x1="190" y1="22" x2="280" y2="22" stroke="currentColor" strokeWidth="0.4" opacity="0.6" />
@@ -632,11 +637,11 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   </p>
 
                   <div className="flex items-center justify-center gap-3 sm:gap-5 mb-3">
-                    <span className="text-[#1F4A3A] text-4xl sm:text-5xl font-light select-none">|</span>
-                    <span className={`text-6xl sm:text-8xl md:text-9xl font-light text-black leading-none ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
+                    <span className="text-[#8BA67F] text-4xl sm:text-5xl font-light select-none">|</span>
+                    <span className={`text-6xl sm:text-8xl md:text-9xl font-light text-[#8BA67F] leading-none ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
                       <WordsReveal text={arDigits(String(dayNum))} />
                     </span>
-                    <span className="text-[#1F4A3A] text-4xl sm:text-5xl font-light select-none">|</span>
+                    <span className="text-[#8BA67F] text-4xl sm:text-5xl font-light select-none">|</span>
                   </div>
 
                   <p className={`text-base sm:text-lg uppercase tracking-[0.2em] text-black/60 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
@@ -707,7 +712,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
           <div className="section-rest" data-rest>
             {/* Decorative pin */}
             <Item className="mb-6">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto text-olive-400 mb-2">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto text-[#C7BFD9] mb-2">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
@@ -739,7 +744,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               <p className={`text-sm sm:text-base uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                 {t(locale, 'venueLabel')}
               </p>
-              <p className={`text-3xl sm:text-4xl font-semibold text-black ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
+              <p className={`text-3xl sm:text-4xl font-semibold text-[#8BA67F] ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
                 <WordsReveal text={isRtl ? settings.venueNameAr : settings.venueNameEn} stagger={0.07} />
               </p>
             </Item>
@@ -804,57 +809,77 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               <div className="divider-gold mb-8" />
             </Item>
 
-            <Item className="bg-black/5 backdrop-blur-sm rounded-lg p-4 sm:p-6 max-w-sm mx-auto border border-black/10">
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <img src="/images/whish.png" alt="Whish Money" className="h-9 sm:h-10 w-auto object-contain" />
-                <p className={`text-xl sm:text-2xl font-semibold text-black ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
-                  {settings.giftProviderName}
-                </p>
-              </div>
-              <div className={`space-y-3 text-base ${isRtl ? 'text-right font-arabic' : 'text-left font-body'}`}>
-                <div className="flex justify-between items-center">
-                  <span className="text-black/40">Account ID</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-black font-mono text-base">{settings.giftAccountId}</span>
-                    <button
-                      onClick={() => copyToClipboard(settings.giftAccountId, 'accountId')}
-                      className="p-1.5 rounded-md hover:bg-black/10 transition-colors"
-                      aria-label={t(locale, 'copyToClipboard')}
-                    >
-                      {copiedField === 'accountId' ? (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      ) : (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-black/40">
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                </div>
-                <div className="border-t border-black/10" />
-                <div className="flex justify-between items-center">
-                  <span className="text-black/40">Phone</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-black font-mono text-base">{settings.giftPhone}</span>
-                    <button
-                      onClick={() => copyToClipboard(settings.giftPhone, 'phone')}
-                      className="p-1.5 rounded-md hover:bg-black/10 transition-colors"
-                      aria-label={t(locale, 'copyToClipboard')}
-                    >
-                      {copiedField === 'phone' ? (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      ) : (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-black/40">
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                        </svg>
-                      )}
-                    </button>
+            <Item className="w-full max-w-sm mx-auto">
+              {/* Whish icon = clear tappable button; drops the gift details open */}
+              <button
+                type="button"
+                onClick={() => setGiftOpen((o) => !o)}
+                aria-expanded={giftOpen}
+                className={`gift-whish-toggle ${giftOpen ? 'open' : ''}`}
+              >
+                <img src="/images/whish.png" alt="Whish Money" className="h-8 sm:h-9 w-auto object-contain" />
+                <span className={`gift-whish-hint ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                  {giftOpen
+                    ? (isRtl ? 'إخفاء التفاصيل' : 'Hide details')
+                    : (isRtl ? 'اضغط لعرض تفاصيل الهدية' : 'Tap for gift details')}
+                </span>
+                <svg className="gift-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+
+              {/* Collapsible account box — same copy feature as before */}
+              <div className={`gift-details ${giftOpen ? 'open' : ''}`}>
+                <div className="bg-black/5 backdrop-blur-sm rounded-lg p-4 sm:p-6 border border-black/10 mt-3">
+                  <p className={`text-center text-lg sm:text-xl font-semibold text-black mb-4 ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
+                    {settings.giftProviderName}
+                  </p>
+                  <div className={`space-y-3 text-base ${isRtl ? 'text-right font-arabic' : 'text-left font-body'}`}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-black/40">Account ID</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-black font-mono text-base">{settings.giftAccountId}</span>
+                        <button
+                          onClick={() => copyToClipboard(settings.giftAccountId, 'accountId')}
+                          className="p-1.5 rounded-md hover:bg-black/10 transition-colors"
+                          aria-label={t(locale, 'copyToClipboard')}
+                        >
+                          {copiedField === 'accountId' ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-black/40">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="border-t border-black/10" />
+                    <div className="flex justify-between items-center">
+                      <span className="text-black/40">Phone</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-black font-mono text-base">{settings.giftPhone}</span>
+                        <button
+                          onClick={() => copyToClipboard(settings.giftPhone, 'phone')}
+                          className="p-1.5 rounded-md hover:bg-black/10 transition-colors"
+                          aria-label={t(locale, 'copyToClipboard')}
+                        >
+                          {copiedField === 'phone' ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-black/40">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
