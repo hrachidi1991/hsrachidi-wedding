@@ -416,7 +416,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             <Item>
               <div className="divider-gold-wide" />
             </Item>
-            <p className="font-arabicDisplay text-3xl sm:text-4xl md:text-5xl text-[#8BA67F] mt-6 mb-4" style={{ direction: 'rtl' }}>
+            <p className="font-arabicDisplay text-3xl sm:text-4xl md:text-5xl text-[#1F4A3A] mt-6 mb-4" style={{ direction: 'rtl' }}>
               <WordsReveal text={t(locale, 'quranPairsVerse')} stagger={0.06} />
             </p>
             <Item as="p" className={`text-sm sm:text-base uppercase tracking-[0.2em] text-black/50 mb-3 ${isRtl ? 'font-arabic' : 'font-body'}`}>
@@ -471,7 +471,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
           <div className="section-rest" data-rest>
             {/* Top ornamental gold crown */}
             <Item>
-            <svg className="w-56 sm:w-72 h-10 mx-auto mb-6 text-[#C7BFD9]" viewBox="0 0 280 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg className="w-56 sm:w-72 h-10 mx-auto mb-6" viewBox="0 0 280 40" fill="none" xmlns="http://www.w3.org/2000/svg">
               {/* Left extending line with taper */}
               <line x1="0" y1="22" x2="90" y2="22" stroke="currentColor" strokeWidth="0.4" opacity="0.6" />
               <line x1="60" y1="22" x2="95" y2="22" stroke="currentColor" strokeWidth="0.7" />
@@ -567,7 +567,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
                   {/* Couple names — large bold calligraphy in gold */}
                   {couple && (
-                    <p className={`font-bold text-[#8BA67F] ${nameFont} text-4xl sm:text-5xl`} dir={isRtl ? 'rtl' : 'ltr'}><WordsReveal text={couple} stagger={0.08} /></p>
+                    <p className={`font-bold text-[#1F4A3A] ${nameFont} text-4xl sm:text-5xl`} dir={isRtl ? 'rtl' : 'ltr'}><WordsReveal text={couple} stagger={0.08} /></p>
                   )}
 
                   {/* Date */}
@@ -580,7 +580,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
             {/* Bottom ornamental gold crown (flipped) */}
             <Item>
-            <svg className="w-56 sm:w-72 h-10 mx-auto mt-6 rotate-180 text-[#C7BFD9]" viewBox="0 0 280 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg className="w-56 sm:w-72 h-10 mx-auto mt-6 rotate-180" viewBox="0 0 280 40" fill="none" xmlns="http://www.w3.org/2000/svg">
               <line x1="0" y1="22" x2="90" y2="22" stroke="currentColor" strokeWidth="0.4" opacity="0.6" />
               <line x1="60" y1="22" x2="95" y2="22" stroke="currentColor" strokeWidth="0.7" />
               <line x1="190" y1="22" x2="280" y2="22" stroke="currentColor" strokeWidth="0.4" opacity="0.6" />
@@ -637,11 +637,11 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   </p>
 
                   <div className="flex items-center justify-center gap-3 sm:gap-5 mb-3">
-                    <span className="text-[#8BA67F] text-4xl sm:text-5xl font-light select-none">|</span>
-                    <span className={`text-6xl sm:text-8xl md:text-9xl font-light text-[#8BA67F] leading-none ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
+                    <span className="text-[#1F4A3A] text-4xl sm:text-5xl font-light select-none">|</span>
+                    <span className={`text-6xl sm:text-8xl md:text-9xl font-light text-black leading-none ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
                       <WordsReveal text={arDigits(String(dayNum))} />
                     </span>
-                    <span className="text-[#8BA67F] text-4xl sm:text-5xl font-light select-none">|</span>
+                    <span className="text-[#1F4A3A] text-4xl sm:text-5xl font-light select-none">|</span>
                   </div>
 
                   <p className={`text-base sm:text-lg uppercase tracking-[0.2em] text-black/60 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
@@ -712,7 +712,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
           <div className="section-rest" data-rest>
             {/* Decorative pin */}
             <Item className="mb-6">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto text-[#C7BFD9] mb-2">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto text-olive-400 mb-2">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
@@ -744,7 +744,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               <p className={`text-sm sm:text-base uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                 {t(locale, 'venueLabel')}
               </p>
-              <p className={`text-3xl sm:text-4xl font-semibold text-[#8BA67F] ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
+              <p className={`text-3xl sm:text-4xl font-semibold text-black ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
                 <WordsReveal text={isRtl ? settings.venueNameAr : settings.venueNameEn} stagger={0.07} />
               </p>
             </Item>

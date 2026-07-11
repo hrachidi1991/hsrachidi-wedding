@@ -1235,22 +1235,7 @@ html.no-scroll body {
 .title-lockup-inner { text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
 .calendar-grid .cal-day.highlight { text-shadow: none; }
 
-/* ═══ V1 ACCENT — sage green + lavender (gray-tables-with-lavender wedding mood) ═══ */
-:root { --sage: #8BA67F; --lavender: #C7BFD9; }
-
-/* Countdown (§5) horizontal rules → soft lavender */
-[data-section="5"] .divider-gold,
-[data-section="5"] .divider-gold-wide {
-  background: linear-gradient(90deg, transparent, var(--lavender), transparent);
-}
-
-/* Calendar highlighted wedding day → lavender pill, ink number */
-.calendar-grid .cal-day.highlight {
-  background: var(--lavender);
-  color: var(--ink);
-}
-
-/* Gift — Whish icon as a clear tappable button; account box drops open on tap */
+/* ═══ V1 — Gift Whish reveal button + collapsible drawer (monochrome) ═══ */
 .gift-whish-toggle {
   display: flex;
   align-items: center;
@@ -1259,7 +1244,7 @@ html.no-scroll body {
   width: 100%;
   padding: 0.8rem 1.25rem;
   background: var(--paper-2);
-  border: 1.5px solid var(--lavender);
+  border: 1.5px solid rgba(42, 39, 36, 0.22);
   border-radius: 9999px;
   cursor: pointer;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6), 0 6px 16px rgba(42, 39, 36, 0.06);

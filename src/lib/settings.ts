@@ -92,7 +92,7 @@ export const defaultSettings: SiteContent = {
   brideNameAr: 'سوزان',
   weddingDate: 'August 25, 2026',
   heroImage: '',
-  showHeroNames: true, // v1: show the hero "The Couple" section (sandbox shows everything)
+  showHeroNames: false, // couple/hero chapter removed
 
   countdownDate: '2026-08-25T20:00:00',
   countdownBg: '',
@@ -162,8 +162,7 @@ export async function getSettings(): Promise<SiteContent> {
   try {
     const record = await prisma.siteSettings.findUnique({ where: { id: 'main' } });
     if (!record) return defaultSettings;
-    // v1 sandbox: always show the hero section even though the live DB turns it off
-    return { ...defaultSettings, ...(record.data as object), showHeroNames: true };
+    return { ...defaultSettings, ...(record.data as object) };
   } catch {
     return defaultSettings;
   }
