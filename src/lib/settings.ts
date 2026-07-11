@@ -162,7 +162,8 @@ export async function getSettings(): Promise<SiteContent> {
   try {
     const record = await prisma.siteSettings.findUnique({ where: { id: 'main' } });
     if (!record) return defaultSettings;
-    return { ...defaultSettings, ...(record.data as object) };
+    // v1 sandbox: always show the hero section even though the live DB turns it off
+    return { ...defaultSettings, ...(record.data as object), showHeroNames: true };
   } catch {
     return defaultSettings;
   }
