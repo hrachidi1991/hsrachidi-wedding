@@ -92,7 +92,7 @@ export const defaultSettings: SiteContent = {
   brideNameAr: 'سوزان',
   weddingDate: 'August 25, 2026',
   heroImage: '',
-  showHeroNames: false, // v1: match the live layout (hero section hidden) without needing the DB
+  showHeroNames: true, // v1: show the hero "The Couple" section (sandbox shows everything)
 
   countdownDate: '2026-08-25T20:00:00',
   countdownBg: '',
