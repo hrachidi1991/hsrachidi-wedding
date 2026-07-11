@@ -230,38 +230,6 @@ html.no-scroll body {
   .media-card.media-landscape { width: min(70%, 620px); }
 }
 
-/* ═══ Entrance hero — full-bleed entrance video that shrinks into a card ═══ */
-.hero-shrink {
-  position: relative;
-  height: 140vh;
-}
-.hero-media {
-  position: sticky;
-  top: 0;
-  width: 100%;
-  height: 100dvh;
-  overflow: hidden;
-  transform-origin: center top;
-  will-change: transform;
-}
-.hero-media .media-el {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-@media (prefers-reduced-motion: reduce) {
-  .hero-shrink { height: auto; }
-  .hero-media {
-    position: relative;
-    height: 70vh;
-    width: min(90%, 620px);
-    margin: 2rem auto;
-    border-radius: 22px;
-  }
-}
-
 /* ═══ Scroll text-build: per-CHARACTER (Latin) / per-WORD (Arabic, joined) ═══ */
 .gsap-words {
   white-space: normal;
@@ -284,6 +252,19 @@ html.no-scroll body {
 /* Arabic must stay cursively joined — never split letters, keep ligatures */
 .gsap-words[dir='rtl'] {
   font-variant-ligatures: common-ligatures contextual;
+}
+
+/* ═══ Bismillah "writing-on": clip-path wipe of the JOINED, fully-shaped line ═══ */
+.bismillah-type {
+  display: inline-block;                       /* box hugs the glyphs → clip % maps to text, not the column */
+  max-width: 100%;
+  white-space: nowrap;                         /* one clean line to wipe straight across */
+  font-size: clamp(1.05rem, 5.4vw, 2.35rem);   /* replaces text-2xl/3xl/4xl; fits ~330px w/o H-overflow */
+  line-height: 1.5;                            /* headroom for harakat */
+  will-change: clip-path;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bismillah-type { clip-path: none !important; -webkit-clip-path: none !important; }
 }
 
 /* ═══ Sliding title lockup (persistent emerald monogram) ═══ */
@@ -729,6 +710,35 @@ html.no-scroll body {
       rgba(20, 18, 16, 0.52) 100%);
 }
 
+/* ═══ Gate exit — tap dissolves film + names + hint into light (no card shrink) ═══ */
+.seal-transitioning .entrance-film {
+  animation: gateFilmOut 0.8s cubic-bezier(.4, 0, .2, 1) both;
+  transform-origin: center center;
+}
+@keyframes gateFilmOut {                    /* bloom → dissolve to light */
+  0%   { opacity: 1; transform: scale(1);    filter: brightness(1)   blur(0); }
+  55%  { opacity: 1; transform: scale(1.04); filter: brightness(1.5) blur(0); }
+  100% { opacity: 0; transform: scale(1.09); filter: brightness(2.2) blur(9px); }
+}
+.seal-transitioning .entrance-hero {        /* couple names lift + soften */
+  animation: gateHeroOut 0.65s cubic-bezier(.4, 0, .2, 1) both;
+}
+@keyframes gateHeroOut {
+  0%   { opacity: 1; transform: translateY(0)     scale(1);    filter: blur(0); }
+  100% { opacity: 0; transform: translateY(-18px) scale(1.06); filter: blur(6px); }
+}
+.seal-transitioning .seal-tap-hint,         /* hint lifts + spreads (keeps its -50% centering) */
+.seal-transitioning .seal-tap-sub {
+  animation: gateHintOut 0.55s ease-in both;
+}
+@keyframes gateHintOut {
+  to { opacity: 0; transform: translateX(-50%) translateY(-10px); letter-spacing: 0.30em; filter: blur(3px); }
+}
+.seal-transitioning .entrance-scrim {
+  animation: gateScrimOut 0.6s ease-out both;
+}
+@keyframes gateScrimOut { to { opacity: 0; } }
+
 .entrance-hero {
   position: relative;
   z-index: 2;
@@ -837,7 +847,7 @@ html.no-scroll body {
 
 /* Fade out entire splash on transition */
 .seal-viewport.seal-transitioning {
-  animation: sealBgFade 1.4s ease-in-out forwards;
+  animation: sealBgFade 0.85s ease-in-out forwards;
 }
 
 @keyframes sealBgFade {
@@ -1169,6 +1179,15 @@ html.no-scroll body {
   .seal-tap-hint {
     animation: none !important;
     opacity: 0.8;
+  }
+  /* Gate-exit dissolve must not animate under reduced motion */
+  .seal-transitioning .entrance-film,
+  .seal-transitioning .entrance-hero,
+  .seal-transitioning .entrance-scrim,
+  .seal-transitioning .seal-tap-hint,
+  .seal-transitioning .seal-tap-sub {
+    animation: none !important;
+    opacity: 0 !important;
   }
   html {
     scroll-behavior: auto;

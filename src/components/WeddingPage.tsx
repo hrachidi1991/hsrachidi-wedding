@@ -56,6 +56,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const chapterScrollRef = useRef<ChapterScrollHandle | null>(null);
+  const introPlayedRef = useRef(false);
 
   // Active chapter (for the minimal chapter nav)
   const [activeChapter, setActiveChapter] = useState<number>(2);
@@ -145,27 +146,29 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
     }
   }, [locale, settings.musicFile, settings.musicFileAr]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Reduced-motion flag (declared before the open handler that reads it)
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
   const handleOpenEnvelope = useCallback(() => {
-    setSealBreaking(true);
-    // Start music immediately on interaction
+    setSealBreaking(true); // disables re-tap (onClick guard)
+    // Music on the user gesture — unchanged
     if (currentMusicSrc && audioRef.current) {
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     }
-
-    // t=500ms: Seal press done → light burst + film departure
-    setTimeout(() => {
-      setFlapsOpening(true);
-    }, 500);
-
-    // t=1800ms: Film gone → reveal content at the top (Blessing)
-    setTimeout(() => {
+    // Reduced motion → instant cut: no vanish, no typewriter
+    if (prefersReducedMotion) {
+      setEnvelopeOpened(true);
+      setShowContent(true); // unlocks scroll; engine effect bails on reduce
+      return;
+    }
+    setFlapsOpening(true); // t=0 → .seal-transitioning: CSS vanish + light-burst + particles
+    window.setTimeout(() => {
+      // t≈880ms → gate unmounts, engine inits, Bismillah types on
       setEnvelopeOpened(true);
       setShowContent(true);
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'auto' });
-      }, 100);
-    }, 1800);
-  }, [currentMusicSrc]);
+      requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+    }, 880);
+  }, [currentMusicSrc, prefersReducedMotion]);
 
   const toggleAudio = () => {
     if (!audioRef.current) return;
@@ -190,7 +193,6 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
   }, [locale, isRtl]);
 
   // Respect reduced-motion for the entrance film autoplay + scroll engine
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mq.matches);
@@ -214,6 +216,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
     if (!el) return;
     const handle = initChapterScroll({ content: el });
     chapterScrollRef.current = handle;
+    if (!introPlayedRef.current) { introPlayedRef.current = true; handle.playIntro(); }
     return () => {
       handle.destroy();
       chapterScrollRef.current = null;
@@ -371,30 +374,17 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
       <div ref={scrollRef} className="scroll-container">
         <div ref={contentRef} className="lenis-content">
 
-        {/* ═══ SECTION 2 — QURAN AYA (clean light paper) ═══ */}
-        {/* Entrance hero — the entrance film that shrinks into a card on the paper */}
-        <section className="hero-shrink" data-hero aria-hidden="true">
-          <div className="hero-media">
-            <video
-              className="media-el"
-              src="/video/entrance.mp4"
-              poster="/images/grayscale/entrance-poster.webp"
-              muted
-              loop
-              playsInline
-              autoPlay
-              preload="metadata"
-            />
-          </div>
-        </section>
-
         {/* ═══ SECTION 2 — QURAN AYA (charcoal text on paper) ═══ */}
         <section className="scroll-section" data-section="2" data-enter="bottom">
           <div className="section-rest" data-rest>
-            {/* Bismillah */}
-            <Item as="p" className="font-arabicDisplay text-2xl sm:text-3xl md:text-4xl text-black/70 mb-4 sm:mb-6" style={{ direction: 'rtl' }}>
+            {/* Bismillah — types on OPEN via clip-path wipe (scrollMotion playIntro); excluded from scroll-reveal */}
+            <p
+              data-bismillah
+              dir="rtl"
+              className="bismillah-type font-arabicDisplay text-black/70 mb-4 sm:mb-6"
+            >
               {t(locale, 'bismillah')}
-            </Item>
+            </p>
             <Item>
               <div className="divider-gold" />
             </Item>
@@ -1107,8 +1097,8 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             </div>
           )}
 
-          {/* Tap hint + exclusivity line */}
-          {!sealBreaking && (
+          {/* Tap hint + exclusivity line — stays mounted through the vanish */}
+          {!envelopeOpened && (
             <>
               <p className={`seal-tap-hint ${isRtl ? 'font-arabic' : ''}`}>
                 {isRtl ? 'انقر لفتح الدعوة' : 'Tap to open'}

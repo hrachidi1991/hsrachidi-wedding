@@ -245,6 +245,7 @@ export interface ChapterScrollHandle {
   scrollTo: (target: HTMLElement | number) => void;
   pause: () => void;
   resume: () => void;
+  playIntro: () => void; // one-shot Bismillah writing-on, called once on open
 }
 
 export function initChapterScroll({
@@ -433,6 +434,12 @@ export function initChapterScroll({
     // (no leave tween → it accumulates beneath the docked media and stays interactive).
     const buildRestReveals = (mob: boolean) => {
       gsap.utils.toArray<HTMLElement>('[data-rest] > *', content).forEach((el) => {
+        if (el.matches('[data-bismillah]')) {
+          // driven by playIntro's typewriter, never scroll-hidden; clear any leftover clip
+          el.style.clipPath = '';
+          (el.style as unknown as { webkitClipPath: string }).webkitClipPath = '';
+          return;
+        }
         gsap.set(el, { autoAlpha: 0 });
         const dir = (el.closest('[data-section]') as HTMLElement | null)?.dataset.enter || 'bottom';
         const role = (el.dataset.revealAs as keyof typeof REVEAL) || roleOf(el);
@@ -462,24 +469,6 @@ export function initChapterScroll({
       });
     };
 
-    // Entrance HERO shrinks from full-bleed into a framed card on the paper as you
-    // scroll past it (sticky video scaled down).
-    const buildHeroShrink = () => {
-      const hero = content.querySelector<HTMLElement>('[data-hero]');
-      const media = hero?.querySelector<HTMLElement>('.hero-media');
-      if (!hero || !media) return;
-      gsap.fromTo(
-        media,
-        { scale: 1, borderRadius: 0 },
-        {
-          scale: 0.82,
-          borderRadius: 24,
-          ease: 'none',
-          scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom bottom', scrub: 0.6 },
-        }
-      );
-    };
-
     // Persistent title lockup slides horizontally with the narrative (à la CAPITOLIUM)
     const buildTitleLockup = () => {
       const inner = document.querySelector<HTMLElement>('.title-lockup-inner');
@@ -499,7 +488,6 @@ export function initChapterScroll({
 
     // DESKTOP — sticky dock + accumulate + chapter fade-on-leave
     mm.add('(min-width: 768px) and (prefers-reduced-motion: no-preference)', () => {
-      buildHeroShrink();
       buildDockReveals(false);
       buildRestReveals(false);
       buildChapterFade(false);
@@ -510,7 +498,6 @@ export function initChapterScroll({
 
     // MOBILE — same model, blur dropped, cheaper scrubs (mobile-first)
     mm.add('(max-width: 767px) and (prefers-reduced-motion: no-preference)', () => {
-      buildHeroShrink();
       buildDockReveals(true);
       buildRestReveals(true);
       buildChapterFade(true);
@@ -541,6 +528,42 @@ export function initChapterScroll({
     },
     resume() {
       lenis.start();
+    },
+    playIntro() {
+      ctx.add(() => {
+        const bism = content.querySelector<HTMLElement>('[data-bismillah]');
+        if (!bism) return;
+        // Direction: element dir wins, else document dir. Site Bismillah is Arabic → rtl in both locales.
+        const rtl = (bism.getAttribute('dir') || document.documentElement.dir || 'rtl') !== 'ltr';
+        // steps ≈ base letters: strip harakat, superscript-alef, tatweel, Quranic marks, whitespace.
+        const STRIP = /[ً-ٰٕـۖ-ۭ\s]/g;
+        const letters = Math.max(10, Math.min(40, (bism.textContent || '').replace(STRIP, '').length));
+        // RTL reveals right→left (shrink LEFT inset 100→0); LTR reveals left→right (shrink RIGHT inset).
+        // Negative top/bottom insets so harakat + the letterpress shadow are never sheared.
+        const clip = (v: number) =>
+          rtl ? `inset(-0.35em 0 -0.45em ${v}%)` : `inset(-0.35em ${v}% -0.45em 0)`;
+        const apply = (v: number) => {
+          const c = clip(v);
+          bism.style.clipPath = c;
+          (bism.style as unknown as { webkitClipPath: string }).webkitClipPath = c;
+        };
+        gsap.set(bism, { autoAlpha: 1, willChange: 'clip-path' });
+        apply(100); // pre-clip BEFORE first paint (runs in the layout effect)
+        const s = { v: 100 };
+        gsap.to(s, {
+          v: 0,
+          duration: Math.min(2.0, letters * 0.09), // ≈1.7s for the ~19-letter Bismillah
+          delay: 0.25, // let the gate light settle first
+          ease: `steps(${letters})`, // typewriter tick-per-letter; glyphs stay JOINED
+          onUpdate: () => apply(s.v),
+          onComplete: () => {
+            // hand back a pristine, fully-visible <p>
+            bism.style.clipPath = '';
+            (bism.style as unknown as { webkitClipPath: string }).webkitClipPath = '';
+            bism.style.willChange = '';
+          },
+        });
+      });
     },
   };
 }

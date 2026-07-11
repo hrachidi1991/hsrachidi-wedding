@@ -12,7 +12,20 @@ export const metadata: Metadata = {
     url: 'https://www.therachidis.com',
     siteName: 'www.therachidis.com',
     locale: 'en_GB',
-    images: 'https://www.therachidis.com/images/og-small.jpg',
+    images: [
+      {
+        url: 'https://www.therachidis.com/images/og-fireworks.jpg',
+        width: 1200,
+        height: 1800,
+        alt: 'Hussein & Suzan',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Wedding of Hussein & Suzan',
+    description: 'You are cordially invited to celebrate the wedding of Hussein & Suzan',
+    images: ['https://www.therachidis.com/images/og-fireworks.jpg'],
   },
 };
 
