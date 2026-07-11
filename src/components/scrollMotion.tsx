@@ -9,6 +9,10 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
+// True once the §2 Blessing has auto-continued its "writing-on" after the Bismillah.
+// First open waits for the Bismillah; later re-inits (locale toggle) snap in quickly.
+let blessingIntroPlayed = false;
+
 /* ───────────────────────── Markup helpers ─────────────────────────
    These render plain DOM with marker classes/attrs. All scroll-driven
    animation is applied later by initChapterScroll() via GSAP. */
@@ -95,7 +99,7 @@ export function WordsReveal({
     <span
       className={`gsap-words ${className ?? ''}`}
       style={{ display: 'inline-block' }}
-      dir={isArabic ? 'rtl' : undefined}
+      dir={isArabic ? 'rtl' : 'ltr'}
     >
       {words.flatMap((w, i) => {
         const unit = (
@@ -434,8 +438,10 @@ export function initChapterScroll({
     // (no leave tween → it accumulates beneath the docked media and stays interactive).
     const buildRestReveals = (mob: boolean) => {
       gsap.utils.toArray<HTMLElement>('[data-rest] > *', content).forEach((el) => {
-        if (el.matches('[data-bismillah]')) {
-          // driven by playIntro's typewriter, never scroll-hidden; clear any leftover clip
+        const secId = (el.closest('[data-section]') as HTMLElement | null)?.dataset.section;
+        if (secId === '2') {
+          // §2 Blessing is driven by playIntro (Bismillah) + buildBlessingWriteOn
+          // (the rest) — never scroll-hide it here. Clear any leftover clip on re-init.
           el.style.clipPath = '';
           (el.style as unknown as { webkitClipPath: string }).webkitClipPath = '';
           return;
@@ -447,6 +453,179 @@ export function initChapterScroll({
           scrollTrigger: { trigger: el, start: 'top 85%', end: 'top 55%', scrub: 0.8 },
         });
         REVEAL[role](tl, el, dir, mob);
+      });
+    };
+
+    // (B2) BLESSING WRITE-ON — §2's data CONTINUES the Bismillah "typing" instead of a
+    // plain fade. Per element TYPE:
+    //   • single-line text  → stepped clip-path wipe (RTL for Arabic, LTR for Latin),
+    //                         one un-split node → Arabic stays JOINED.
+    //   • wrapped verses     → brisk per-unit cascade (AR per-word / Latin per-char).
+    //   • dividers           → quick centre-out draw.
+    // TRIGGER: in-view items auto-continue just after the Bismillah; below-fold items
+    // type on as they scroll into view. Pre-hidden before paint (no FOUC), play once.
+    const buildBlessingWriteOn = () => {
+      const sec = sections.find((s) => s.dataset.section === '2');
+      if (!sec) return;
+      const els = gsap.utils
+        .toArray<HTMLElement>('[data-rest] > *', sec)
+        .filter((el) => !el.matches('[data-bismillah]'));
+      if (!els.length) return;
+
+      // strip harakat / superscript-alef / tatweel / Quranic marks / whitespace for step count
+      const STRIP = /[ً-ٰٕـۖ-ۭ\s]/g;
+      const stepsOf = (t: string) => Math.max(6, Math.min(38, (t || '').replace(STRIP, '').length));
+      const hasArabic = (t: string) => /[؀-ۿ]/.test(t || '');
+
+      type Player = { el: HTMLElement; dur: number; prehide: () => void; play: () => void };
+
+      const makeWriteOn = (el: HTMLElement): Player => {
+        const isDivider =
+          el.classList.contains('divider-gold') ||
+          el.classList.contains('divider-gold-wide') ||
+          !!el.querySelector('.divider-gold, .divider-gold-wide');
+        const units = el.querySelectorAll<HTMLElement>('.gsap-word, .gsap-char');
+
+        // DIVIDER → quick centre-out draw (short, so it never stalls the sequence)
+        if (isDivider) {
+          const line =
+            (el.classList.contains('divider-gold') || el.classList.contains('divider-gold-wide')
+              ? el
+              : el.querySelector<HTMLElement>('.divider-gold, .divider-gold-wide')) || el;
+          return {
+            el,
+            dur: 0.4,
+            prehide: () => gsap.set(el, { autoAlpha: 0 }),
+            play: () => {
+              gsap.set(el, { autoAlpha: 1 });
+              gsap.fromTo(
+                line,
+                { scaleX: 0 },
+                { scaleX: 1, transformOrigin: 'center center', duration: 0.4, ease: 'power2.out' },
+              );
+            },
+          };
+        }
+
+        // WRAPPED VERSE (WordsReveal) → brisk per-unit TYPING cascade; AR words stay joined
+        if (units.length) {
+          const stg = Math.min(0.055, 1.1 / units.length);
+          return {
+            el,
+            dur: 0.35 + stg * units.length,
+            prehide: () => gsap.set(units, { autoAlpha: 0, yPercent: 110 }),
+            play: () =>
+              gsap.to(units, {
+                autoAlpha: 1,
+                yPercent: 0,
+                stagger: stg,
+                duration: 0.32,
+                ease: 'power2.out',
+              }),
+          };
+        }
+
+        // PLAIN TEXT: single line → clip wipe (like the Bismillah); multi-line → word cascade
+        const txt = el.textContent || '';
+        const rtl = (el.getAttribute('dir') || '').toLowerCase() === 'rtl' || hasArabic(txt);
+        let oneLine = true;
+        try {
+          const r = document.createRange();
+          r.selectNodeContents(el);
+          oneLine = r.getClientRects().length <= 1;
+        } catch {
+          /* default to clip wipe */
+        }
+
+        if (oneLine) {
+          const N = stepsOf(txt);
+          el.style.display = 'inline-block';
+          el.style.maxWidth = '100%';
+          el.style.whiteSpace = 'nowrap';
+          const clip = (v: number) =>
+            rtl ? `inset(-0.35em 0 -0.45em ${v}%)` : `inset(-0.35em ${v}% -0.45em 0)`;
+          const apply = (v: number) => {
+            const c = clip(v);
+            el.style.clipPath = c;
+            (el.style as unknown as { webkitClipPath: string }).webkitClipPath = c;
+          };
+          const dur = Math.min(1.3, N * 0.065);
+          return {
+            el,
+            dur,
+            prehide: () => {
+              gsap.set(el, { autoAlpha: 1, willChange: 'clip-path' });
+              apply(100);
+            },
+            play: () => {
+              const s = { v: 100 };
+              gsap.to(s, {
+                v: 0,
+                duration: dur,
+                ease: `steps(${N})`,
+                onUpdate: () => apply(s.v),
+                onComplete: () => {
+                  el.style.clipPath = '';
+                  (el.style as unknown as { webkitClipPath: string }).webkitClipPath = '';
+                  el.style.willChange = '';
+                },
+              });
+            },
+          };
+        }
+
+        // MULTI-LINE plain text → split into WORD spans (splits at spaces only, so Arabic
+        // joining is preserved) and cascade them → reads as continued writing, no curtain.
+        const words = txt.split(/\s+/).filter(Boolean);
+        el.textContent = '';
+        const spans: HTMLElement[] = [];
+        words.forEach((w, i) => {
+          const span = document.createElement('span');
+          span.className = 'wo-word';
+          span.textContent = w;
+          el.appendChild(span);
+          spans.push(span);
+          if (i < words.length - 1) el.appendChild(document.createTextNode(' '));
+        });
+        const stg = Math.min(0.05, 1.1 / spans.length);
+        return {
+          el,
+          dur: 0.3 + stg * spans.length,
+          prehide: () => gsap.set(spans, { autoAlpha: 0, yPercent: 45 }),
+          play: () =>
+            gsap.to(spans, {
+              autoAlpha: 1,
+              yPercent: 0,
+              stagger: stg,
+              duration: 0.3,
+              ease: 'power2.out',
+            }),
+        };
+      };
+
+      const players = els.map(makeWriteOn);
+      players.forEach((p) => p.prehide()); // pre-paint hide (runs inside the layout effect)
+
+      // First open → chain the in-view items just AFTER the Bismillah (≈0.25 + ~1.7s).
+      // Re-init (locale toggle / breakpoint) → snap them in quickly, no dead wait.
+      const first = !blessingIntroPlayed;
+      blessingIntroPlayed = true;
+      const vh = window.innerHeight || 800;
+      let chain = first ? 2.2 : 0.15;
+      players.forEach((p) => {
+        const guard = { done: false };
+        const fire = () => {
+          if (guard.done) return;
+          guard.done = true;
+          p.play();
+        };
+        const inView = p.el.getBoundingClientRect().top < vh * 0.92;
+        if (inView) {
+          gsap.delayedCall(chain, fire);
+          chain += Math.min(p.dur, 0.85) + 0.1; // brisk, slight overlap → keeps "writing" flow
+        } else {
+          ScrollTrigger.create({ trigger: p.el, start: 'top 82%', once: true, onEnter: fire });
+        }
       });
     };
 
@@ -490,6 +669,7 @@ export function initChapterScroll({
     mm.add('(min-width: 768px) and (prefers-reduced-motion: no-preference)', () => {
       buildDockReveals(false);
       buildRestReveals(false);
+      buildBlessingWriteOn();
       buildChapterFade(false);
       buildTitleLockup();
       ScrollTrigger.refresh();
@@ -500,6 +680,7 @@ export function initChapterScroll({
     mm.add('(max-width: 767px) and (prefers-reduced-motion: no-preference)', () => {
       buildDockReveals(true);
       buildRestReveals(true);
+      buildBlessingWriteOn();
       buildChapterFade(true);
       ScrollTrigger.refresh();
       return () => document.documentElement.classList.remove('sm-armed');

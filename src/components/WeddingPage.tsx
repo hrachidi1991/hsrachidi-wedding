@@ -619,6 +619,9 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               const dayHeaders = locale === 'ar'
                 ? ['ن','ث','ر','خ','ج','س','ح']
                 : ['Mo','Tu','We','Th','Fr','Sa','Su'];
+              // Arabic-Indic digits in the AR version (fixes "25"→"52" reversal + reads native)
+              const arDigits = (s: string) =>
+                locale === 'ar' ? s.replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d]) : s;
 
               return (
                 <>
@@ -631,7 +634,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   <div className="flex items-center justify-center gap-3 sm:gap-5 mb-3">
                     <span className="text-[#1F4A3A] text-4xl sm:text-5xl font-light select-none">|</span>
                     <span className={`text-6xl sm:text-8xl md:text-9xl font-light text-black leading-none ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>
-                      <WordsReveal text={String(dayNum)} />
+                      <WordsReveal text={arDigits(String(dayNum))} />
                     </span>
                     <span className="text-[#1F4A3A] text-4xl sm:text-5xl font-light select-none">|</span>
                   </div>
@@ -639,8 +642,8 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   <p className={`text-base sm:text-lg uppercase tracking-[0.2em] text-black/60 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                     {monthName}
                   </p>
-                  <p className={`text-base tracking-[0.15em] text-black/40 mb-8 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                    {year}
+                  <p className={`text-base tracking-[0.15em] text-black/40 mb-8 ${isRtl ? 'font-arabic' : 'font-body'}`} dir="ltr">
+                    {arDigits(String(year))}
                   </p>
 
                   <div className="divider-gold" />
@@ -649,7 +652,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                     {t(locale, 'countdownTo')}
                   </p>
 
-                  <div className="flex items-center justify-center gap-1 sm:gap-2 mb-2">
+                  <div className="flex items-center justify-center gap-1 sm:gap-2 mb-2" dir="ltr">
                     {[
                       { value: countdown.days, label: t(locale, 'days') },
                       { value: countdown.hours, label: t(locale, 'hours') },
@@ -658,7 +661,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                     ].map((unit, i) => (
                       <div key={i} className="flex items-center">
                         <div className="countdown-unit">
-                          <div className="countdown-number">{String(unit.value).padStart(2, '0')}</div>
+                          <div className="countdown-number">{arDigits(String(unit.value).padStart(2, '0'))}</div>
                           <div className={`countdown-label ${isRtl ? 'font-arabic' : ''}`}>{unit.label}</div>
                         </div>
                         {i < 3 && (
@@ -674,7 +677,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                     {t(locale, 'theGreatDay')}
                   </p>
                   <p className={`text-sm uppercase tracking-[0.15em] text-black/40 mb-3 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                    {monthName} {year}
+                    {monthName} {arDigits(String(year))}
                   </p>
                   <div className="calendar-grid">
                     {dayHeaders.map((d) => (
@@ -685,7 +688,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                     ))}
                     {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => (
                       <div key={d} className={`cal-day ${d === dayNum ? 'highlight' : ''}`}>
-                        {d}
+                        {arDigits(String(d))}
                       </div>
                     ))}
                   </div>
@@ -714,7 +717,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               <p className={`text-sm sm:text-base uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                 {t(locale, 'dateLabel')}
               </p>
-              <p className={`text-2xl sm:text-3xl font-medium text-black ${isRtl ? 'font-arabic' : 'font-display'}`}>
+              <p className={`text-2xl sm:text-3xl font-medium text-black ${isRtl ? 'font-arabic' : 'font-display'}`} dir="ltr">
                 {settings.eventDate}
               </p>
             </Item>
@@ -723,7 +726,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               <p className={`text-sm sm:text-base uppercase tracking-[0.25em] text-olive-400 mb-1 ${isRtl ? 'font-arabic' : 'font-body'}`}>
                 {t(locale, 'timeLabel')}
               </p>
-              <p className={`text-2xl sm:text-3xl font-medium text-black ${isRtl ? 'font-arabic' : 'font-display'}`}>
+              <p className={`text-2xl sm:text-3xl font-medium text-black ${isRtl ? 'font-arabic' : 'font-display'}`} dir="ltr">
                 {settings.eventTime}
               </p>
             </Item>
@@ -1102,9 +1105,6 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
             <>
               <p className={`seal-tap-hint ${isRtl ? 'font-arabic' : ''}`}>
                 {isRtl ? 'انقر لفتح الدعوة' : 'Tap to open'}
-              </p>
-              <p className={`seal-tap-sub ${isRtl ? 'font-arabic' : ''}`}>
-                {isRtl ? 'هذه الدعوة خاصة بك وحدك' : 'This invitation is exclusive for you'}
               </p>
             </>
           )}

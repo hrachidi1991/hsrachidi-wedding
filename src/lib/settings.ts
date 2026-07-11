@@ -127,7 +127,7 @@ export const defaultSettings: SiteContent = {
 
   eventDate: 'August 25, 2026',
   eventTime: '8:00 PM',
-  venueNameEn: 'Plein Nature',
+  venueNameEn: 'Pleine Nature',
   venueNameAr: 'بلين ناتشر',
   venueAddressEn: 'Beirut, Lebanon',
   venueAddressAr: 'بيروت، لبنان',

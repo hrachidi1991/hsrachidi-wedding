@@ -267,6 +267,16 @@ html.no-scroll body {
   .bismillah-type { clip-path: none !important; -webkit-clip-path: none !important; }
 }
 
+/* §2 Blessing write-on: word units for multi-line plain text (split at spaces only,
+   so Arabic joining is preserved). Transform-only → 60fps; wraps naturally. */
+.wo-word {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wo-word { opacity: 1 !important; transform: none !important; }
+}
+
 /* ═══ Sliding title lockup (persistent emerald monogram) ═══ */
 .title-lockup {
   position: fixed;

@@ -1,0 +1,9 @@
+# Source / unused media — keep the deployment lean (used clips stay)
+public/video/ScreenRecording*
+public/video/_raw
+public/video/publer-1783637168271.MP4
+public/video/scene-cake.mp4
+public/video/venue-dusk.mp4
+public/video/venue-twilight.mp4
+BUgs
+docs
