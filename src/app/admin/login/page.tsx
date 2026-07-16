@@ -34,38 +34,44 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4" style={{ fontFamily: 'system-ui, sans-serif' }}>
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-800">HSRachidi Admin</h1>
-          <p className="text-sm text-gray-500 mt-1">Wedding Website Management</p>
+    <div className="admin-root" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}>
+      <div style={{ width: '100%', maxWidth: '25rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+          <div className="ad-eyebrow" style={{ marginBottom: '0.5rem' }}>Wedding Admin</div>
+          <h1 className="ad-title">Hussein &amp; Suzan</h1>
+          <p className="ad-page-desc" style={{ marginInline: 'auto' }}>Sign in to manage your wedding website.</p>
         </div>
-        <form onSubmit={handleLogin} className="bg-white rounded-lg shadow-md p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+        <form onSubmit={handleLogin} className="ad-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="ad-field">
+            <label className="ad-label" htmlFor="admin-username">Username</label>
             <input
+              id="admin-username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="ad-input"
+              autoComplete="username"
               required
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <div className="ad-field">
+            <label className="ad-label" htmlFor="admin-password">Password</label>
             <input
+              id="admin-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="ad-input"
+              autoComplete="current-password"
               required
             />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <div className="ad-notice ad-notice--bad">{error}</div>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white rounded-md py-2.5 text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50"
+            className="ad-btn ad-btn--primary"
+            style={{ width: '100%' }}
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>

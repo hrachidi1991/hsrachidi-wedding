@@ -1086,25 +1086,8 @@ html.no-scroll body {
   border-radius: 2px;
 }
 
-/* Admin styles */
-.admin-layout {
-  font-family: system-ui, -apple-system, sans-serif;
-}
-
-.admin-sidebar {
-  background: #1a1a2e;
-  color: white;
-  width: 260px;
-  min-height: 100vh;
-}
-
-.admin-card {
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
+/* Admin styles — the full admin design system lives in src/app/admin.css
+   (scoped under .admin-root and imported by the admin layout). */
 
 /* RSVP Toggle Buttons */
 .rsvp-btn {

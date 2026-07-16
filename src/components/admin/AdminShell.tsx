@@ -4,11 +4,93 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
+type IconProps = { className?: string };
+
+const stroke = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.7,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+};
+
+function DashboardIcon({ className }: IconProps) {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" className={className} {...stroke}>
+      <rect x="3" y="3" width="7" height="9" rx="1.5" />
+      <rect x="14" y="3" width="7" height="5" rx="1.5" />
+      <rect x="14" y="12" width="7" height="9" rx="1.5" />
+      <rect x="3" y="16" width="7" height="5" rx="1.5" />
+    </svg>
+  );
+}
+
+function ContentIcon({ className }: IconProps) {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" className={className} {...stroke}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function GuestsIcon({ className }: IconProps) {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" className={className} {...stroke}>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+function SeatingIcon({ className }: IconProps) {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" className={className} {...stroke}>
+      <path d="M4 18v-6a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v1h6v-1a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v6" />
+      <path d="M6 13V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v7" />
+      <path d="M4 18h16" />
+      <path d="M6 18v2M18 18v2" />
+    </svg>
+  );
+}
+
+function RsvpIcon({ className }: IconProps) {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" className={className} {...stroke}>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m2 7 10 6 10-6" />
+    </svg>
+  );
+}
+
+function GlobeIcon({ className }: IconProps) {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" className={className} {...stroke}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z" />
+    </svg>
+  );
+}
+
+function LogoutIcon({ className }: IconProps) {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" className={className} {...stroke}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="m16 17 5-5-5-5" />
+      <path d="M21 12H9" />
+    </svg>
+  );
+}
+
 const navItems = [
-  { href: '/admin', label: 'Dashboard', icon: '📊' },
-  { href: '/admin/content', label: 'Content & Settings', icon: '✏️' },
-  { href: '/admin/guests', label: 'Guests & Groups', icon: '👥' },
-  { href: '/admin/rsvp', label: 'RSVP Tracking', icon: '✉️' },
+  { href: '/admin', label: 'Dashboard', Icon: DashboardIcon },
+  { href: '/admin/content', label: 'Content & Settings', Icon: ContentIcon },
+  { href: '/admin/guests', label: 'Guests & Groups', Icon: GuestsIcon },
+  { href: '/admin/seating', label: 'Seating Map', Icon: SeatingIcon },
+  { href: '/admin/rsvp', label: 'RSVP Tracking', Icon: RsvpIcon },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
@@ -22,66 +104,70 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <div className="admin-layout flex min-h-screen bg-gray-50" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      {/* Mobile header */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-[#1a1a2e] text-white flex items-center justify-between px-4 py-3 md:hidden">
-        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <div className="admin-root admin-shell">
+      {/* Mobile top bar */}
+      <header className="ad-topbar">
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(true)}
+          className="ad-hamburger"
+          aria-label="Open navigation menu"
+          aria-expanded={sidebarOpen}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
             <line x1="3" y1="6" x2="21" y2="6" />
             <line x1="3" y1="12" x2="21" y2="12" />
             <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
-        <h1 className="text-sm font-bold">HSRachidi Admin</h1>
-        <div className="w-6" />
-      </div>
+        <span className="ad-topbar__brand">Hussein &amp; Suzan</span>
+      </header>
 
-      {/* Mobile overlay */}
+      {/* Mobile scrim */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="ad-scrim md:hidden" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
       )}
 
       {/* Sidebar */}
-      <aside className={`admin-sidebar flex flex-col w-64 flex-shrink-0 fixed md:static inset-y-0 left-0 z-50 transform transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
-        <div className="p-5 border-b border-white/10">
-          <h1 className="text-lg font-bold">HSRachidi</h1>
-          <p className="text-xs text-gray-400 mt-0.5">Wedding Admin</p>
+      <aside className={`ad-sidebar${sidebarOpen ? ' is-open' : ''}`} aria-label="Admin navigation">
+        <div className="ad-brand">
+          <div className="ad-brand__names">Hussein &amp; Suzan</div>
+          <div className="ad-brand__label">Wedding Admin</div>
         </div>
-        <nav className="flex-1 p-3 space-y-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${
-                pathname === item.href
-                  ? 'bg-white/10 text-white font-medium'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <span>{item.icon}</span>
-              {item.label}
-            </Link>
-          ))}
+
+        <nav className="ad-nav">
+          {navItems.map(({ href, label, Icon }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setSidebarOpen(false)}
+                className={`ad-nav-link${active ? ' is-active' : ''}`}
+                aria-current={active ? 'page' : undefined}
+              >
+                <Icon />
+                {label}
+              </Link>
+            );
+          })}
         </nav>
-        <div className="p-3 border-t border-white/10">
-          <Link href="/" target="_blank" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition">
-            🌐 View Website
+
+        <div className="ad-sidebar-foot">
+          <Link href="/" target="_blank" className="ad-foot-link">
+            <GlobeIcon />
+            View website
           </Link>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-red-300 rounded-lg hover:bg-white/5 transition mt-1"
-          >
-            🚪 Logout
+          <button onClick={handleLogout} className="ad-foot-link ad-foot-link--danger">
+            <LogoutIcon />
+            Logout
           </button>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto text-gray-900 pt-14 md:pt-0">
-        <div className="p-4 sm:p-6 max-w-6xl">
-          {children}
-        </div>
+      <main className="ad-main">
+        <div className="ad-main__inner">{children}</div>
       </main>
     </div>
   );

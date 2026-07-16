@@ -41,10 +41,11 @@ const WhatsAppIcon = ({ phone, rsvpLink }: { phone: string; rsvpLink: string }) 
     href={getWhatsAppUrl(phone, rsvpLink)}
     target="_blank"
     rel="noopener noreferrer"
-    className="inline-flex items-center text-green-500 hover:text-green-600 transition-colors"
+    className="ad-icon-btn ad-icon-btn--wa"
     title={`Send RSVP link via WhatsApp to ${phone}`}
+    aria-label={`Send RSVP link via WhatsApp to ${phone}`}
   >
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
     </svg>
   </a>
@@ -490,22 +491,46 @@ export default function GuestsPage() {
     }
   };
 
-  if (loading) return <div className="p-8 text-gray-400">Loading...</div>;
+  if (loading) {
+    return (
+      <div>
+        <div className="ad-skel" style={{ height: 34, width: 230, marginBottom: 24 }} />
+        <div className="ad-skel" style={{ height: 46, width: 280, marginBottom: 24 }} />
+        <div className="ad-card">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="ad-skel" style={{ height: 16, width: '100%', marginBottom: 14 }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const tabLabels: Record<'groups' | 'guests' | 'import', string> = {
+    groups: 'Groups',
+    guests: 'Guests',
+    import: 'Import',
+  };
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Guests & Groups</h1>
+      <header className="ad-header">
+        <div>
+          <div className="ad-eyebrow" style={{ marginBottom: '0.4rem' }}>Guest list</div>
+          <h1 className="ad-title">Guests &amp; Groups</h1>
+          <p className="ad-page-desc">Create invitation groups, add guests and share personalised RSVP links.</p>
+        </div>
+      </header>
 
-      <div className="flex gap-2 mb-6">
+      <div className="ad-seg mb-5" role="tablist" aria-label="Guests and groups views">
         {(['groups', 'guests', 'import'] as const).map((tab) => (
           <button
             key={tab}
+            role="tab"
+            aria-selected={activeTab === tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm rounded-md transition capitalize ${
-              activeTab === tab ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border'
-            }`}
+            className="ad-seg-btn"
           >
-            {tab === 'import' ? 'Import' : tab}
+            {tabLabels[tab]}
           </button>
         ))}
       </div>
@@ -513,57 +538,72 @@ export default function GuestsPage() {
       {/* ═══ GROUPS TAB ═══ */}
       {activeTab === 'groups' && (
         <div>
-          <div className="admin-card mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Add New Group</h3>
-            <div className="flex gap-2 flex-wrap items-end">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Group Code</label>
-                <input type="text" value={newGroupCode} onChange={(e) => setNewGroupCode(e.target.value)} placeholder="e.g., RACHIDI-FAM" className="border rounded px-3 py-2 text-sm w-48" />
+          <div className="ad-card mb-5">
+            <h3 className="ad-eyebrow" style={{ marginBottom: '0.9rem' }}>Add New Group</h3>
+            <div className="ad-form-row">
+              <div className="ad-field" style={{ flex: '2 1 200px' }}>
+                <label className="ad-label">Group Code</label>
+                <input type="text" value={newGroupCode} onChange={(e) => setNewGroupCode(e.target.value)} placeholder="e.g., RACHIDI-FAM" className="ad-input" />
               </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Max Guests</label>
-                <input type="number" value={newGroupMax} onChange={(e) => setNewGroupMax(parseInt(e.target.value) || 1)} min={1} max={20} className="border rounded px-3 py-2 text-sm w-24" />
+              <div className="ad-field" style={{ flex: '0 1 120px' }}>
+                <label className="ad-label">Max Guests</label>
+                <input type="number" value={newGroupMax} onChange={(e) => setNewGroupMax(parseInt(e.target.value) || 1)} min={1} max={20} className="ad-input ad-nums" />
               </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Side</label>
-                <select value={newGroupSide} onChange={(e) => setNewGroupSide(e.target.value)} className="border rounded px-3 py-2 text-sm">
+              <div className="ad-field" style={{ flex: '0 1 140px' }}>
+                <label className="ad-label">Side</label>
+                <select value={newGroupSide} onChange={(e) => setNewGroupSide(e.target.value)} className="ad-select">
                   <option value="groom">Groom</option>
                   <option value="bride">Bride</option>
                 </select>
               </div>
-              <button onClick={addGroup} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
+              <button onClick={addGroup} className="ad-btn ad-btn--primary">
                 Create Group
               </button>
             </div>
           </div>
 
-          <div className="admin-card">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+          <div className="ad-card ad-card--flush">
+            <div className="ad-table-wrap">
+              <table className="ad-table">
                 <thead>
-                  <tr className="text-left text-gray-500 border-b">
-                    <th className="pb-2 font-medium">Group Code</th>
-                    <th className="pb-2 font-medium">Side</th>
-                    <th className="pb-2 font-medium">Max</th>
-                    <th className="pb-2 font-medium">Guests</th>
-                    <th className="pb-2 font-medium">RSVP Link</th>
-                    <th className="pb-2 font-medium">Actions</th>
+                  <tr>
+                    <th>Group Code</th>
+                    <th>Side</th>
+                    <th>Max</th>
+                    <th>Guests</th>
+                    <th>RSVP Link</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {groups.map((g) => (
-                    <tr key={g.id} className="border-b border-gray-50">
-                      <td className="py-2 font-medium text-gray-800">{g.groupCode}</td>
-                      <td className="py-2 capitalize text-gray-600">{g.side}</td>
-                      <td className="py-2 text-gray-600">{g.maxGuests}</td>
-                      <td className="py-2 text-gray-600">{g.guests?.length || 0}</td>
-                      <td className="py-2">
-                        <div className="flex items-center gap-2">
+                    <tr key={g.id}>
+                      <td className="ad-cell-strong">{g.groupCode}</td>
+                      <td className="ad-cap">{g.side}</td>
+                      <td>{g.maxGuests}</td>
+                      <td>{g.guests?.length || 0}</td>
+                      <td>
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <button
                             onClick={() => copyLink(g.groupCode)}
-                            className="text-blue-600 hover:text-blue-800 text-xs underline"
+                            className="ad-link-btn"
                           >
-                            Copy Link
+                            {copiedGroupCode === g.groupCode ? (
+                              <>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ad-ok)' }}>
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                <span style={{ color: 'var(--ad-ok)' }}>Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                                Copy Link
+                              </>
+                            )}
                           </button>
                           {g.guests?.filter((guest) => guest.phone).map((guest) => (
                             <WhatsAppIcon
@@ -574,16 +614,21 @@ export default function GuestsPage() {
                           ))}
                         </div>
                       </td>
-                      <td className="py-2">
-                        <button onClick={() => deleteGroup(g.id)} className="text-red-400 hover:text-red-600 text-xs">
-                          Delete
+                      <td>
+                        <button onClick={() => deleteGroup(g.id)} className="ad-icon-btn ad-icon-btn--danger" aria-label={`Delete group ${g.groupCode}`} title="Delete group">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            <line x1="10" y1="11" x2="10" y2="17" />
+                            <line x1="14" y1="11" x2="14" y2="17" />
+                          </svg>
                         </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {groups.length === 0 && <p className="text-gray-400 text-sm py-4 text-center">No groups yet.</p>}
+              {groups.length === 0 && <p className="ad-empty">No groups yet.</p>}
             </div>
           </div>
         </div>
@@ -593,45 +638,62 @@ export default function GuestsPage() {
       {activeTab === 'guests' && (
         <div>
           {/* Add guest form */}
-          <div className="admin-card mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Add New Guest</h3>
-            <div className="flex gap-2 flex-wrap items-end">
-              <input type="text" value={newGuest.name} onChange={(e) => setNewGuest({ ...newGuest, name: e.target.value })} placeholder="Full Name" className="border rounded px-3 py-2 text-sm w-48" />
-              <input type="text" value={newGuest.phone} onChange={(e) => setNewGuest({ ...newGuest, phone: e.target.value })} placeholder="Phone" className="border rounded px-3 py-2 text-sm w-40" />
-              <select value={newGuest.side} onChange={(e) => setNewGuest({ ...newGuest, side: e.target.value })} className="border rounded px-3 py-2 text-sm">
-                <option value="groom">Groom</option>
-                <option value="bride">Bride</option>
-              </select>
-              <select value={newGuest.groupCode} onChange={(e) => setNewGuest({ ...newGuest, groupCode: e.target.value })} className="border rounded px-3 py-2 text-sm">
-                <option value="">Select Group...</option>
-                {groups.map((g) => <option key={g.id} value={g.groupCode}>{g.groupCode}</option>)}
-              </select>
-              <button onClick={addGuest} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 whitespace-nowrap">
-                Add
+          <div className="ad-card mb-5">
+            <h3 className="ad-eyebrow" style={{ marginBottom: '0.9rem' }}>Add New Guest</h3>
+            <div className="ad-form-row">
+              <div className="ad-field" style={{ flex: '2 1 200px' }}>
+                <label className="ad-label">Full Name</label>
+                <input type="text" value={newGuest.name} onChange={(e) => setNewGuest({ ...newGuest, name: e.target.value })} placeholder="Full Name" className="ad-input" />
+              </div>
+              <div className="ad-field" style={{ flex: '1 1 150px' }}>
+                <label className="ad-label">Phone</label>
+                <input type="text" value={newGuest.phone} onChange={(e) => setNewGuest({ ...newGuest, phone: e.target.value })} placeholder="Phone" className="ad-input" />
+              </div>
+              <div className="ad-field" style={{ flex: '0 1 130px' }}>
+                <label className="ad-label">Side</label>
+                <select value={newGuest.side} onChange={(e) => setNewGuest({ ...newGuest, side: e.target.value })} className="ad-select">
+                  <option value="groom">Groom</option>
+                  <option value="bride">Bride</option>
+                </select>
+              </div>
+              <div className="ad-field" style={{ flex: '1 1 160px' }}>
+                <label className="ad-label">Group</label>
+                <select value={newGuest.groupCode} onChange={(e) => setNewGuest({ ...newGuest, groupCode: e.target.value })} className="ad-select">
+                  <option value="">Select Group...</option>
+                  {groups.map((g) => <option key={g.id} value={g.groupCode}>{g.groupCode}</option>)}
+                </select>
+              </div>
+              <button onClick={addGuest} className="ad-btn ad-btn--primary">
+                Add Guest
               </button>
             </div>
           </div>
 
           {/* Guests list */}
-          <div className="admin-card">
+          <div className="ad-card ad-card--flush">
             {/* Search bar */}
-            <div className="mb-3 relative">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                type="text"
-                value={guestSearch}
-                onChange={(e) => setGuestSearch(e.target.value)}
-                placeholder="Search by name, phone, or group..."
-                className="border rounded px-3 py-2 pl-9 text-sm w-full"
-              />
-              {guestSearch && (
-                <button onClick={() => setGuestSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  &times;
-                </button>
-              )}
+            <div style={{ padding: '1rem 1.1rem' }}>
+              <div className="ad-search">
+                <span className="ad-search__icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </span>
+                <input
+                  type="text"
+                  value={guestSearch}
+                  onChange={(e) => setGuestSearch(e.target.value)}
+                  placeholder="Search by name, phone, or group..."
+                  className="ad-input ad-input--search"
+                  aria-label="Search guests"
+                />
+                {guestSearch && (
+                  <button onClick={() => setGuestSearch('')} className="ad-search__clear" aria-label="Clear search">
+                    &times;
+                  </button>
+                )}
+              </div>
             </div>
             {(() => {
               const q = guestSearch.toLowerCase().trim();
@@ -643,23 +705,23 @@ export default function GuestsPage() {
                   )
                 : guests;
               return (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <div className="ad-table-wrap">
+                <table className="ad-table">
                   <thead>
-                    <tr className="text-left text-gray-500 border-b">
-                      <th className="pb-2 font-medium">Name</th>
-                      <th className="pb-2 font-medium">Phone</th>
-                      <th className="pb-2 font-medium">Side</th>
-                      <th className="pb-2 font-medium">Group ID</th>
-                      <th className="pb-2 font-medium">Link</th>
-                      <th className="pb-2 font-medium">Actions</th>
+                    <tr>
+                      <th>Name</th>
+                      <th>Phone</th>
+                      <th>Side</th>
+                      <th>Group ID</th>
+                      <th>Link</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.map((g) => (
-                      <tr key={g.id} className="border-b border-gray-50">
-                        <td className="py-2 font-medium text-gray-800">{g.name}</td>
-                        <td className="py-2 text-gray-600">
+                      <tr key={g.id}>
+                        <td className="ad-cell-strong">{g.name}</td>
+                        <td>
                           <span className="flex items-center gap-2">
                             {g.phone || '-'}
                             {g.phone && (
@@ -670,19 +732,19 @@ export default function GuestsPage() {
                             )}
                           </span>
                         </td>
-                        <td className="py-2 capitalize text-gray-600">{g.side}</td>
-                        <td className="py-2 text-gray-600">{g.groupCode}</td>
-                        <td className="py-2">
+                        <td className="ad-cap">{g.side}</td>
+                        <td>{g.groupCode}</td>
+                        <td>
                           <button
                             onClick={() => copyLink(g.groupCode)}
-                            className="text-blue-600 hover:text-blue-800 text-xs inline-flex items-center gap-1"
+                            className="ad-link-btn"
                           >
                             {copiedGroupCode === g.groupCode ? (
                               <>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ad-ok)' }}>
                                   <polyline points="20 6 9 17 4 12" />
                                 </svg>
-                                <span className="text-green-600">Copied!</span>
+                                <span style={{ color: 'var(--ad-ok)' }}>Copied!</span>
                               </>
                             ) : (
                               <>
@@ -695,16 +757,23 @@ export default function GuestsPage() {
                             )}
                           </button>
                         </td>
-                        <td className="py-2">
-                          <button onClick={() => deleteGuest(g.id)} className="text-red-400 hover:text-red-600 text-xs">Delete</button>
+                        <td>
+                          <button onClick={() => deleteGuest(g.id)} className="ad-icon-btn ad-icon-btn--danger" aria-label={`Delete guest ${g.name}`} title="Delete guest">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <line x1="10" y1="11" x2="10" y2="17" />
+                              <line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                          </button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                {guests.length === 0 && <p className="text-gray-400 text-sm py-4 text-center">No guests yet.</p>}
+                {guests.length === 0 && <p className="ad-empty">No guests yet.</p>}
                 {guests.length > 0 && filtered.length === 0 && (
-                  <p className="text-gray-400 text-sm py-4 text-center">No guests match &ldquo;{guestSearch}&rdquo;</p>
+                  <p className="ad-empty">No guests match &ldquo;{guestSearch}&rdquo;</p>
                 )}
               </div>
               );
@@ -715,14 +784,14 @@ export default function GuestsPage() {
 
       {/* ═══ IMPORT TAB ═══ */}
       {activeTab === 'import' && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Excel Upload Wizard */}
-          <div className="admin-card">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Import from Excel File</h3>
-            <p className="text-xs text-gray-500 mb-3">
+          <div className="ad-card">
+            <h3 className="ad-eyebrow" style={{ marginBottom: '0.6rem' }}>Import from Excel File</h3>
+            <p className="ad-help" style={{ marginBottom: '1rem' }}>
               Upload an <strong>.xlsx</strong> or <strong>.xls</strong> file with columns:
-              <code className="bg-gray-100 px-1 rounded ml-1">Name, Phone Number, S, GT, Group #</code>
-              <span className="block mt-1 text-gray-400">
+              <code style={{ marginLeft: '0.35rem' }}>Name, Phone Number, S, GT, Group #</code>
+              <span style={{ display: 'block', marginTop: '0.35rem', color: 'var(--ad-muted)' }}>
                 S = G (groom) or B (bride) &middot; GroupCode = S+GT+Group# (e.g. GFAM1) &middot; maxGuests auto-calculated per group
               </span>
             </p>
@@ -738,9 +807,9 @@ export default function GuestsPage() {
             {importStep === 'idle' && (
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 border border-gray-300 inline-flex items-center gap-2"
+                className="ad-btn ad-btn--outline"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
                   <line x1="12" y1="3" x2="12" y2="15" />
@@ -751,23 +820,17 @@ export default function GuestsPage() {
 
             {/* FILE-SELECTED: Show file name + Next button */}
             {importStep === 'file-selected' && (
-              <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500 flex-shrink-0">
+              <div className="ad-filechip">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="flex-shrink-0">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
-                <span className="text-sm text-blue-800 flex-1 truncate font-medium">{importFileName}</span>
-                <button
-                  onClick={handleNext}
-                  className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 font-medium whitespace-nowrap"
-                >
+                <span className="flex-1 truncate font-medium" style={{ color: 'var(--ad-ink)' }}>{importFileName}</span>
+                <button onClick={handleNext} className="ad-btn ad-btn--accent ad-btn--sm">
                   Next
                 </button>
-                <button
-                  onClick={resetImportWizard}
-                  className="text-gray-400 hover:text-red-500 text-lg leading-none"
-                >
-                  &times;
+                <button onClick={resetImportWizard} className="ad-icon-btn" aria-label="Cancel import">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                 </button>
               </div>
             )}
@@ -775,21 +838,21 @@ export default function GuestsPage() {
             {/* SHEET-SELECT: Pick which sheet to load */}
             {importStep === 'sheet-select' && (
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500 flex-shrink-0">
+                <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--ad-body)' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="flex-shrink-0" style={{ color: 'var(--ad-accent)' }}>
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                     <polyline points="14 2 14 8 20 8" />
                   </svg>
                   <span className="truncate font-medium">{importFileName}</span>
-                  <span className="text-gray-400">({sheetNames.length} sheets)</span>
+                  <span style={{ color: 'var(--ad-muted)' }}>({sheetNames.length} sheets)</span>
                 </div>
-                <div className="flex items-end gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Select Sheet</label>
+                <div className="ad-form-row">
+                  <div className="ad-field" style={{ flex: '1 1 220px' }}>
+                    <label className="ad-label">Select Sheet</label>
                     <select
                       value={selectedSheet}
                       onChange={(e) => setSelectedSheet(e.target.value)}
-                      className="border rounded px-3 py-2 text-sm min-w-[200px]"
+                      className="ad-select"
                     >
                       <option value="__ALL__">All Sheets</option>
                       {sheetNames.map((name) => (
@@ -797,16 +860,10 @@ export default function GuestsPage() {
                       ))}
                     </select>
                   </div>
-                  <button
-                    onClick={handleLoadSheet}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 font-medium"
-                  >
+                  <button onClick={handleLoadSheet} className="ad-btn ad-btn--accent">
                     Load
                   </button>
-                  <button
-                    onClick={resetImportWizard}
-                    className="px-4 py-2 text-gray-500 text-sm rounded-md hover:bg-gray-100 border border-gray-300"
-                  >
+                  <button onClick={resetImportWizard} className="ad-btn ad-btn--outline">
                     Cancel
                   </button>
                 </div>
@@ -819,116 +876,113 @@ export default function GuestsPage() {
               return (
               <div className="space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <span className="font-medium truncate">{importFileName}</span>
+                  <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--ad-body)' }}>
+                    <span className="font-medium truncate" style={{ color: 'var(--ad-ink)' }}>{importFileName}</span>
                     {sheetNames.length > 1 && (
-                      <span className="text-gray-400">/ {selectedSheet === '__ALL__' ? 'All Sheets' : selectedSheet}</span>
+                      <span style={{ color: 'var(--ad-muted)' }}>/ {selectedSheet === '__ALL__' ? 'All Sheets' : selectedSheet}</span>
                     )}
-                    <span className="text-gray-400">
+                    <span style={{ color: 'var(--ad-muted)' }}>
                       &mdash; {previewRows.length} row{previewRows.length !== 1 ? 's' : ''}
                     </span>
                     {errorCount > 0 && (
-                      <span className="text-red-600 font-medium">
+                      <span className="font-medium" style={{ color: 'var(--ad-bad)' }}>
                         ({errorCount} with errors)
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
                     {sheetNames.length > 1 && (
-                      <button
-                        onClick={() => setImportStep('sheet-select')}
-                        className="px-3 py-1.5 text-gray-500 text-xs rounded-md hover:bg-gray-100 border border-gray-300"
-                      >
+                      <button onClick={() => setImportStep('sheet-select')} className="ad-btn ad-btn--outline ad-btn--sm">
                         Change Sheet
                       </button>
                     )}
                     <button
                       onClick={handleSaveSelected}
                       disabled={selectedRowIndices.size === 0}
-                      className="px-4 py-1.5 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="ad-btn ad-btn--ok ad-btn--sm"
                     >
                       Save Selected ({selectedRowIndices.size})
                     </button>
-                    <button
-                      onClick={resetImportWizard}
-                      className="px-3 py-1.5 text-gray-500 text-xs rounded-md hover:bg-gray-100 border border-gray-300"
-                    >
+                    <button onClick={resetImportWizard} className="ad-btn ad-btn--outline ad-btn--sm">
                       Cancel
                     </button>
                   </div>
                 </div>
 
                 {errorCount > 0 && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2.5 text-sm text-red-700">
+                  <div className="ad-notice ad-notice--bad">
                     <strong>{errorCount} row{errorCount !== 1 ? 's have' : ' has'} errors</strong> and cannot be imported. Fix them in your spreadsheet or deselect them before saving.
                   </div>
                 )}
 
                 {previewRows.length === 0 ? (
-                  <p className="text-gray-400 text-sm py-4 text-center">This sheet has no data rows.</p>
+                  <p className="ad-empty">This sheet has no data rows.</p>
                 ) : (
-                  <div className="border rounded-lg overflow-auto max-h-[400px]">
-                    <table className="w-full text-xs">
-                      <thead className="sticky top-0 bg-gray-50 z-10">
-                        <tr className="text-left text-gray-500 border-b">
-                          <th className="px-3 py-2 font-medium w-10">
+                  <div style={{ border: '1px solid var(--ad-border)', borderRadius: 'var(--ad-r-ctrl)', overflow: 'auto', maxHeight: 400 }}>
+                    <table className="ad-table" style={{ fontSize: '0.78rem' }}>
+                      <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--ad-raised)' }}>
+                        <tr>
+                          <th style={{ width: 40 }}>
                             <input
                               type="checkbox"
                               checked={previewRows.length > 0 && selectedRowIndices.size === previewRows.length}
                               onChange={toggleAllRows}
                               disabled={previewRows.length === 0}
-                              className="rounded"
+                              className="ad-checkbox"
+                              aria-label="Select all rows"
                             />
                           </th>
-                          <th className="px-3 py-2 font-medium text-gray-400 w-10">#</th>
+                          <th style={{ width: 40 }}>#</th>
                           {previewHeaders.map((h) => (
-                            <th key={h} className="px-3 py-2 font-medium whitespace-nowrap">{h}</th>
+                            <th key={h} className="whitespace-nowrap">{h}</th>
                           ))}
-                          <th className="px-3 py-2 font-medium text-gray-400 w-10"></th>
+                          <th style={{ width: 40 }}></th>
                         </tr>
                       </thead>
                       <tbody>
                         {previewRows.map((row, i) => {
                           const hasError = !!rowErrors[i];
+                          const selected = selectedRowIndices.has(i);
                           return (
                           <tr
                             key={i}
-                            className={`border-b transition-colors ${
-                              hasError
-                                ? selectedRowIndices.has(i)
-                                  ? 'bg-red-50 border-red-100 cursor-pointer'
-                                  : 'bg-red-50/50 border-red-100 text-gray-400 cursor-pointer'
-                                : selectedRowIndices.has(i)
-                                  ? 'bg-white hover:bg-gray-50 cursor-pointer border-gray-50'
-                                  : 'bg-gray-100 text-gray-400 hover:bg-gray-50 cursor-pointer border-gray-50'
-                            }`}
+                            style={{
+                              cursor: 'pointer',
+                              background: hasError
+                                ? 'var(--ad-bad-soft)'
+                                : selected ? 'var(--ad-surface)' : 'var(--ad-raised)',
+                              color: hasError
+                                ? 'var(--ad-bad)'
+                                : selected ? 'var(--ad-body)' : 'var(--ad-muted)',
+                            }}
                             onClick={() => toggleRowSelection(i)}
                             title={hasError ? rowErrors[i].join(' | ') : undefined}
                           >
-                            <td className="px-3 py-1.5">
+                            <td>
                               <input
                                 type="checkbox"
-                                checked={selectedRowIndices.has(i)}
+                                checked={selected}
                                 onChange={() => toggleRowSelection(i)}
                                 onClick={(e) => e.stopPropagation()}
-                                className="rounded"
+                                className="ad-checkbox"
+                                aria-label={`Select row ${i + 1}`}
                               />
                             </td>
-                            <td className={`px-3 py-1.5 ${hasError ? 'text-red-400' : 'text-gray-400'}`}>{i + 1}</td>
+                            <td style={{ color: hasError ? 'var(--ad-bad)' : 'var(--ad-muted)' }}>{i + 1}</td>
                             {previewHeaders.map((h) => (
-                              <td key={h} className={`px-3 py-1.5 whitespace-nowrap max-w-[200px] truncate ${hasError ? 'text-red-600' : ''}`}>
+                              <td key={h} className="whitespace-nowrap" style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {row[h] || ''}
                               </td>
                             ))}
-                            <td className="px-3 py-1.5">
+                            <td>
                               {hasError && (
-                                <span className="relative group">
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-500">
+                                <span className="relative group" style={{ display: 'inline-flex' }}>
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ad-bad)' }}>
                                     <circle cx="12" cy="12" r="10" />
                                     <line x1="12" y1="8" x2="12" y2="12" />
                                     <line x1="12" y1="16" x2="12.01" y2="16" />
                                   </svg>
-                                  <span className="absolute right-0 bottom-full mb-1 hidden group-hover:block bg-red-700 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-20 shadow-lg">
+                                  <span className="absolute right-0 bottom-full mb-1 hidden group-hover:block text-white text-xs rounded px-2 py-1 whitespace-nowrap z-20 shadow-lg" style={{ background: '#9a3f3c' }}>
                                     {rowErrors[i].join(' | ')}
                                   </span>
                                 </span>
@@ -949,16 +1003,13 @@ export default function GuestsPage() {
             {importStep === 'saving' && (
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                    <div
-                      className="bg-green-500 h-full rounded-full transition-all duration-500 ease-out"
-                      style={{ width: `${importProgress}%` }}
-                    />
+                  <div className="ad-progress">
+                    <div className="ad-progress__fill" style={{ width: `${importProgress}%` }} />
                   </div>
-                  <span className="text-sm text-gray-500 w-10 text-right">{importProgress}%</span>
+                  <span className="text-sm ad-nums" style={{ color: 'var(--ad-muted)', width: 40, textAlign: 'right' }}>{importProgress}%</span>
                 </div>
-                <p className="text-sm text-gray-500 flex items-center gap-2">
-                  <svg className="animate-spin h-4 w-4 text-green-500" viewBox="0 0 24 24">
+                <p className="text-sm flex items-center gap-2" style={{ color: 'var(--ad-muted)' }}>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" style={{ color: 'var(--ad-accent)' }}>
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
@@ -969,61 +1020,62 @@ export default function GuestsPage() {
           </div>
 
           {/* CSV Paste */}
-          <div className="admin-card">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Or Paste CSV Data</h3>
-            <p className="text-xs text-gray-500 mb-3">
-              Same format: <code className="bg-gray-100 px-1 rounded">Name,Phone Number,S,GT,Group #</code>
+          <div className="ad-card">
+            <h3 className="ad-eyebrow" style={{ marginBottom: '0.6rem' }}>Or Paste CSV Data</h3>
+            <p className="ad-help" style={{ marginBottom: '0.85rem' }}>
+              Same format: <code>Name,Phone Number,S,GT,Group #</code>
             </p>
             <textarea
               value={csvText}
               onChange={(e) => setCsvText(e.target.value)}
               rows={8}
               placeholder={`Name,Phone Number,S,GT,Group #\nHussein Rachidi,03833508,G,FAM,1\nSuzan Rachidi,,B,FAM,1\nAhmad Rachidi,71538385,G,FRD,2`}
-              className="w-full border rounded-md px-3 py-2 text-sm font-mono mb-3"
+              className="ad-textarea ad-mono"
+              style={{ marginBottom: '0.85rem' }}
             />
-            <button onClick={handleImport} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
-              Import CSV
-            </button>
+            <div>
+              <button onClick={handleImport} className="ad-btn ad-btn--primary">
+                Import CSV
+              </button>
+            </div>
           </div>
 
           {/* Import result */}
           {importResult && (
-            <div className={`admin-card ${importResult.startsWith('Error') ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}`}>
-              <div className={`text-sm ${importResult.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>
-                {importResult.split('\n').map((line, i) => (
-                  <p key={i}>{line}</p>
-                ))}
-              </div>
+            <div className={`ad-notice ${importResult.startsWith('Error') ? 'ad-notice--bad' : 'ad-notice--ok'}`}>
+              {importResult.split('\n').map((line, i) => (
+                <p key={i}>{line}</p>
+              ))}
             </div>
           )}
         </div>
       )}
       {/* ═══ CONFIRM MODAL ═══ */}
       {confirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="ad-modal-scrim" role="dialog" aria-modal="true" aria-label={confirmModal.title}>
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
+          <div className="absolute inset-0" onClick={() => setConfirmModal(null)} aria-hidden="true" />
           {/* Modal card */}
-          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+          <div className="ad-modal">
             {/* Header */}
-            <div className="bg-amber-50 border-b border-amber-200 px-6 py-4 flex items-center gap-3">
-              <div className="bg-amber-100 rounded-full p-2">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-600">
+            <div className="ad-modal__head">
+              <span className="ad-modal__icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                   <line x1="12" y1="9" x2="12" y2="13" />
                   <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800">{confirmModal.title}</h3>
+              </span>
+              <h3 className="ad-section-title" style={{ fontSize: '1.2rem' }}>{confirmModal.title}</h3>
             </div>
             {/* Body */}
-            <div className="px-6 py-5">
-              <p className="text-sm text-gray-600 mb-4">{confirmModal.message}</p>
-              <div className="bg-gray-50 rounded-lg border border-gray-200 divide-y divide-gray-200">
-                {confirmModal.details.map(({ code, count }) => (
-                  <div key={code} className="flex items-center justify-between px-4 py-2.5">
-                    <span className="text-sm font-medium text-gray-800">{code}</span>
-                    <span className="text-xs text-gray-500 bg-gray-200 rounded-full px-2.5 py-0.5">
+            <div style={{ padding: '1.25rem 1.4rem' }}>
+              <p className="text-sm" style={{ color: 'var(--ad-body)', marginBottom: '1rem' }}>{confirmModal.message}</p>
+              <div style={{ background: 'var(--ad-raised)', borderRadius: 'var(--ad-r-ctrl)', border: '1px solid var(--ad-border)' }}>
+                {confirmModal.details.map(({ code, count }, idx) => (
+                  <div key={code} className="flex items-center justify-between" style={{ padding: '0.6rem 0.9rem', borderTop: idx === 0 ? 'none' : '1px solid var(--ad-border)' }}>
+                    <span className="text-sm font-medium" style={{ color: 'var(--ad-ink)' }}>{code}</span>
+                    <span className="ad-count">
                       {count} guest{count !== 1 ? 's' : ''}
                     </span>
                   </div>
@@ -1031,17 +1083,11 @@ export default function GuestsPage() {
               </div>
             </div>
             {/* Footer */}
-            <div className="border-t border-gray-100 px-6 py-4 flex justify-end gap-3 bg-gray-50">
-              <button
-                onClick={() => setConfirmModal(null)}
-                className="px-4 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-200 border border-gray-300 font-medium transition-colors"
-              >
+            <div className="ad-modal__foot">
+              <button onClick={() => setConfirmModal(null)} className="ad-btn ad-btn--outline">
                 No, Cancel
               </button>
-              <button
-                onClick={confirmModal.onConfirm}
-                className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 font-medium transition-colors"
-              >
+              <button onClick={confirmModal.onConfirm} className="ad-btn ad-btn--accent">
                 Yes, Add to Group
               </button>
             </div>

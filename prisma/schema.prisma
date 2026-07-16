@@ -33,9 +33,22 @@ model Guest {
   groupCode   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  seat        Seat?
 
   @@index([groupCode])
   @@index([side])
+}
+
+// Seating map — assignment of a Guest to a physical chair. The chair geometry
+// (positions traced from the venue floor plan) lives in code (lib/seatLayout);
+// the DB stores only which Guest sits in which seat `code`. Real FK to Guest.
+model Seat {
+  id        String   @id @default(uuid())
+  code      String   @unique          // matches a chair code from lib/seatLayout, e.g. "A1-05"
+  guestId   String?  @unique          // one guest per seat
+  guest     Guest?   @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model GuestGroup {

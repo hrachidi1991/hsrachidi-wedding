@@ -31,7 +31,7 @@ function renderGuestNames(guestNames: any): React.ReactNode {
       <div className="space-y-0.5">
         {(guestNames as GuestAttendance[]).map((g, i) => (
           <div key={i} className="flex items-center gap-1.5">
-            <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${g.attending ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span className={`ad-dot ${g.attending ? 'ad-dot--ok' : 'ad-dot--bad'}`} />
             <span>{g.name}</span>
           </div>
         ))}
@@ -92,7 +92,26 @@ export default function RsvpTracking() {
     window.open('/api/export', '_blank');
   };
 
-  if (loading) return <div className="p-8 text-gray-400">Loading...</div>;
+  if (loading) {
+    return (
+      <div>
+        <div className="ad-skel" style={{ height: 34, width: 220, marginBottom: 24 }} />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="ad-stat">
+              <div className="ad-skel" style={{ height: 12, width: '55%' }} />
+              <div className="ad-skel" style={{ height: 30, width: '40%', marginTop: 10 }} />
+            </div>
+          ))}
+        </div>
+        <div className="ad-card">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="ad-skel" style={{ height: 16, width: '100%', marginBottom: 12 }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const totalAttending = filtered
     .filter((g) => g.rsvpResponse?.attending)
@@ -100,49 +119,69 @@ export default function RsvpTracking() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">RSVP Tracking</h1>
-        <button onClick={exportCsv} className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
-          📥 Export CSV
-        </button>
-      </div>
+      <header className="ad-header">
+        <div>
+          <div className="ad-eyebrow" style={{ marginBottom: '0.4rem' }}>Responses</div>
+          <h1 className="ad-title">RSVP Tracking</h1>
+          <p className="ad-page-desc">Filter, search and export every reply from your guests.</p>
+        </div>
+        <div className="ad-header__actions">
+          <button onClick={exportCsv} className="ad-btn ad-btn--accent">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Export CSV
+          </button>
+        </div>
+      </header>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-blue-700">{groups.length}</p>
-          <p className="text-xs text-blue-500">Total Groups</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-5">
+        <div className="ad-stat">
+          <span className="ad-stat__label">Total Groups</span>
+          <span className="ad-stat__value">{groups.length}</span>
         </div>
-        <div className="bg-green-50 border border-green-100 rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-green-700">{totalAttending}</p>
-          <p className="text-xs text-green-500">Total Attending</p>
+        <div className="ad-stat ad-stat--ok">
+          <span className="ad-stat__label">Total Attending</span>
+          <span className="ad-stat__value">{totalAttending}</span>
         </div>
-        <div className="bg-red-50 border border-red-100 rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-red-700">{groups.filter((g) => g.rsvpResponse && !g.rsvpResponse.attending).length}</p>
-          <p className="text-xs text-red-500">Not Attending</p>
+        <div className="ad-stat">
+          <span className="ad-stat__label">Not Attending</span>
+          <span className="ad-stat__value" style={{ color: 'var(--ad-bad)' }}>{groups.filter((g) => g.rsvpResponse && !g.rsvpResponse.attending).length}</span>
         </div>
-        <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-gray-600">{groups.filter((g) => !g.rsvpResponse).length}</p>
-          <p className="text-xs text-gray-400">No Response</p>
+        <div className="ad-stat">
+          <span className="ad-stat__label">No Response</span>
+          <span className="ad-stat__value" style={{ color: 'var(--ad-muted)' }}>{groups.filter((g) => !g.rsvpResponse).length}</span>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex gap-3 mb-4 flex-wrap">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, phone, group..."
-          className="border rounded-md px-3 py-2 text-sm flex-1 min-w-[200px]"
-        />
-        <select value={filter} onChange={(e) => setFilter(e.target.value as any)} className="border rounded-md px-3 py-2 text-sm">
+        <div className="ad-search" style={{ flex: '1 1 220px', minWidth: 0 }}>
+          <span className="ad-search__icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, phone, group..."
+            className="ad-input ad-input--search"
+            aria-label="Search RSVPs"
+          />
+        </div>
+        <select value={filter} onChange={(e) => setFilter(e.target.value as any)} className="ad-select" aria-label="Filter by status" style={{ width: 'auto', flex: '0 0 auto' }}>
           <option value="all">All Statuses</option>
           <option value="attending">Attending</option>
           <option value="not_attending">Not Attending</option>
           <option value="no_response">No Response</option>
         </select>
-        <select value={sideFilter} onChange={(e) => setSideFilter(e.target.value as any)} className="border rounded-md px-3 py-2 text-sm">
+        <select value={sideFilter} onChange={(e) => setSideFilter(e.target.value as any)} className="ad-select" aria-label="Filter by side" style={{ width: 'auto', flex: '0 0 auto' }}>
           <option value="all">Both Sides</option>
           <option value="bride">Bride</option>
           <option value="groom">Groom</option>
@@ -150,48 +189,44 @@ export default function RsvpTracking() {
       </div>
 
       {/* Table */}
-      <div className="admin-card">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+      <div className="ad-card ad-card--flush">
+        <div className="ad-table-wrap">
+          <table className="ad-table">
             <thead>
-              <tr className="text-left text-gray-500 border-b">
-                <th className="pb-2 font-medium">Group Code</th>
-                <th className="pb-2 font-medium">Side</th>
-                <th className="pb-2 font-medium">Max</th>
-                <th className="pb-2 font-medium">Status</th>
-                <th className="pb-2 font-medium"># Att.</th>
-                <th className="pb-2 font-medium">Guest Names (RSVP)</th>
-                <th className="pb-2 font-medium">Registered Guests</th>
-                <th className="pb-2 font-medium">Updated</th>
+              <tr>
+                <th>Group Code</th>
+                <th>Side</th>
+                <th>Max</th>
+                <th>Status</th>
+                <th># Att.</th>
+                <th>Guest Names (RSVP)</th>
+                <th>Registered Guests</th>
+                <th>Updated</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((g) => (
-                <tr key={g.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                  <td className="py-2 font-medium text-gray-800">{g.groupCode}</td>
-                  <td className="py-2 capitalize text-gray-600">{g.side}</td>
-                  <td className="py-2 text-gray-600">{g.maxGuests}</td>
-                  <td className="py-2">
+                <tr key={g.id}>
+                  <td className="ad-cell-strong">{g.groupCode}</td>
+                  <td className="ad-cap">{g.side}</td>
+                  <td>{g.maxGuests}</td>
+                  <td>
                     {g.rsvpResponse ? (
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        g.rsvpResponse.attending ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}>
+                      <span className={`ad-pill ${g.rsvpResponse.attending ? 'ad-pill--ok' : 'ad-pill--bad'}`}>
                         {g.rsvpResponse.attending ? 'Attending' : 'Not Attending'}
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
-                        No Response
-                      </span>
+                      <span className="ad-pill ad-pill--neutral">No Response</span>
                     )}
                   </td>
-                  <td className="py-2 text-gray-600">{g.rsvpResponse?.numberAttending || '-'}</td>
-                  <td className="py-2 text-gray-600 text-xs">
+                  <td>{g.rsvpResponse?.numberAttending || '-'}</td>
+                  <td style={{ fontSize: '0.8rem' }}>
                     {g.rsvpResponse?.guestNames ? renderGuestNames(g.rsvpResponse.guestNames) : '-'}
                   </td>
-                  <td className="py-2 text-gray-500 text-xs">
+                  <td style={{ fontSize: '0.8rem', color: 'var(--ad-muted)' }}>
                     {g.guests?.map((guest) => guest.name).join(', ') || '-'}
                   </td>
-                  <td className="py-2 text-gray-400 text-xs">
+                  <td style={{ fontSize: '0.8rem', color: 'var(--ad-muted)' }}>
                     {g.rsvpResponse?.updatedAt
                       ? new Date(g.rsvpResponse.updatedAt).toLocaleDateString()
                       : '-'}
@@ -201,10 +236,10 @@ export default function RsvpTracking() {
             </tbody>
           </table>
           {filtered.length === 0 && (
-            <p className="text-gray-400 text-sm py-6 text-center">No results found.</p>
+            <p className="ad-empty">No results found.</p>
           )}
         </div>
-        <div className="mt-4 text-xs text-gray-400">
+        <div style={{ padding: '0.85rem 1.25rem', fontSize: '0.78rem', color: 'var(--ad-muted)', borderTop: '1px solid var(--ad-border)' }}>
           Showing {filtered.length} of {groups.length} groups
         </div>
       </div>
