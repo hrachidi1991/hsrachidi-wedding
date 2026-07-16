@@ -674,7 +674,7 @@ function SeatingStyles() {
     .seat-legend__item { display: inline-flex; align-items: center; gap: 0.4rem; }
     .seat-swatch { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto; display: inline-block; }
     .seat-swatch--empty { background: var(--ad-surface); border: 1px solid var(--ad-border-strong); }
-    .seat-swatch--filled { background: var(--ad-ok); }
+    .seat-swatch--filled { background: var(--ad-accent); }
     .seat-swatch--stage { background: var(--ad-accent-soft); border: 1px solid var(--ad-accent); }
     .seat-swatch--table { background: var(--ad-raised); border: 1px solid var(--ad-border-strong); }
 
@@ -708,10 +708,10 @@ function SeatingStyles() {
     .seat-chair-hit { fill: transparent; }
     .seat-chair-body { fill: var(--ad-surface); stroke: var(--ad-border-strong); stroke-width: 1; transition: fill 0.14s ease, stroke 0.14s ease; }
     .seat-chair-back { fill: var(--ad-border-strong); transition: fill 0.14s ease; }
-    .seat-chair.is-filled .seat-chair-body { fill: var(--ad-ok); stroke: #256b48; }
-    .seat-chair.is-filled .seat-chair-back { fill: #256b48; }
+    .seat-chair.is-filled .seat-chair-body { fill: var(--ad-accent); stroke: var(--ad-accent-strong); }
+    .seat-chair.is-filled .seat-chair-back { fill: var(--ad-accent-strong); }
     .seat-chair.is-empty:hover .seat-chair-body { fill: var(--ad-accent-soft); stroke: var(--ad-accent); }
-    .seat-chair.is-filled:hover .seat-chair-body { fill: #34996a; }
+    .seat-chair.is-filled:hover .seat-chair-body { fill: #2a2724; }
     .seat-chair.is-target .seat-chair-body { fill: var(--ad-accent-soft); stroke: var(--ad-accent); stroke-width: 1.4; stroke-dasharray: 2.4 1.8; animation: seat-pulse 1.4s ease-in-out infinite; }
     @keyframes seat-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 

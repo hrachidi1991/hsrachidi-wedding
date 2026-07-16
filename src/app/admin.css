@@ -25,10 +25,11 @@
   --ad-sidebar-border: rgba(239, 236, 228, 0.10);
 
   /* One accent — champagne bronze */
-  --ad-accent: #a98545;
-  --ad-accent-strong: #8f6f37;
-  --ad-accent-soft: rgba(169, 133, 69, 0.10);
-  --ad-accent-ring: rgba(169, 133, 69, 0.28);
+  /* Monochrome grey mood — matches the main invitation (charcoal on paper) */
+  --ad-accent: #4a463f;
+  --ad-accent-strong: #2a2724;
+  --ad-accent-soft: rgba(74, 70, 63, 0.10);
+  --ad-accent-ring: rgba(74, 70, 63, 0.26);
 
   /* Semantic status (separate from accent) */
   --ad-ok: #2f855a;
