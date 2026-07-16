@@ -45,6 +45,17 @@ function GuestsIcon({ className }: IconProps) {
   );
 }
 
+function GuestListIcon({ className }: IconProps) {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" className={className} {...stroke}>
+      <path d="M8 6h13" />
+      <path d="M8 12h13" />
+      <path d="M8 18h13" />
+      <path d="M3 6h.01M3 12h.01M3 18h.01" />
+    </svg>
+  );
+}
+
 function SeatingIcon({ className }: IconProps) {
   return (
     <svg width="19" height="19" viewBox="0 0 24 24" className={className} {...stroke}>
@@ -88,6 +99,7 @@ function LogoutIcon({ className }: IconProps) {
 const navItems = [
   { href: '/admin', label: 'Dashboard', Icon: DashboardIcon },
   { href: '/admin/content', label: 'Content & Settings', Icon: ContentIcon },
+  { href: '/admin/guest-list', label: 'Guest List', Icon: GuestListIcon },
   { href: '/admin/guests', label: 'Guests & Groups', Icon: GuestsIcon },
   { href: '/admin/seating', label: 'Seating Map', Icon: SeatingIcon },
   { href: '/admin/rsvp', label: 'RSVP Tracking', Icon: RsvpIcon },

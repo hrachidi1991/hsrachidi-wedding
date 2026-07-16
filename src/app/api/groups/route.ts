@@ -19,7 +19,11 @@ export async function GET(request: NextRequest) {
       guests: guests.filter((guest) => guest.groupCode === g.groupCode),
     }));
     return NextResponse.json(groupsWithGuests);
-  } catch {
+  } catch (e: any) {
+    // New columns (circle/notes/rsvpManual/sortOrder) not migrated yet
+    if (e?.code === 'P2022' || e?.code === 'P2021') {
+      return NextResponse.json({ error: 'Schema not migrated', code: 'SCHEMA_OUTDATED' }, { status: 503 });
+    }
     return NextResponse.json({ error: 'Failed to load groups' }, { status: 500 });
   }
 }
@@ -66,13 +70,16 @@ export async function PUT(request: NextRequest) {
   }
   try {
     const data = await request.json();
-    const group = await prisma.guestGroup.update({
-      where: { id: data.id },
-      data: {
-        maxGuests: data.maxGuests,
-        side: data.side,
-      },
-    });
+    const patch: Record<string, any> = {};
+    if (typeof data.maxGuests === 'number') patch.maxGuests = Math.max(1, data.maxGuests);
+    if (data.side) patch.side = data.side;
+
+    const group = await prisma.guestGroup.update({ where: { id: data.id }, data: patch });
+
+    // Keep guests' side in sync with their group so the Groom/Bride tabs match.
+    if (data.side) {
+      await prisma.guest.updateMany({ where: { groupCode: group.groupCode }, data: { side: data.side } });
+    }
     return NextResponse.json(group);
   } catch {
     return NextResponse.json({ error: 'Failed to update group' }, { status: 500 });
