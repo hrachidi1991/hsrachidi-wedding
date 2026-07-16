@@ -5,6 +5,7 @@ import {
   SEATS,
   STAGE,
   TABLES,
+  ROOM,
   VIEWBOX,
   SEAT_COUNT,
   SEAT_BY_CODE,
@@ -401,6 +402,9 @@ function FloorPlan({
       {/* floor backdrop */}
       <rect className="seat-floor-bg" x={2} y={2} width={VIEWBOX.w - 4} height={VIEWBOX.h - 4} rx={18} />
 
+      {/* hall outline (octagon) */}
+      <polygon className="seat-room" points={ROOM} />
+
       {/* tables */}
       {TABLES.map((t) => (
         <g key={`table-${t.n}`}>
@@ -692,6 +696,7 @@ function SeatingStyles() {
 
     /* floor + furniture */
     .seat-floor-bg { fill: var(--ad-raised); stroke: var(--ad-border); stroke-width: 1.5; }
+    .seat-room { fill: var(--ad-surface); stroke: var(--ad-border-strong); stroke-width: 2; stroke-linejoin: round; }
     .seat-stagedisc { fill: var(--ad-accent-soft); stroke: var(--ad-accent); stroke-width: 1.6; }
     .seat-stagedisc-label { fill: var(--ad-accent-strong); font-family: var(--ad-font-serif); font-weight: 600; font-size: 24px; letter-spacing: 0.16em; }
     .seat-table { fill: var(--ad-raised); stroke: var(--ad-border-strong); stroke-width: 1.2; }
