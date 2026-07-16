@@ -3,9 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   SEATS,
-  STAGE,
-  TABLES,
-  ROOM,
+  PLAN_IMAGE,
   VIEWBOX,
   SEAT_COUNT,
   SEAT_BY_CODE,
@@ -253,10 +251,9 @@ export default function SeatingPage() {
             {/* Legend + zoom controls */}
             <div className="seat-toolbar">
               <div className="seat-legend" aria-hidden="true">
-                <span className="seat-legend__item"><span className="seat-swatch seat-swatch--empty" />Empty</span>
-                <span className="seat-legend__item"><span className="seat-swatch seat-swatch--filled" />Seated</span>
-                <span className="seat-legend__item"><span className="seat-swatch seat-swatch--stage" />Stage</span>
-                <span className="seat-legend__item"><span className="seat-swatch seat-swatch--table" />Table</span>
+                <span className="seat-legend__item"><span className="seat-swatch seat-swatch--empty" />Empty seat</span>
+                <span className="seat-legend__item"><span className="seat-swatch seat-swatch--filled" />Seated guest</span>
+                <span className="seat-legend__hint">Hover a seat for the name · pinch / scroll to zoom</span>
               </div>
               <div className="seat-zoom" role="group" aria-label="Zoom the floor plan">
                 <button type="button" className="ad-icon-btn" onClick={() => setZoom((z) => Math.max(1, +(z - 0.25).toFixed(2)))} disabled={zoom <= 1} aria-label="Zoom out">
@@ -351,8 +348,8 @@ export default function SeatingPage() {
               <div className="seat-panel__idle">
                 <h3 className="ad-section-title">Plan the room</h3>
                 <p className="ad-page-desc" style={{ marginTop: '0.4rem' }}>
-                  Select any chair to seat a guest. Green chairs are already taken — click one to
-                  move or clear it.
+                  Select any chair on the plan to seat a guest. Dark (filled) chairs are already
+                  taken — click one to move or clear it.
                 </p>
                 <div className="seat-idle-stat">
                   <span className="ad-stat__value" style={{ fontSize: '1.9rem', color: unseated.length ? 'var(--ad-warn)' : 'var(--ad-ok)' }}>{unseated.length}</span>
@@ -399,25 +396,10 @@ function FloorPlan({
       aria-label={`Venue floor plan with ${SEAT_COUNT} chairs`}
       preserveAspectRatio="xMidYMid meet"
     >
-      {/* floor backdrop */}
-      <rect className="seat-floor-bg" x={2} y={2} width={VIEWBOX.w - 4} height={VIEWBOX.h - 4} rx={18} />
+      {/* exact venue floor plan rendered from the CAD (walls, aisles, tables, stage, theater, trees) */}
+      <image href={PLAN_IMAGE} x={0} y={0} width={VIEWBOX.w} height={VIEWBOX.h} preserveAspectRatio="none" />
 
-      {/* hall outline (octagon) */}
-      <polygon className="seat-room" points={ROOM} />
-
-      {/* tables */}
-      {TABLES.map((t) => (
-        <g key={`table-${t.n}`}>
-          <circle className="seat-table" cx={t.cx} cy={t.cy} r={t.r} />
-          <text className="seat-table-label" x={t.cx} y={t.cy} textAnchor="middle" dominantBaseline="central">T{t.n}</text>
-        </g>
-      ))}
-
-      {/* stage */}
-      <circle className="seat-stagedisc" cx={STAGE.x} cy={STAGE.y} r={STAGE.r} />
-      <text className="seat-stagedisc-label" x={STAGE.x} y={STAGE.y} textAnchor="middle" dominantBaseline="central">STAGE</text>
-
-      {/* chairs */}
+      {/* interactive chairs — invisible overlays sitting exactly on the plan's seats */}
       {SEATS.map((s) => {
         const occ = assignments[s.code];
         const filled = !!occ;
@@ -428,8 +410,9 @@ function FloorPlan({
           moveActive && !filled ? 'is-target' : '',
         ].filter(Boolean).join(' ');
         const label = filled
-          ? `Seat ${s.code}, ${s.zone}, seated: ${occ.name}. Activate to manage.`
-          : `Seat ${s.code}, ${s.zone} seat ${s.num}, empty. Activate to assign a guest.`;
+          ? `${s.zone}, seated: ${occ.name}. Activate to manage.`
+          : `${s.zone}, empty. Activate to assign a guest.`;
+        const hw = Math.max(s.w, s.h) / 2 + 1;
         return (
           <g
             key={s.code}
@@ -448,10 +431,10 @@ function FloorPlan({
             onFocus={(e) => onFocusChair(s.code, e.currentTarget)}
             onBlur={onBlurChair}
           >
-            {/* enlarged transparent hit area for touch */}
-            <rect className="seat-chair-hit" x={-9} y={-9} width={18} height={18} />
-            <rect className="seat-chair-back" x={-6.5} y={2.2} width={13} height={4} rx={2} />
-            <rect className="seat-chair-body" x={-6.5} y={-6} width={13} height={9} rx={2.8} />
+            {/* enlarged transparent hit area for pointer/touch */}
+            <rect className="seat-chair-hit" x={-hw - 3} y={-hw - 3} width={2 * hw + 6} height={2 * hw + 6} />
+            {/* seat body: invisible when empty (the plan image shows the seat), coloured when filled/hovered */}
+            <rect className="seat-chair-body" x={-s.w / 2} y={-s.h / 2} width={s.w} height={s.h} rx={1.6} />
           </g>
         );
       })}
@@ -461,15 +444,16 @@ function FloorPlan({
         if (!code || (i === 1 && code === selectedCode)) return null;
         const s = SEAT_BY_CODE[code];
         if (!s) return null;
+        const r = Math.max(s.w, s.h) / 2 + 4;
         return (
           <rect
             key={`ring-${i}-${code}`}
             className={i === 0 ? 'seat-ring seat-ring--sel' : 'seat-ring seat-ring--focus'}
-            x={s.x - 10}
-            y={s.y - 10}
-            width={20}
-            height={20}
-            rx={6}
+            x={s.x - r}
+            y={s.y - r}
+            width={2 * r}
+            height={2 * r}
+            rx={4}
           />
         );
       })}
@@ -673,10 +657,10 @@ function SeatingStyles() {
     .seat-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.76rem; color: var(--ad-body); }
     .seat-legend__item { display: inline-flex; align-items: center; gap: 0.4rem; }
     .seat-swatch { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto; display: inline-block; }
-    .seat-swatch--empty { background: var(--ad-surface); border: 1px solid var(--ad-border-strong); }
+    .seat-swatch--empty { background: #efece6; border: 1px solid #b3a89a; }
     .seat-swatch--filled { background: var(--ad-accent); }
-    .seat-swatch--stage { background: var(--ad-accent-soft); border: 1px solid var(--ad-accent); }
-    .seat-swatch--table { background: var(--ad-raised); border: 1px solid var(--ad-border-strong); }
+    .seat-legend__hint { color: var(--ad-muted); font-size: 0.72rem; }
+    @media (max-width: 560px) { .seat-legend__hint { display: none; } }
 
     .seat-zoom { display: inline-flex; align-items: center; gap: 0.25rem; }
     .seat-zoom__val { font-size: 0.76rem; color: var(--ad-muted); min-width: 42px; text-align: center; }
@@ -693,31 +677,22 @@ function SeatingStyles() {
     }
     .seat-canvas { min-width: 0; }
     .seat-svg { display: block; width: 100%; height: auto; }
+    .seat-svg image { image-rendering: auto; }
 
-    /* floor + furniture */
-    .seat-floor-bg { fill: var(--ad-raised); stroke: var(--ad-border); stroke-width: 1.5; }
-    .seat-room { fill: var(--ad-surface); stroke: var(--ad-border-strong); stroke-width: 2; stroke-linejoin: round; }
-    .seat-stagedisc { fill: var(--ad-accent-soft); stroke: var(--ad-accent); stroke-width: 1.6; }
-    .seat-stagedisc-label { fill: var(--ad-accent-strong); font-family: var(--ad-font-serif); font-weight: 600; font-size: 24px; letter-spacing: 0.16em; }
-    .seat-table { fill: var(--ad-raised); stroke: var(--ad-border-strong); stroke-width: 1.2; }
-    .seat-table-label { fill: var(--ad-muted); font-family: var(--ad-font-ui); font-weight: 600; font-size: 12px; }
-
-    /* chairs */
+    /* interactive chairs (overlay the CAD plan image) */
     .seat-chair { cursor: pointer; }
     .seat-chair:focus { outline: none; }
     .seat-chair-hit { fill: transparent; }
-    .seat-chair-body { fill: var(--ad-surface); stroke: var(--ad-border-strong); stroke-width: 1; transition: fill 0.14s ease, stroke 0.14s ease; }
-    .seat-chair-back { fill: var(--ad-border-strong); transition: fill 0.14s ease; }
+    .seat-chair-body { fill: transparent; stroke: transparent; stroke-width: 0.8; transition: fill 0.14s ease, stroke 0.14s ease; }
     .seat-chair.is-filled .seat-chair-body { fill: var(--ad-accent); stroke: var(--ad-accent-strong); }
-    .seat-chair.is-filled .seat-chair-back { fill: var(--ad-accent-strong); }
     .seat-chair.is-empty:hover .seat-chair-body { fill: var(--ad-accent-soft); stroke: var(--ad-accent); }
-    .seat-chair.is-filled:hover .seat-chair-body { fill: #2a2724; }
-    .seat-chair.is-target .seat-chair-body { fill: var(--ad-accent-soft); stroke: var(--ad-accent); stroke-width: 1.4; stroke-dasharray: 2.4 1.8; animation: seat-pulse 1.4s ease-in-out infinite; }
-    @keyframes seat-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+    .seat-chair.is-filled:hover .seat-chair-body { fill: #2a2724; stroke: #1c1a17; }
+    .seat-chair.is-target .seat-chair-body { fill: var(--ad-accent-soft); stroke: var(--ad-accent); stroke-width: 1; stroke-dasharray: 2.4 1.8; animation: seat-pulse 1.4s ease-in-out infinite; }
+    @keyframes seat-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
     .seat-ring { fill: none; pointer-events: none; }
-    .seat-ring--sel { stroke: var(--ad-accent); stroke-width: 2.2; }
-    .seat-ring--focus { stroke: var(--ad-accent-strong); stroke-width: 2; stroke-dasharray: 3 2.4; }
+    .seat-ring--sel { stroke: var(--ad-accent); stroke-width: 1.6; }
+    .seat-ring--focus { stroke: var(--ad-accent-strong); stroke-width: 1.4; stroke-dasharray: 3 2.4; }
 
     /* tooltip */
     .seat-tip {
