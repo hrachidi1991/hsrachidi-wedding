@@ -63,6 +63,7 @@ model GuestGroup {
   maxGuests   Int          @default(2)
   token       String       @unique @default(uuid())
   side        String       @default("groom")
+  inRsvp      Boolean      @default(false) // in RSVP tracking (invite link sent, or added manually)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   rsvpResponse RsvpResponse?

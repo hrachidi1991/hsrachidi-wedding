@@ -101,8 +101,23 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
         v.src = src;
         v.load();
       });
+    // Warm the music too so it starts instantly on tap (main cause of "slow / sometimes no sound")
+    const loadAudio = (src: string) =>
+      new Promise<void>((res) => {
+        if (!src) { res(); return; }
+        const a = new Audio();
+        a.preload = 'auto';
+        let done = false;
+        const finish = () => { if (!done) { done = true; res(); } };
+        a.addEventListener('canplaythrough', finish, { once: true });
+        a.addEventListener('loadeddata', finish, { once: true });
+        a.addEventListener('error', finish, { once: true });
+        window.setTimeout(finish, 12000);
+        a.src = src;
+        a.load();
+      });
     const fonts = (document as any).fonts?.ready?.then(() => {}).catch(() => {}) ?? Promise.resolve();
-    const all = Promise.all([...images.map(loadImage), ...videos.map(loadVideo), fonts]);
+    const all = Promise.all([...images.map(loadImage), ...videos.map(loadVideo), loadAudio(settings.musicFile), fonts]);
     const hardCap = new Promise<void>((res) => window.setTimeout(res, 22000)); // absolute fallback
     const minShow = new Promise<void>((res) => window.setTimeout(res, 1400));  // avoid a jarring flash
     Promise.all([Promise.race([all, hardCap]), minShow]).then(() => { if (!cancelled) setAssetsReady(true); });
@@ -203,12 +218,23 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
   // Reduced-motion flag (declared before the open handler that reads it)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
+  // Play the (preloaded) music with a few retries — weak links often reject the
+  // first play() with AbortError while still buffering; retry instead of silently failing.
+  const playMusic = useCallback(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    const attempt = (n: number) => {
+      a.play().then(() => setIsPlaying(true)).catch(() => {
+        if (n > 0) window.setTimeout(() => attempt(n - 1), 400);
+      });
+    };
+    attempt(3);
+  }, []);
+
   const handleOpenEnvelope = useCallback(() => {
     setSealBreaking(true); // disables re-tap (onClick guard)
-    // Music on the user gesture — unchanged
-    if (currentMusicSrc && audioRef.current) {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
-    }
+    // Music on the user gesture (audio is preloaded during the loading gate)
+    if (currentMusicSrc) playMusic();
     // Reduced motion → instant cut: no vanish, no typewriter
     if (prefersReducedMotion) {
       setEnvelopeOpened(true);
@@ -222,7 +248,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
       setShowContent(true);
       requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
     }, 880);
-  }, [currentMusicSrc, prefersReducedMotion]);
+  }, [currentMusicSrc, prefersReducedMotion, playMusic]);
 
   const toggleAudio = () => {
     if (!audioRef.current) return;
@@ -230,7 +256,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+      playMusic();
     }
   };
 
@@ -380,7 +406,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
       {/* Audio */}
       {currentMusicSrc && (
-        <audio ref={audioRef} src={currentMusicSrc} loop preload="metadata" />
+        <audio ref={audioRef} src={currentMusicSrc} loop preload="auto" playsInline />
       )}
 
       {/* Language toggle */}

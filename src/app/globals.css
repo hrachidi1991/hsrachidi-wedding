@@ -249,6 +249,15 @@ html.no-scroll body {
   display: inline-block;
   will-change: transform;
 }
+/* Script-font couple names (Great Vibes) have tall caps/swashes; the reveal
+   wrappers clip them at the top. Give those wrappers headroom (and a hair of
+   line-height) so letters like "S" in Suzan and "H" in Hussein aren't cut. */
+.font-script .gsap-char-wrap,
+.font-script .gsap-word-wrap {
+  padding-top: 0.32em;
+  padding-bottom: 0.08em;
+}
+.font-script { line-height: 1.32; }
 /* Arabic must stay cursively joined — never split letters, keep ligatures */
 .gsap-words[dir='rtl'] {
   font-variant-ligatures: common-ligatures contextual;

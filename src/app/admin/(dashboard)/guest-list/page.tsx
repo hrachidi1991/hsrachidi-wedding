@@ -26,6 +26,7 @@ interface Group {
   maxGuests: number;
   side: string;
   token: string;
+  inRsvp: boolean;
   rsvpResponse: Rsvp | null;
   guests: Guest[];
 }
@@ -47,8 +48,14 @@ function formatPhoneForWhatsApp(phone: string): string {
   return p.replace('+', '');
 }
 
-function whatsAppUrl(phone: string, name: string, link: string): string {
-  const msg = `Hello ${name}! You're warmly invited to Hussein & Suzan's wedding 💍\nKindly RSVP here: ${link}`;
+interface EventInfo { date: string; time: string; venue: string }
+function whatsAppUrl(phone: string, name: string, link: string, ev: EventInfo): string {
+  const msg =
+    `Hello ${name}! You're warmly invited to Hussein & Suzan's wedding 💍\n` +
+    `📅 ${ev.date}\n` +
+    `🕐 ${ev.time}\n` +
+    `📍 ${ev.venue}\n` +
+    `Kindly RSVP here: ${link}`;
   return `https://wa.me/${formatPhoneForWhatsApp(phone)}?text=${encodeURIComponent(msg)}`;
 }
 
@@ -66,6 +73,8 @@ export default function GuestListPage() {
   const [seatByGuestId, setSeatByGuestId] = useState<Record<string, string>>({});
   const [notePopup, setNotePopup] = useState<Guest | null>(null);
   const [waBlock, setWaBlock] = useState<string | null>(null);
+  const [eventInfo, setEventInfo] = useState<EventInfo>({ date: '25 August', time: '8:00 PM', venue: 'Pleine Nature' });
+  const [menu, setMenu] = useState<{ group: Group; x: number; y: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -85,6 +94,17 @@ export default function GuestListPage() {
       }
       if (!res.ok) { setLoadError('Could not load the guest list.'); setLoading(false); return; }
       setGroups(await res.json());
+      // event details for the WhatsApp invite message (falls back to defaults)
+      try {
+        const raw = await (await fetch('/api/settings')).json();
+        const st = raw?.settings || raw || {};
+        const d = new Date(st.eventDate);
+        setEventInfo({
+          date: isNaN(d.getTime()) ? (st.eventDate || '25 August') : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }),
+          time: st.eventTime || '8:00 PM',
+          venue: st.venueNameEn || 'Pleine Nature',
+        });
+      } catch { /* keep defaults */ }
       // seat assignments (from the seating map) — optional; column just shows — if unavailable
       try {
         const sres = await fetch('/api/seats');
@@ -199,8 +219,23 @@ export default function GuestListPage() {
       setWaBlock(`${guest.name} has no phone number yet. Add a phone number to this guest to send the invite link on WhatsApp.`);
       return;
     }
-    window.open(whatsAppUrl(guest.phone, guest.name, inviteLink(group.groupCode)), '_blank', 'noopener,noreferrer');
+    window.open(whatsAppUrl(guest.phone, guest.name, inviteLink(group.groupCode), eventInfo), '_blank', 'noopener,noreferrer');
     markWaSent(guest);
+    if (!group.inRsvp) setGroupInRsvp(group, true); // sending the link adds the group to RSVP tracking
+  };
+
+  // add/remove a group from RSVP tracking (also set by right-clicking a group)
+  const setGroupInRsvp = async (group: Group, inRsvp: boolean) => {
+    const prev = groups;
+    setGroups((g) => g.map((x) => (x.id === group.id ? { ...x, inRsvp } : x)));
+    try {
+      const res = await fetch('/api/groups', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: group.id, inRsvp }),
+      });
+      if (!res.ok) throw new Error();
+      flash(inRsvp ? `${group.groupCode} added to RSVP tracking` : `${group.groupCode} removed from RSVP tracking`);
+    } catch { setGroups(prev); flash('Could not update RSVP tracking', true); }
   };
 
   // record that the invite link was sent to this guest (increments the counter)
@@ -371,7 +406,7 @@ export default function GuestListPage() {
                   <thead>
                     <tr>
                       <th>Name</th><th>Phone</th><th>Side</th><th>Circle</th>
-                      <th className="gl-c-center">Seats</th><th>Group ID</th><th>RSVP</th><th className="gl-c-center">Seat</th><th className="gl-c-center">Sent</th><th aria-label="actions" />
+                      <th className="gl-c-center">Seats</th><th>Group ID</th><th className="gl-c-center">In RSVP</th><th>RSVP</th><th className="gl-c-center">Seat</th><th className="gl-c-center">Sent</th><th aria-label="actions" />
                     </tr>
                   </thead>
                   <tbody>
@@ -380,7 +415,7 @@ export default function GuestListPage() {
                         const over = i >= g.maxGuests;
                         const rowCls = `gl-row${i === 0 ? ' gl-row--groupstart' : ''}${gi % 2 ? ' gl-row--band' : ''}${over ? ' gl-row--over' : ''}`;
                         return (
-                          <tr key={gu.id} className={rowCls}>
+                          <tr key={gu.id} className={rowCls} onContextMenu={(e) => { e.preventDefault(); setMenu({ group: g, x: e.clientX, y: e.clientY }); }}>
                             <td><EditText value={gu.name} onSave={(v) => saveGuest(gu.id, 'name', v)} placeholder="Name" strong /></td>
                             <td><EditText value={gu.phone || ''} onSave={(v) => saveGuest(gu.id, 'phone', v)} placeholder="—" mono /></td>
                             {i === 0 && (
@@ -396,6 +431,15 @@ export default function GuestListPage() {
                             )}
                             {i === 0 && (
                               <td rowSpan={g.guests.length} className="gl-c-group gl-c-gid">{g.groupCode}</td>
+                            )}
+                            {i === 0 && (
+                              <td rowSpan={g.guests.length} className="gl-c-group gl-c-center">
+                                <button className={`gl-track${g.inRsvp ? ' is-on' : ''}`} onClick={() => setGroupInRsvp(g, !g.inRsvp)} title={g.inRsvp ? 'In RSVP tracking — click to remove' : 'Add to RSVP tracking'} aria-pressed={g.inRsvp}>
+                                  {g.inRsvp
+                                    ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                    : <span className="gl-track-dot" />}
+                                </button>
+                              </td>
                             )}
                             <td><RsvpCell guest={gu} auto={autoRsvp(g)} onSave={(v) => saveGuest(gu.id, 'rsvpManual', v)} /></td>
                             <td className="gl-c-center"><span className={`gl-seatlbl ad-nums${seatByGuestId[gu.id] ? '' : ' gl-seatlbl--empty'}`}>{seatLabel(gu.id)}</span></td>
@@ -463,6 +507,22 @@ export default function GuestListPage() {
           onClose={() => setNotePopup(null)}
           onSave={(v) => { saveGuest(notePopup.id, 'notes', v); setNotePopup(null); }}
         />
+      )}
+
+      {menu && (
+        <>
+          <div className="gl-menu-scrim" onClick={() => setMenu(null)} onContextMenu={(e) => { e.preventDefault(); setMenu(null); }} />
+          <div className="gl-menu" style={{ left: Math.min(menu.x, (typeof window !== 'undefined' ? window.innerWidth : 9999) - 230), top: menu.y }} role="menu">
+            <div className="gl-menu-head">Group {menu.group.groupCode}</div>
+            <button className="gl-menu-item" onClick={() => { setGroupInRsvp(menu.group, !menu.group.inRsvp); setMenu(null); }}>
+              {menu.group.inRsvp ? (
+                <><span className="gl-menu-ic">✕</span> Remove from RSVP tracking</>
+              ) : (
+                <><span className="gl-menu-ic gl-menu-ic--ok">✓</span> Add to RSVP tracking</>
+              )}
+            </button>
+          </div>
+        </>
       )}
 
       {waBlock && (
@@ -720,6 +780,17 @@ function GuestListStyles() {
     .gl-seatlbl--empty { color: var(--ad-muted); }
     .gl-sent { display: inline-flex; align-items: center; gap: 0.22rem; padding: 0.14rem 0.5rem; border-radius: 999px; background: rgba(37,168,102,0.12); color: #1c8f54; font-size: 0.8rem; font-weight: 700; }
     .gl-sent-none { color: var(--ad-muted); }
+    .gl-track { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--ad-border-strong); background: var(--ad-surface); color: var(--ad-muted); cursor: pointer; transition: all 0.14s ease; }
+    .gl-track:hover { border-color: var(--ad-ok); }
+    .gl-track.is-on { background: var(--ad-ok, #1c8f54); border-color: var(--ad-ok, #1c8f54); color: #fff; }
+    .gl-track-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ad-border-strong); }
+    .gl-menu-scrim { position: fixed; inset: 0; z-index: 85; }
+    .gl-menu { position: fixed; z-index: 86; min-width: 220px; background: var(--ad-surface); border: 1px solid var(--ad-border); border-radius: 10px; box-shadow: var(--ad-shadow); padding: 0.3rem; overflow: hidden; }
+    .gl-menu-head { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ad-muted); padding: 0.4rem 0.6rem 0.3rem; }
+    .gl-menu-item { display: flex; align-items: center; gap: 0.55rem; width: 100%; text-align: left; padding: 0.55rem 0.6rem; background: transparent; border: none; border-radius: 7px; cursor: pointer; font: inherit; font-size: 0.88rem; color: var(--ad-ink); }
+    .gl-menu-item:hover { background: var(--ad-accent-soft); }
+    .gl-menu-ic { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border-radius: 50%; background: var(--ad-bad-soft); color: var(--ad-bad); font-size: 0.7rem; }
+    .gl-menu-ic--ok { background: rgba(37,168,102,0.14); color: #1c8f54; }
     .gl-danger { color: var(--ad-bad); }
     .gl-modal--alert { width: min(94vw, 430px); }
     .gl-alert-icon { width: 52px; height: 52px; border-radius: 50%; background: var(--ad-bad-soft); color: var(--ad-bad); display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 0.7rem; }

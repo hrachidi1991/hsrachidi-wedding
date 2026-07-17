@@ -13,7 +13,8 @@ interface GroupWithRsvp {
   maxGuests: number;
   side: string;
   token: string;
-  guests: { name: string; phone: string | null }[];
+  inRsvp: boolean;
+  guests: { name: string; phone: string | null; rsvpManual?: string | null }[];
   rsvpResponse: {
     attending: boolean;
     numberAttending: number;
@@ -21,6 +22,22 @@ interface GroupWithRsvp {
     language: string;
     updatedAt: string;
   } | null;
+}
+
+// Per-guest attendance: prefer the online RSVP submission, then the manual override,
+// then the group-level response. Returns true/false/'pending'/null(no response).
+function guestStatus(group: GroupWithRsvp, name: string): boolean | 'pending' | null {
+  const gn = group.rsvpResponse?.guestNames;
+  if (Array.isArray(gn) && gn.length && typeof gn[0] === 'object' && gn[0] !== null && 'name' in gn[0]) {
+    const hit = (gn as GuestAttendance[]).find((x) => x.name?.toLowerCase() === name.toLowerCase());
+    if (hit) return hit.attending;
+  }
+  const g = group.guests.find((x) => x.name === name);
+  if (g?.rsvpManual === 'Coming') return true;
+  if (g?.rsvpManual === 'Not coming') return false;
+  if (g?.rsvpManual === 'Pending') return 'pending';
+  if (group.rsvpResponse) return group.rsvpResponse.attending;
+  return null;
 }
 
 function renderGuestNames(guestNames: any): React.ReactNode {
@@ -56,6 +73,7 @@ export default function RsvpTracking() {
   const [filter, setFilter] = useState<'all' | 'attending' | 'not_attending' | 'no_response'>('all');
   const [sideFilter, setSideFilter] = useState<'all' | 'bride' | 'groom'>('all');
   const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<GroupWithRsvp | null>(null);
 
   useEffect(() => {
     fetch('/api/groups')
@@ -66,7 +84,9 @@ export default function RsvpTracking() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = groups.filter((g) => {
+  // Only groups that are in RSVP tracking (invite sent, or added manually) appear here.
+  const tracked = groups.filter((g) => g.inRsvp);
+  const filtered = tracked.filter((g) => {
     // Status filter
     if (filter === 'attending' && (!g.rsvpResponse || !g.rsvpResponse.attending)) return false;
     if (filter === 'not_attending' && (!g.rsvpResponse || g.rsvpResponse.attending)) return false;
@@ -123,7 +143,7 @@ export default function RsvpTracking() {
         <div>
           <div className="ad-eyebrow" style={{ marginBottom: '0.4rem' }}>Responses</div>
           <h1 className="ad-title">RSVP Tracking</h1>
-          <p className="ad-page-desc">Filter, search and export every reply from your guests.</p>
+          <p className="ad-page-desc">Only groups you&rsquo;ve invited appear here. Click a group to see who&rsquo;s inside.</p>
         </div>
         <div className="ad-header__actions">
           <button onClick={exportCsv} className="ad-btn ad-btn--accent">
@@ -140,8 +160,8 @@ export default function RsvpTracking() {
       {/* Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-5">
         <div className="ad-stat">
-          <span className="ad-stat__label">Total Groups</span>
-          <span className="ad-stat__value">{groups.length}</span>
+          <span className="ad-stat__label">Invited Groups</span>
+          <span className="ad-stat__value">{tracked.length}</span>
         </div>
         <div className="ad-stat ad-stat--ok">
           <span className="ad-stat__label">Total Attending</span>
@@ -149,11 +169,11 @@ export default function RsvpTracking() {
         </div>
         <div className="ad-stat">
           <span className="ad-stat__label">Not Attending</span>
-          <span className="ad-stat__value" style={{ color: 'var(--ad-bad)' }}>{groups.filter((g) => g.rsvpResponse && !g.rsvpResponse.attending).length}</span>
+          <span className="ad-stat__value" style={{ color: 'var(--ad-bad)' }}>{tracked.filter((g) => g.rsvpResponse && !g.rsvpResponse.attending).length}</span>
         </div>
         <div className="ad-stat">
           <span className="ad-stat__label">No Response</span>
-          <span className="ad-stat__value" style={{ color: 'var(--ad-muted)' }}>{groups.filter((g) => !g.rsvpResponse).length}</span>
+          <span className="ad-stat__value" style={{ color: 'var(--ad-muted)' }}>{tracked.filter((g) => !g.rsvpResponse).length}</span>
         </div>
       </div>
 
@@ -206,7 +226,7 @@ export default function RsvpTracking() {
             </thead>
             <tbody>
               {filtered.map((g) => (
-                <tr key={g.id}>
+                <tr key={g.id} onClick={() => setSelected(g)} style={{ cursor: 'pointer' }}>
                   <td className="ad-cell-strong">{g.groupCode}</td>
                   <td className="ad-cap">{g.side}</td>
                   <td>{g.maxGuests}</td>
@@ -236,13 +256,61 @@ export default function RsvpTracking() {
             </tbody>
           </table>
           {filtered.length === 0 && (
-            <p className="ad-empty">No results found.</p>
+            <p className="ad-empty">
+              {tracked.length === 0
+                ? 'No invited groups yet. Send a group’s invite link (or right-click a group in Guest List → "Add to RSVP tracking") and it will appear here.'
+                : 'No results match your filters.'}
+            </p>
           )}
         </div>
         <div style={{ padding: '0.85rem 1.25rem', fontSize: '0.78rem', color: 'var(--ad-muted)', borderTop: '1px solid var(--ad-border)' }}>
-          Showing {filtered.length} of {groups.length} groups
+          Showing {filtered.length} of {tracked.length} invited groups
         </div>
       </div>
+
+      {/* Group guests popup */}
+      {selected && (
+        <div
+          onClick={() => setSelected(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(20,18,15,0.44)', display: 'grid', placeItems: 'center', zIndex: 80, padding: '1rem' }}
+        >
+          <div className="ad-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 440, width: '100%', maxHeight: '82vh', overflow: 'auto' }}>
+            <div className="ad-header" style={{ marginBottom: '0.9rem' }}>
+              <div>
+                <div className="ad-eyebrow" style={{ marginBottom: '0.3rem' }}>Group {selected.groupCode} &middot; {cap(selected.side)}</div>
+                <h2 className="ad-section-title" style={{ fontSize: '1.15rem' }}>
+                  {selected.rsvpResponse
+                    ? (selected.rsvpResponse.attending ? `${selected.rsvpResponse.numberAttending} attending` : 'Not attending')
+                    : 'No response yet'}
+                </h2>
+              </div>
+              <button className="ad-icon-btn" onClick={() => setSelected(null)} aria-label="Close">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
+            </div>
+            {selected.guests?.length ? (
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                {selected.guests.map((guest, i) => {
+                  const att = guestStatus(selected, guest.name);
+                  const label = att === true ? 'Coming' : att === false ? 'Not coming' : att === 'pending' ? 'Pending' : 'No response';
+                  const tone = att === true ? 'ok' : att === false ? 'bad' : 'muted';
+                  return (
+                    <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.55rem 0.7rem', background: 'var(--ad-raised)', border: '1px solid var(--ad-border)', borderRadius: 'var(--ad-r-ctrl)' }}>
+                      <span className={`ad-dot ad-dot--${tone === 'muted' ? '' : tone}`} style={tone === 'muted' ? { background: 'var(--ad-border-strong)' } : undefined} />
+                      <span style={{ fontWeight: 500, color: 'var(--ad-ink)' }}>{guest.name}</span>
+                      <span className={`ad-pill ad-pill--${tone === 'ok' ? 'ok' : tone === 'bad' ? 'bad' : 'neutral'}`} style={{ marginInlineStart: 'auto' }}>{label}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="ad-empty">No registered guests in this group.</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+function cap(s: string) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }

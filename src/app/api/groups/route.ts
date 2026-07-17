@@ -73,6 +73,7 @@ export async function PUT(request: NextRequest) {
     const patch: Record<string, any> = {};
     if (typeof data.maxGuests === 'number') patch.maxGuests = Math.max(1, data.maxGuests);
     if (data.side) patch.side = data.side;
+    if (typeof data.inRsvp === 'boolean') patch.inRsvp = data.inRsvp;
 
     const group = await prisma.guestGroup.update({ where: { id: data.id }, data: patch });
 

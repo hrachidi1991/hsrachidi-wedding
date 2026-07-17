@@ -7,25 +7,25 @@ export const metadata: Metadata = {
   description: 'You are cordially invited to celebrate the wedding of Hussein & Suzan',
   openGraph: {
     title: 'Wedding of Hussein & Suzan',
-    description: 'Wedding invitation',
-    type: 'article',
+    description: 'You are warmly invited — 25 August 2026, Pleine Nature',
+    type: 'website',
     url: 'https://www.therachidis.com',
-    siteName: 'www.therachidis.com',
+    siteName: 'Hussein & Suzan',
     locale: 'en_GB',
     images: [
       {
-        url: 'https://www.therachidis.com/images/og-fireworks.jpg',
+        url: 'https://www.therachidis.com/images/og-wide.jpg',
         width: 1200,
-        height: 1800,
-        alt: 'Hussein & Suzan',
+        height: 630,
+        alt: 'Hussein & Suzan — Wedding Invitation',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Wedding of Hussein & Suzan',
-    description: 'You are cordially invited to celebrate the wedding of Hussein & Suzan',
-    images: ['https://www.therachidis.com/images/og-fireworks.jpg'],
+    description: 'You are warmly invited — 25 August 2026, Pleine Nature',
+    images: ['https://www.therachidis.com/images/og-wide.jpg'],
   },
 };
 
