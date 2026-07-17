@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
+import { SEAT_BY_CODE } from '@/lib/seatLayout';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface Guest {
@@ -30,6 +31,25 @@ interface Group {
 const CIRCLES = ['Immediate Fam', 'Fathers', 'Mothers', 'Ghassan Guests', 'Ranas Guests', 'Friends', 'Social'];
 const RSVP_OPTIONS = ['Pending', 'Coming', 'Not coming'];
 
+// Same invite-link format as the old section: a short link off the site root, keyed by group code.
+const inviteLink = (groupCode: string) =>
+  `${typeof window !== 'undefined' ? window.location.origin : ''}/?g=${groupCode}`;
+
+// Normalize a phone for wa.me (default Lebanon +961), then strip the leading + so wa.me gets pure digits.
+function formatPhoneForWhatsApp(phone: string): string {
+  let p = phone.replace(/[\s\-()]/g, '');
+  if (p.startsWith('00')) p = '+' + p.slice(2);
+  if (p.startsWith('0') && !p.startsWith('+')) p = '+961' + p.slice(1);
+  if (!p.startsWith('+') && p.length <= 8) p = '+961' + p;
+  if (!p.startsWith('+')) p = '+' + p;
+  return p.replace('+', '');
+}
+
+function whatsAppUrl(phone: string, name: string, link: string): string {
+  const msg = `Hello ${name}! You're warmly invited to Hussein & Suzan's wedding 💍\nKindly RSVP here: ${link}`;
+  return `https://wa.me/${formatPhoneForWhatsApp(phone)}?text=${encodeURIComponent(msg)}`;
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function GuestListPage() {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -41,6 +61,9 @@ export default function GuestListPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [importing, setImporting] = useState<{ count: number; groups: number; rows: any[] } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [seatByGuestId, setSeatByGuestId] = useState<Record<string, string>>({});
+  const [notePopup, setNotePopup] = useState<Guest | null>(null);
+  const [waBlock, setWaBlock] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -60,6 +83,16 @@ export default function GuestListPage() {
       }
       if (!res.ok) { setLoadError('Could not load the guest list.'); setLoading(false); return; }
       setGroups(await res.json());
+      // seat assignments (from the seating map) — optional; column just shows — if unavailable
+      try {
+        const sres = await fetch('/api/seats');
+        if (sres.ok) {
+          const sd = await sres.json();
+          const map: Record<string, string> = {};
+          for (const g of (sd.guests || [])) if (g.seatCode) map[g.id] = g.seatCode;
+          setSeatByGuestId(map);
+        }
+      } catch { /* leave seat map empty */ }
     } catch { setLoadError('Could not load the guest list.'); }
     setLoading(false);
   };
@@ -140,6 +173,33 @@ export default function GuestListPage() {
     } catch { setGroups(prev); flash('Could not delete', true); }
   };
 
+  // seat assigned to a guest (from the seating map) -> friendly label
+  const seatLabel = (guestId: string) => {
+    const code = seatByGuestId[guestId];
+    if (!code) return '—';
+    const s = SEAT_BY_CODE[code];
+    return s ? s.zone : code;
+  };
+
+  // WhatsApp: one shared invite link per group. Blocked unless the group's guest count == its seats.
+  const sendWhatsApp = (group: Group, guest: Guest) => {
+    const n = group.guests.length, seats = group.maxGuests;
+    if (n !== seats) {
+      setWaBlock(
+        `The invite link for group ${group.groupCode} can’t be generated yet — this group has ${n} guest${n === 1 ? '' : 's'} but ${seats} seat${seats === 1 ? '' : 's'}. ` +
+        (n > seats
+          ? `Please remove ${n - seats} guest${n - seats === 1 ? '' : 's'}, or raise the seats to ${n}, so the numbers match — then send the link.`
+          : `Please add ${seats - n} more guest${seats - n === 1 ? '' : 's'}, or lower the seats to ${n}, so the numbers match — then send the link.`)
+      );
+      return;
+    }
+    if (!guest.phone) {
+      setWaBlock(`${guest.name} has no phone number yet. Add a phone number to this guest to send the invite link on WhatsApp.`);
+      return;
+    }
+    window.open(whatsAppUrl(guest.phone, guest.name, inviteLink(group.groupCode)), '_blank', 'noopener,noreferrer');
+  };
+
   const addGuest = async (payload: any) => {
     setBusy(true);
     try {
@@ -218,10 +278,10 @@ export default function GuestListPage() {
       g.guests.map((gu) => ({
         Name: gu.name, Phone: gu.phone || '', Side: g.side,
         Circle: gu.circle || '', Seats: g.maxGuests, 'Group ID': g.groupCode,
-        RSVP: gu.rsvpManual || autoRsvp(g), Notes: gu.notes || '',
+        RSVP: gu.rsvpManual || autoRsvp(g), Seat: seatByGuestId[gu.id] ? seatLabel(gu.id) : '', Notes: gu.notes || '',
       }))
     );
-    const ws = XLSX.utils.json_to_sheet(rows, { header: ['Name', 'Phone', 'Side', 'Circle', 'Seats', 'Group ID', 'RSVP', 'Notes'] });
+    const ws = XLSX.utils.json_to_sheet(rows, { header: ['Name', 'Phone', 'Side', 'Circle', 'Seats', 'Group ID', 'RSVP', 'Seat', 'Notes'] });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, tab === 'bride' ? 'Bride' : 'Groom');
     XLSX.writeFile(wb, `${tab}-guest-list.xlsx`);
@@ -296,7 +356,7 @@ export default function GuestListPage() {
                   <thead>
                     <tr>
                       <th>Name</th><th>Phone</th><th>Side</th><th>Circle</th>
-                      <th className="gl-c-center">Seats</th><th>Group ID</th><th>RSVP</th><th>Notes</th><th aria-label="actions" />
+                      <th className="gl-c-center">Seats</th><th>Group ID</th><th>RSVP</th><th className="gl-c-center">Seat</th><th aria-label="actions" />
                     </tr>
                   </thead>
                   <tbody>
@@ -323,9 +383,15 @@ export default function GuestListPage() {
                               <td rowSpan={g.guests.length} className="gl-c-group gl-c-gid">{g.groupCode}</td>
                             )}
                             <td><RsvpCell guest={gu} auto={autoRsvp(g)} onSave={(v) => saveGuest(gu.id, 'rsvpManual', v)} /></td>
-                            <td><EditText value={gu.notes || ''} onSave={(v) => saveGuest(gu.id, 'notes', v)} placeholder="—" /></td>
+                            <td className="gl-c-center"><span className={`gl-seatlbl ad-nums${seatByGuestId[gu.id] ? '' : ' gl-seatlbl--empty'}`}>{seatLabel(gu.id)}</span></td>
                             <td className="gl-c-actions">
-                              <button className="gl-del" onClick={() => deleteGuest(gu)} aria-label={`Remove ${gu.name}`} title="Remove">
+                              <button className="gl-act gl-act--wa" onClick={() => sendWhatsApp(g, gu)} title="Send invite link on WhatsApp" aria-label={`Send invite link to ${gu.name} on WhatsApp`}>
+                                <WaIcon />
+                              </button>
+                              <button className={`gl-act gl-note-btn${gu.notes ? ' has-note' : ''}`} onClick={() => setNotePopup(gu)} title={gu.notes ? 'View / edit note' : 'Add a note'} aria-label={`Note for ${gu.name}`}>
+                                <NoteIcon filled={!!gu.notes} />
+                              </button>
+                              <button className="gl-act gl-del" onClick={() => deleteGuest(gu)} aria-label={`Remove ${gu.name}`} title="Remove">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 6h18M8 6V4h8v2m-9 0v14a2 2 0 002 2h6a2 2 0 002-2V6" /></svg>
                               </button>
                             </td>
@@ -362,6 +428,30 @@ export default function GuestListPage() {
             <div className="gl-modal__actions">
               <button className="ad-btn ad-btn--outline" onClick={() => setImporting(null)} disabled={busy}>Cancel</button>
               <button className="ad-btn ad-btn--primary" onClick={confirmImport} disabled={busy}>{busy ? 'Importing…' : 'Import'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {notePopup && (
+        <NoteModal
+          key={notePopup.id}
+          guest={notePopup}
+          onClose={() => setNotePopup(null)}
+          onSave={(v) => { saveGuest(notePopup.id, 'notes', v); setNotePopup(null); }}
+        />
+      )}
+
+      {waBlock && (
+        <div className="gl-modal-scrim" onClick={() => setWaBlock(null)}>
+          <div className="gl-modal gl-modal--alert" onClick={(e) => e.stopPropagation()}>
+            <div className="gl-alert-icon" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+            </div>
+            <h3 className="ad-section-title" style={{ textAlign: 'center' }}>Can&rsquo;t send the link yet</h3>
+            <p className="ad-page-desc" style={{ textAlign: 'center', marginTop: '0.5rem' }}>{waBlock}</p>
+            <div className="gl-modal__actions" style={{ justifyContent: 'center' }}>
+              <button className="ad-btn ad-btn--primary" onClick={() => setWaBlock(null)}>Got it</button>
             </div>
           </div>
         </div>
@@ -499,6 +589,28 @@ function AddGuestModal({ defaultGroup, side, busy, onClose, onSave }: {
   );
 }
 
+function NoteModal({ guest, onClose, onSave }: { guest: Guest; onClose: () => void; onSave: (v: string) => void }) {
+  const [draft, setDraft] = useState(guest.notes || '');
+  return (
+    <div className="gl-modal-scrim" onClick={onClose}>
+      <div className="gl-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="ad-eyebrow">Note</div>
+        <h3 className="ad-section-title" style={{ fontSize: '1.15rem' }}>{guest.name}</h3>
+        <textarea
+          className="ad-input gl-note-area" value={draft} autoFocus rows={5}
+          placeholder="Write a note about this guest (dietary needs, travel, seating wishes…)"
+          onChange={(e) => setDraft(e.target.value)}
+        />
+        <div className="gl-modal__actions">
+          {guest.notes && <button className="ad-btn ad-btn--outline gl-danger" style={{ marginRight: 'auto' }} onClick={() => onSave('')}>Clear</button>}
+          <button className="ad-btn ad-btn--outline" onClick={onClose}>Cancel</button>
+          <button className="ad-btn ad-btn--primary" onClick={() => onSave(draft.trim())}>Save note</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SchemaNotice({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="ad-card" style={{ textAlign: 'center', padding: '2.5rem 1.5rem' }}>
@@ -514,6 +626,10 @@ function SchemaNotice({ onRetry }: { onRetry: () => void }) {
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const UploadIcon = () => (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>);
+const WaIcon = () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.46.13-.6.13-.13.3-.35.44-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.5l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.69.63.71.22 1.36.2 1.87.12.57-.09 1.76-.72 2-1.4.25-.7.25-1.28.17-1.4-.07-.13-.27-.2-.57-.35zM12.04 21.5h-.01a9.5 9.5 0 0 1-4.84-1.33l-.35-.2-3.6.94.96-3.5-.23-.36a9.46 9.46 0 0 1-1.45-5.05c0-5.24 4.27-9.5 9.52-9.5 2.54 0 4.93.99 6.73 2.79a9.44 9.44 0 0 1 2.78 6.72c0 5.24-4.27 9.5-9.52 9.5zm8.1-17.6A11.36 11.36 0 0 0 12.04.5C5.75.5.63 5.62.63 11.9c0 2 .52 3.96 1.52 5.68L.5 23.5l6.06-1.59a11.34 11.34 0 0 0 5.48 1.4h.01c6.28 0 11.4-5.12 11.4-11.4 0-3.05-1.19-5.91-3.34-8.06z" /></svg>);
+const NoteIcon = ({ filled }: { filled: boolean }) => filled
+  ? (<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4Z" /><path d="M8 8h6M8 12h8M8 16h5" stroke="var(--ad-surface)" strokeWidth="1.5" strokeLinecap="round" /></svg>)
+  : (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M8 13h8M8 17h5" /></svg>);
 const DownloadIcon = () => (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>);
 const PlusIcon = () => (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>);
 
@@ -570,9 +686,19 @@ function GuestListStyles() {
     .gl-seats__btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .gl-seats__val { min-width: 20px; text-align: center; font-weight: 700; color: var(--ad-ink); }
 
-    .gl-c-actions { text-align: center; }
-    .gl-del { border: none; background: transparent; color: var(--ad-muted); cursor: pointer; padding: 0.35rem; border-radius: 6px; display: inline-flex; }
+    .gl-c-actions { text-align: right; white-space: nowrap; }
+    .gl-act { border: none; background: transparent; color: var(--ad-muted); cursor: pointer; padding: 0.35rem; border-radius: 6px; display: inline-flex; vertical-align: middle; }
+    .gl-act--wa { color: #25a866; }
+    .gl-act--wa:hover { background: rgba(37,168,102,0.12); color: #1c8f54; }
+    .gl-note-btn:hover { color: var(--ad-accent-strong); background: var(--ad-accent-soft); }
+    .gl-note-btn.has-note { color: var(--ad-accent-strong); }
     .gl-del:hover { color: var(--ad-bad); background: var(--ad-bad-soft); }
+    .gl-seatlbl { font-size: 0.82rem; color: var(--ad-ink); }
+    .gl-seatlbl--empty { color: var(--ad-muted); }
+    .gl-danger { color: var(--ad-bad); }
+    .gl-modal--alert { width: min(94vw, 430px); }
+    .gl-alert-icon { width: 52px; height: 52px; border-radius: 50%; background: var(--ad-bad-soft); color: var(--ad-bad); display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 0.7rem; }
+    .gl-note-area { width: 100%; margin-top: 0.9rem; resize: vertical; font: inherit; line-height: 1.5; }
 
     .gl-modal-scrim { position: fixed; inset: 0; z-index: 80; background: rgba(20,18,15,0.44); display: flex; align-items: center; justify-content: center; padding: 1rem; }
     .gl-modal { background: var(--ad-surface); border: 1px solid var(--ad-border); border-radius: var(--ad-r-card); box-shadow: var(--ad-shadow); padding: 1.4rem; width: min(94vw, 440px); }
