@@ -680,12 +680,6 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
               const dayName = weddingDate.toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { weekday: 'long' });
               const monthName = weddingDate.toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { month: 'long' });
 
-              const firstOfMonth = new Date(year, weddingDate.getMonth(), 1);
-              const daysInMonth = new Date(year, weddingDate.getMonth() + 1, 0).getDate();
-              const startDay = (firstOfMonth.getDay() + 6) % 7;
-              const dayHeaders = locale === 'ar'
-                ? ['ن','ث','ر','خ','ج','س','ح']
-                : ['Mo','Tu','We','Th','Fr','Sa','Su'];
               // Arabic-Indic digits in the AR version (fixes "25"→"52" reversal + reads native)
               const arDigits = (s: string) =>
                 locale === 'ar' ? s.replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d]) : s;
@@ -738,27 +732,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                     ))}
                   </div>
 
-                  <div className="divider-gold mt-8 mb-6" />
-
-                  <p className={`text-sm uppercase tracking-[0.25em] text-olive-400 mb-4 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                    {t(locale, 'theGreatDay')}
-                  </p>
-                  <p className={`text-sm uppercase tracking-[0.15em] text-black/40 mb-3 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                    {monthName} {arDigits(String(year))}
-                  </p>
-                  <div className="calendar-grid">
-                    {dayHeaders.map((d) => (
-                      <div key={d} className="cal-header font-body">{d}</div>
-                    ))}
-                    {Array.from({ length: startDay }).map((_, i) => (
-                      <div key={`e${i}`} className="cal-day empty" />
-                    ))}
-                    {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => (
-                      <div key={d} className={`cal-day ${d === dayNum ? 'highlight' : ''}`}>
-                        {arDigits(String(d))}
-                      </div>
-                    ))}
-                  </div>
+                  <div className="divider-gold mt-8" />
                 </>
               );
             })()}
