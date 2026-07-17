@@ -71,10 +71,20 @@ export async function PATCH(request: NextRequest) {
     const data = await request.json();
     if (!data.id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
+    // Mark a WhatsApp invite as sent — increments the per-guest counter.
+    if (data.markWaSent) {
+      const guest = await prisma.guest.update({
+        where: { id: data.id },
+        data: { waSentCount: { increment: 1 }, waSentAt: new Date() },
+      });
+      return NextResponse.json(guest);
+    }
+
     const patch: Record<string, any> = {};
     for (const f of ['name', 'phone', 'side', 'relation', 'circle', 'rsvpManual', 'notes', 'groupCode'] as const) {
       if (f in data) patch[f] = data[f] === '' ? null : data[f];
     }
+    if ('waSentCount' in data) patch.waSentCount = Math.max(0, parseInt(data.waSentCount) || 0);
     if ('name' in patch && !patch.name) {
       return NextResponse.json({ error: 'Name cannot be empty' }, { status: 400 });
     }

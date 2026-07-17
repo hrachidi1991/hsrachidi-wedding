@@ -14,6 +14,8 @@ interface Guest {
   circle: string | null;
   rsvpManual: string | null;
   notes: string | null;
+  waSentCount: number;
+  waSentAt: string | null;
   groupCode: string;
   sortOrder: number;
 }
@@ -198,6 +200,18 @@ export default function GuestListPage() {
       return;
     }
     window.open(whatsAppUrl(guest.phone, guest.name, inviteLink(group.groupCode)), '_blank', 'noopener,noreferrer');
+    markWaSent(guest);
+  };
+
+  // record that the invite link was sent to this guest (increments the counter)
+  const markWaSent = async (guest: Guest) => {
+    patchGuestLocal(guest.id, { waSentCount: (guest.waSentCount || 0) + 1, waSentAt: new Date().toISOString() });
+    try {
+      await fetch('/api/guests', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: guest.id, markWaSent: true }),
+      });
+    } catch { /* non-critical; local count stays optimistic */ }
   };
 
   const addGuest = async (payload: any) => {
@@ -278,10 +292,11 @@ export default function GuestListPage() {
       g.guests.map((gu) => ({
         Name: gu.name, Phone: gu.phone || '', Side: g.side,
         Circle: gu.circle || '', Seats: g.maxGuests, 'Group ID': g.groupCode,
-        RSVP: gu.rsvpManual || autoRsvp(g), Seat: seatByGuestId[gu.id] ? seatLabel(gu.id) : '', Notes: gu.notes || '',
+        RSVP: gu.rsvpManual || autoRsvp(g), Seat: seatByGuestId[gu.id] ? seatLabel(gu.id) : '',
+        Sent: gu.waSentCount || '', Notes: gu.notes || '',
       }))
     );
-    const ws = XLSX.utils.json_to_sheet(rows, { header: ['Name', 'Phone', 'Side', 'Circle', 'Seats', 'Group ID', 'RSVP', 'Seat', 'Notes'] });
+    const ws = XLSX.utils.json_to_sheet(rows, { header: ['Name', 'Phone', 'Side', 'Circle', 'Seats', 'Group ID', 'RSVP', 'Seat', 'Sent', 'Notes'] });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, tab === 'bride' ? 'Bride' : 'Groom');
     XLSX.writeFile(wb, `${tab}-guest-list.xlsx`);
@@ -356,7 +371,7 @@ export default function GuestListPage() {
                   <thead>
                     <tr>
                       <th>Name</th><th>Phone</th><th>Side</th><th>Circle</th>
-                      <th className="gl-c-center">Seats</th><th>Group ID</th><th>RSVP</th><th className="gl-c-center">Seat</th><th aria-label="actions" />
+                      <th className="gl-c-center">Seats</th><th>Group ID</th><th>RSVP</th><th className="gl-c-center">Seat</th><th className="gl-c-center">Sent</th><th aria-label="actions" />
                     </tr>
                   </thead>
                   <tbody>
@@ -384,6 +399,14 @@ export default function GuestListPage() {
                             )}
                             <td><RsvpCell guest={gu} auto={autoRsvp(g)} onSave={(v) => saveGuest(gu.id, 'rsvpManual', v)} /></td>
                             <td className="gl-c-center"><span className={`gl-seatlbl ad-nums${seatByGuestId[gu.id] ? '' : ' gl-seatlbl--empty'}`}>{seatLabel(gu.id)}</span></td>
+                            <td className="gl-c-center">
+                              {gu.waSentCount > 0 ? (
+                                <span className="gl-sent ad-nums" title={`Invite link sent ${gu.waSentCount} time${gu.waSentCount === 1 ? '' : 's'}${gu.waSentAt ? ' · last on ' + new Date(gu.waSentAt).toLocaleDateString() : ''}`}>
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                  {gu.waSentCount}
+                                </span>
+                              ) : <span className="gl-sent-none">—</span>}
+                            </td>
                             <td className="gl-c-actions">
                               <button className="gl-act gl-act--wa" onClick={() => sendWhatsApp(g, gu)} title="Send invite link on WhatsApp" aria-label={`Send invite link to ${gu.name} on WhatsApp`}>
                                 <WaIcon />
@@ -695,6 +718,8 @@ function GuestListStyles() {
     .gl-del:hover { color: var(--ad-bad); background: var(--ad-bad-soft); }
     .gl-seatlbl { font-size: 0.82rem; color: var(--ad-ink); }
     .gl-seatlbl--empty { color: var(--ad-muted); }
+    .gl-sent { display: inline-flex; align-items: center; gap: 0.22rem; padding: 0.14rem 0.5rem; border-radius: 999px; background: rgba(37,168,102,0.12); color: #1c8f54; font-size: 0.8rem; font-weight: 700; }
+    .gl-sent-none { color: var(--ad-muted); }
     .gl-danger { color: var(--ad-bad); }
     .gl-modal--alert { width: min(94vw, 430px); }
     .gl-alert-icon { width: 52px; height: 52px; border-radius: 50%; background: var(--ad-bad-soft); color: var(--ad-bad); display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 0.7rem; }

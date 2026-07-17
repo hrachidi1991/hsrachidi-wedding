@@ -33,6 +33,8 @@ model Guest {
   circle      String?  // guest "circle": Immediate Fam | Fathers | Mothers | Ghassan Guests | Ranas Guests | Friends | Social
   rsvpManual  String?  // manual RSVP override: "" | "Pending" | "Coming" | "Not coming" (overrides the online RSVP)
   notes       String?  // free-text admin notes
+  waSentCount Int      @default(0) // how many times the WhatsApp invite link was sent to this guest
+  waSentAt    DateTime? // when the invite link was last sent on WhatsApp
   groupCode   String
   sortOrder   Int      @default(0) // preserves display order within a group
   createdAt   DateTime @default(now())
