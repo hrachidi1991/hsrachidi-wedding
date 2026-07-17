@@ -1263,3 +1263,96 @@ html.no-scroll body {
 .lenis-content { display: flex; flex-direction: column; }
 .lenis-content > [data-section="8"] { order: 1; }
 .lenis-content > .scroll-section[data-section="7"] { order: 2; padding-bottom: 26vh; }
+
+/* ═══ Preloader — media-ready gate on the paper ground (matches the page) ═══ */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background-color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.8s ease;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.preloader.is-hiding {
+  opacity: 0;
+  pointer-events: none;
+}
+.preloader-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+.preloader-monogram {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.5;
+  padding-inline-start: 0.5em; /* balance trailing letter-spacing */
+}
+.preloader-ring {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(42, 39, 36, 0.14);
+  border-top-color: var(--ink);
+  animation: preloaderSpin 0.85s linear infinite;
+}
+.preloader-ring.is-static {
+  animation: none;
+  position: relative;
+}
+.preloader-ring.is-static::after {
+  content: '';
+  position: absolute;
+  inset: 38%;
+  border-radius: 50%;
+  background: var(--ink);
+  animation: preloaderPulse 1.7s ease-in-out infinite;
+}
+@keyframes preloaderSpin { to { transform: rotate(360deg); } }
+@keyframes preloaderPulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 0.85; transform: scale(1.1); } }
+.preloader-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 3.6em;
+  text-align: center;
+  max-width: 88vw;
+}
+.preloader-line {
+  display: block;
+  animation: preloaderLineIn 0.5s ease both;
+}
+.preloader-line--primary {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.15rem, 4.6vw, 1.6rem);
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+.preloader-line--primary.ar {
+  font-family: 'Aref Ruqaa', serif;
+  line-height: 1.6;
+}
+.preloader-line--twin {
+  font-family: 'Lora', serif;
+  font-size: 0.8rem;
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
+}
+.preloader-line--twin.ar {
+  font-family: 'Amiri', serif;
+  font-size: 0.98rem;
+}
+@keyframes preloaderLineIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .preloader { transition: opacity 0.2s ease; }
+  .preloader-line { animation: none; }
+}

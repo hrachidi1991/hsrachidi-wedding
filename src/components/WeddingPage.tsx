@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
+import Preloader from './Preloader';
 import type { SiteContent } from '@/lib/settings';
 import type { Locale } from '@/lib/i18n';
 import { t } from '@/lib/i18n';
@@ -52,11 +53,61 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
   const [flapsOpening, setFlapsOpening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showContent, setShowContent] = useState(false);
+  const [assetsReady, setAssetsReady] = useState(false);
+  const [loaderGone, setLoaderGone] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const chapterScrollRef = useRef<ChapterScrollHandle | null>(null);
   const introPlayedRef = useRef(false);
+
+  // ═══ Preload all media (images + video) + fonts before revealing the page,
+  //     so a slow connection waits here instead of popping in mid-scroll. ═══
+  useEffect(() => {
+    let cancelled = false;
+    const images = [
+      '/images/grayscale/couple-dance-new.webp',
+      '/images/grayscale/entrance-poster.webp',
+      '/images/grayscale/scene-fireworks.webp',
+      '/images/grayscale/scene-garden.webp',
+      '/images/grayscale/scene-mountain.webp',
+      '/images/grayscale/scene-venue-walk.webp',
+      '/images/whish.png',
+    ];
+    const videos = [
+      '/video/entrance.mp4',
+      '/video/scene-mountain.mp4',
+      '/video/scene-venue-walk.mp4',
+      '/video/scene-garden.mp4',
+    ];
+    const loadImage = (src: string) =>
+      new Promise<void>((res) => {
+        const img = new window.Image();
+        img.onload = () => res();
+        img.onerror = () => res();
+        img.src = src;
+      });
+    const loadVideo = (src: string) =>
+      new Promise<void>((res) => {
+        const v = document.createElement('video');
+        v.muted = true;
+        v.preload = 'auto';
+        let done = false;
+        const finish = () => { if (!done) { done = true; res(); } };
+        v.addEventListener('canplaythrough', finish, { once: true });
+        v.addEventListener('loadeddata', finish, { once: true });
+        v.addEventListener('error', finish, { once: true });
+        window.setTimeout(finish, 12000); // don't wait forever on one video
+        v.src = src;
+        v.load();
+      });
+    const fonts = (document as any).fonts?.ready?.then(() => {}).catch(() => {}) ?? Promise.resolve();
+    const all = Promise.all([...images.map(loadImage), ...videos.map(loadVideo), fonts]);
+    const hardCap = new Promise<void>((res) => window.setTimeout(res, 22000)); // absolute fallback
+    const minShow = new Promise<void>((res) => window.setTimeout(res, 1400));  // avoid a jarring flash
+    Promise.all([Promise.race([all, hardCap]), minShow]).then(() => { if (!cancelled) setAssetsReady(true); });
+    return () => { cancelled = true; };
+  }, []);
 
   // Active chapter (for the minimal chapter nav)
   const [activeChapter, setActiveChapter] = useState<number>(2);
@@ -316,6 +367,17 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
   // ═══════════════════════════════════════════════════
   return (
     <div dir={isRtl ? 'rtl' : 'ltr'}>
+      {/* Loading gate — holds until all media is cached, then dissolves */}
+      {!loaderGone && (
+        <Preloader
+          locale={locale}
+          isRtl={isRtl}
+          reducedMotion={prefersReducedMotion}
+          ready={assetsReady}
+          onDone={() => setLoaderGone(true)}
+        />
+      )}
+
       {/* Audio */}
       {currentMusicSrc && (
         <audio ref={audioRef} src={currentMusicSrc} loop preload="metadata" />
