@@ -4,7 +4,7 @@ import WeddingPage from '@/components/WeddingPage';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ g?: string; token?: string }> }) {
+export default async function Home({ searchParams }: { searchParams: Promise<{ g?: string; token?: string; edit?: string }> }) {
   const params = await searchParams;
   const settings = await getSettings();
 
@@ -18,6 +18,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ g
         ? await prisma.guestGroup.findUnique({ where: { groupCode }, include: { rsvpResponse: true } })
         : await prisma.guestGroup.findUnique({ where: { token: legacyToken! }, include: { rsvpResponse: true } });
       if (group) {
+        // Editing an already-submitted response is only allowed via the couple's
+        // update link (?edit=<group token>). The normal invite link is submit-once.
+        const allowEdit = !!(params.edit && params.edit === group.token);
         const guests = await prisma.guest.findMany({
           where: { groupCode: group.groupCode },
         });
@@ -26,6 +29,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ g
           maxGuests: group.maxGuests,
           side: group.side,
           guests,
+          allowEdit,
+          editToken: allowEdit ? group.token : null,
           rsvp: group.rsvpResponse
             ? {
                 attending: group.rsvpResponse.attending,

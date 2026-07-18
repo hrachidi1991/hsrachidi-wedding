@@ -91,6 +91,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (group.rsvpResponse) {
+      // Submit-once: an existing response is locked. Only the couple's update
+      // link (which carries the group token) may change it.
+      if (!body.editToken || body.editToken !== group.token) {
+        return NextResponse.json(
+          { error: 'This RSVP is already submitted and locked. Please contact the couple for an update link.', code: 'RSVP_LOCKED' },
+          { status: 403 }
+        );
+      }
       // Update existing
       await prisma.rsvpResponse.update({
         where: { id: group.rsvpResponse.id },

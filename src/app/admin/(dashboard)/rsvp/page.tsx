@@ -75,7 +75,17 @@ export default function RsvpTracking() {
   const [sideFilter, setSideFilter] = useState<'all' | 'bride' | 'groom'>('all');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<GroupWithRsvp | null>(null);
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const isMobile = useIsMobile();
+
+  // The couple's "update link" re-enables editing for a group that already responded.
+  const copyUpdateLink = (g: GroupWithRsvp) => {
+    const url = `${window.location.origin}/?g=${g.groupCode}&edit=${g.token}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedLink(g.id);
+      setTimeout(() => setCopiedLink(null), 2500);
+    }).catch(() => {});
+  };
 
   useEffect(() => {
     fetch('/api/groups')
@@ -330,6 +340,16 @@ export default function RsvpTracking() {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
               </button>
             </div>
+            <button className="ad-btn ad-btn--outline" style={{ width: '100%', marginBottom: '1rem' }} onClick={() => copyUpdateLink(selected)}>
+              {copiedLink === selected.id ? (
+                <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg> Update link copied</>
+              ) : (
+                <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg> Copy update link</>
+              )}
+            </button>
+            <p style={{ fontSize: '0.74rem', color: 'var(--ad-muted)', margin: '-0.5rem 0 0.9rem' }}>
+              Send this only if a guest asks to change their reply — it re-opens editing for this group.
+            </p>
             {selected.guests?.length ? (
               <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                 {selected.guests.map((guest, i) => {

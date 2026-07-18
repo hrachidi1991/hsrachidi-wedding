@@ -40,6 +40,9 @@ export default function AdminDashboard() {
   const totalAttending = attending.reduce((s, g) => s + (g.rsvpResponse?.numberAttending || 0), 0);
   const brideGroups = groups.filter((g) => g.side === 'bride');
   const groomGroups = groups.filter((g) => g.side === 'groom');
+  // "Sent" = the invite link was actually sent to at least one guest in the group.
+  const linksSent = groups.filter((g) => (g.guests || []).some((x: any) => (x.waSentCount || 0) > 0)).length;
+  const linksNotSent = totalGroups - linksSent;
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -61,6 +64,12 @@ export default function AdminDashboard() {
         <StatCard label="Max Capacity" value={totalMaxGuests} />
         <StatCard label="Confirmed Attending" value={totalAttending} tone="ok" />
         <StatCard label="Response Rate" value={`${totalGroups > 0 ? Math.round((responded.length / totalGroups) * 100) : 0}%`} tone="accent" />
+      </div>
+
+      {/* Invite links sent vs not sent */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-5">
+        <StatCard label="Invites Sent" value={linksSent} sub={`/ ${totalGroups} groups`} tone="accent" />
+        <StatCard label="Not Sent Yet" value={linksNotSent} sub="groups" numTone={linksNotSent > 0 ? 'warn' : 'muted'} />
       </div>
 
       {/* Response breakdown */}

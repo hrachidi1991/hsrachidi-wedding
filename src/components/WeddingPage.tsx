@@ -25,6 +25,8 @@ interface RsvpData {
   maxGuests: number;
   side: string;
   guests: any[];
+  allowEdit?: boolean;       // true only when opened via the couple's update link (?edit=<token>)
+  editToken?: string | null; // the group token, present only on an update link
   rsvp: { attending: boolean; numberAttending: number; guestNames: any } | null;
 }
 
@@ -159,7 +161,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
   const [guestAttendance, setGuestAttendance] = useState<GuestAttendance[]>(initAttendance);
   const [rsvpSubmitted, setRsvpSubmitted] = useState(!!rsvpData?.rsvp);
-  const [isEditing, setIsEditing] = useState(!rsvpData?.rsvp);
+  const [isEditing, setIsEditing] = useState(!rsvpData?.rsvp || !!rsvpData?.allowEdit);
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [rsvpMessage, setRsvpMessage] = useState('');
 
@@ -371,6 +373,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
           groupCode: rsvpData.groupCode,
           guestAttendance,
           language: locale,
+          editToken: rsvpData.editToken,
         }),
       });
       if (res.ok) {
@@ -378,6 +381,11 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
         setRsvpSubmitted(true);
         setIsEditing(false);
         setRsvpMessage(data.updated ? t(locale, 'rsvpUpdated') : t(locale, 'rsvpSuccess'));
+      } else if (res.status === 403) {
+        setRsvpMessage(locale === 'en'
+          ? 'Your response is already saved and can’t be changed here. Please contact us to update it.'
+          : 'ردكم محفوظ ولا يمكن تغييره من هنا. يرجى التواصل معنا لتعديله.');
+        setIsEditing(false);
       } else {
         setRsvpMessage(t(locale, 'rsvpError'));
       }
@@ -1021,12 +1029,20 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   {attendingCount} / {guestAttendance.length} {t(locale, 'perGuestAttending').toLowerCase()}
                 </p>
 
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="btn-gold w-full"
-                >
-                  {t(locale, 'rsvpUpdatePrompt')}
-                </button>
+                {rsvpData?.allowEdit ? (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="btn-gold w-full"
+                  >
+                    {t(locale, 'rsvpUpdatePrompt')}
+                  </button>
+                ) : (
+                  <p className={`text-sm text-black/50 ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                    {locale === 'en'
+                      ? 'Your response is saved. To make a change, please contact us.'
+                      : 'تم حفظ ردكم. لإجراء أي تعديل، يرجى التواصل معنا.'}
+                  </p>
+                )}
               </div>
             ) : (
               /* ═══ EDITING STATE — per-guest toggle form ═══ */
