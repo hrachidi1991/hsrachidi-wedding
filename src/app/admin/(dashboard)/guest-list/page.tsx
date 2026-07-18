@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { SEAT_BY_CODE } from '@/lib/seatLayout';
+import { useIsMobile } from '@/lib/useIsMobile';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface Guest {
@@ -75,6 +76,7 @@ export default function GuestListPage() {
   const [waBlock, setWaBlock] = useState<string | null>(null);
   const [eventInfo, setEventInfo] = useState<EventInfo>({ date: '25 August', time: '8:00 PM', venue: 'Pleine Nature' });
   const [menu, setMenu] = useState<{ group: Group; x: number; y: number } | null>(null);
+  const isMobile = useIsMobile();
   const fileRef = useRef<HTMLInputElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -398,6 +400,55 @@ export default function GuestListPage() {
               <p className="ad-page-desc" style={{ margin: '0.5rem auto 0' }}>
                 Import a list or add guests manually to get started.
               </p>
+            </div>
+          ) : isMobile ? (
+            <div className="gl-cards">
+              {sideGroups.map((g) => (
+                <div key={g.id} className="gl-mcard">
+                  <div className="gl-mcard__head">
+                    <span className="gl-mcard__gid">{g.groupCode}</span>
+                    <EditSelect value={g.side} options={['bride', 'groom']} onSave={(v) => setSide(g, v)} cap />
+                    <div className="gl-mcard__spacer" />
+                    <span className="gl-mcard__lbl">Seats</span>
+                    <SeatsStepper seats={g.maxGuests} count={g.guests.length} onChange={(s) => setSeats(g, s)} />
+                    <button
+                      className={`gl-track${g.inRsvp ? ' is-on' : ''}`}
+                      onClick={() => setGroupInRsvp(g, !g.inRsvp)}
+                      title={g.inRsvp ? 'In RSVP tracking — tap to remove' : 'Add to RSVP tracking'}
+                      aria-pressed={g.inRsvp}
+                    >
+                      {g.inRsvp
+                        ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                        : <span className="gl-track-dot" />}
+                    </button>
+                  </div>
+                  <div className="gl-mcard__body">
+                    {g.guests.map((gu, i) => (
+                      <div key={gu.id} className={`gl-mguest${i >= g.maxGuests ? ' is-over' : ''}`}>
+                        <div className="gl-mguest__info">
+                          <EditText value={gu.name} onSave={(v) => saveGuest(gu.id, 'name', v)} placeholder="Name" strong />
+                          <div className="gl-mguest__line">
+                            <EditText value={gu.phone || ''} onSave={(v) => saveGuest(gu.id, 'phone', v)} placeholder="+ add phone" mono />
+                            <EditSelect value={gu.circle || ''} options={CIRCLES} onSave={(v) => saveGuest(gu.id, 'circle', v)} placeholder="circle" allowBlank />
+                          </div>
+                          <div className="gl-mguest__line gl-mguest__meta">
+                            <RsvpCell guest={gu} auto={autoRsvp(g)} onSave={(v) => saveGuest(gu.id, 'rsvpManual', v)} />
+                            {seatByGuestId[gu.id] && <span className="gl-mguest__seat ad-nums">{seatLabel(gu.id)}</span>}
+                            {gu.waSentCount > 0 && (
+                              <span className="gl-sent ad-nums"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>{gu.waSentCount}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="gl-mguest__acts">
+                          <button className="gl-act gl-act--wa" onClick={() => sendWhatsApp(g, gu)} aria-label={`Send WhatsApp invite to ${gu.name}`}><WaIcon /></button>
+                          <button className={`gl-act gl-note-btn${gu.notes ? ' has-note' : ''}`} onClick={() => setNotePopup(gu)} aria-label={`Note for ${gu.name}`}><NoteIcon filled={!!gu.notes} /></button>
+                          <button className="gl-act gl-del" onClick={() => deleteGuest(gu)} aria-label={`Remove ${gu.name}`}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 6h18M8 6V4h8v2m-9 0v14a2 2 0 002 2h6a2 2 0 002-2V6" /></svg></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="ad-card gl-tablecard">
@@ -812,6 +863,32 @@ function GuestListStyles() {
     @media (max-width: 720px) {
       .gl-table { font-size: 0.82rem; }
       .gl-cell { white-space: normal; }
+    }
+
+    /* ── Mobile: group cards instead of the wide table ── */
+    .gl-cards { display: flex; flex-direction: column; gap: 0.85rem; }
+    .gl-mcard { background: var(--ad-surface); border: 1px solid var(--ad-border); border-radius: var(--ad-r-card); box-shadow: var(--ad-shadow); overflow: hidden; }
+    .gl-mcard__head { display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.7rem; background: color-mix(in srgb, var(--ad-accent-soft) 55%, transparent); border-bottom: 1px solid var(--ad-border); flex-wrap: wrap; }
+    .gl-mcard__gid { font-family: var(--ad-font-serif); font-weight: 700; color: var(--ad-accent-strong); font-size: 1.05rem; letter-spacing: 0.02em; }
+    .gl-mcard__head .gl-cell--cap { padding: 0.2rem 0.4rem; font-size: 0.85rem; }
+    .gl-mcard__spacer { flex: 1; }
+    .gl-mcard__lbl { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ad-muted); }
+    .gl-mcard__body { display: flex; flex-direction: column; }
+    .gl-mguest { display: flex; align-items: flex-start; gap: 0.35rem; padding: 0.5rem 0.55rem 0.5rem 0.7rem; border-bottom: 1px solid var(--ad-border); }
+    .gl-mguest:last-child { border-bottom: none; }
+    .gl-mguest.is-over { background: var(--ad-bad-soft); }
+    .gl-mguest.is-over .gl-cell--strong { color: var(--ad-bad); }
+    .gl-mguest__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+    .gl-mguest__info .gl-cell { padding: 0.28rem 0.4rem; white-space: normal; min-height: 34px; }
+    .gl-mguest__line { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+    .gl-mguest__meta { margin-top: 0.05rem; padding-inline-start: 0.4rem; }
+    .gl-mguest__seat { font-size: 0.74rem; color: var(--ad-body); background: var(--ad-raised); border: 1px solid var(--ad-border); border-radius: 6px; padding: 0.12rem 0.4rem; }
+    .gl-mguest__acts { display: flex; flex-direction: column; gap: 0.2rem; flex: 0 0 auto; }
+    .gl-mguest__acts .gl-act { width: 36px; height: 36px; border: 1px solid var(--ad-border); }
+    @media (max-width: 720px) {
+      .gl-toolbar { gap: 0.6rem; }
+      .gl-actions { width: 100%; }
+      .gl-actions .ad-btn { flex: 1; justify-content: center; }
     }
     `}</style>
   );

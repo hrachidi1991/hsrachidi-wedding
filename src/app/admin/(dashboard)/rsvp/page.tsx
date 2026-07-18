@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useIsMobile } from '@/lib/useIsMobile';
 
 interface GuestAttendance {
   name: string;
@@ -74,6 +75,7 @@ export default function RsvpTracking() {
   const [sideFilter, setSideFilter] = useState<'all' | 'bride' | 'groom'>('all');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<GroupWithRsvp | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetch('/api/groups')
@@ -208,8 +210,35 @@ export default function RsvpTracking() {
         </select>
       </div>
 
-      {/* Table */}
+      {/* Table (desktop) / cards (mobile) */}
       <div className="ad-card ad-card--flush">
+        {isMobile ? (
+          <div className="rsvp-cards">
+            {filtered.map((g) => {
+              const att = g.rsvpResponse;
+              const label = att ? (att.attending ? 'Attending' : 'Not Attending') : 'No Response';
+              const tone = att ? (att.attending ? 'ok' : 'bad') : 'neutral';
+              return (
+                <button key={g.id} className="rsvp-mcard" onClick={() => setSelected(g)}>
+                  <div className="rsvp-mcard__top">
+                    <span className="rsvp-mcard__code">{g.groupCode}</span>
+                    <span className="ad-cap rsvp-mcard__side">{g.side}</span>
+                    <span className={`ad-pill ad-pill--${tone}`}>{label}</span>
+                    <span className="rsvp-mcard__chev" aria-hidden="true">›</span>
+                  </div>
+                  <div className="rsvp-mcard__meta">
+                    <span>{g.guests?.length || 0} guest{(g.guests?.length || 0) === 1 ? '' : 's'}</span>
+                    {att && <span>&middot; {att.numberAttending} attending</span>}
+                    {att?.updatedAt && <span>&middot; {new Date(att.updatedAt).toLocaleDateString()}</span>}
+                  </div>
+                </button>
+              );
+            })}
+            {filtered.length === 0 && (
+              <p className="ad-empty">{tracked.length === 0 ? 'No invited groups yet. Send a group’s invite link (or add one from Guest List) and it will appear here.' : 'No results match your filters.'}</p>
+            )}
+          </div>
+        ) : (
         <div className="ad-table-wrap">
           <table className="ad-table">
             <thead>
@@ -263,10 +292,23 @@ export default function RsvpTracking() {
             </p>
           )}
         </div>
+        )}
         <div style={{ padding: '0.85rem 1.25rem', fontSize: '0.78rem', color: 'var(--ad-muted)', borderTop: '1px solid var(--ad-border)' }}>
           Showing {filtered.length} of {tracked.length} invited groups
         </div>
       </div>
+
+      <style>{`
+        .rsvp-cards { display: flex; flex-direction: column; }
+        .rsvp-mcard { display: flex; flex-direction: column; gap: 0.35rem; width: 100%; text-align: left; padding: 0.8rem 0.9rem; background: transparent; border: none; border-bottom: 1px solid var(--ad-border); cursor: pointer; font: inherit; }
+        .rsvp-mcard:last-child { border-bottom: none; }
+        .rsvp-mcard:active { background: var(--ad-raised); }
+        .rsvp-mcard__top { display: flex; align-items: center; gap: 0.5rem; }
+        .rsvp-mcard__code { font-family: var(--ad-font-serif); font-weight: 700; color: var(--ad-ink); font-size: 1.05rem; }
+        .rsvp-mcard__side { font-size: 0.8rem; color: var(--ad-muted); }
+        .rsvp-mcard__chev { margin-inline-start: auto; color: var(--ad-muted); font-size: 1.3rem; line-height: 1; }
+        .rsvp-mcard__meta { display: flex; flex-wrap: wrap; gap: 0.3rem; font-size: 0.78rem; color: var(--ad-muted); }
+      `}</style>
 
       {/* Group guests popup */}
       {selected && (
