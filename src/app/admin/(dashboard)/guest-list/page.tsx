@@ -76,6 +76,8 @@ export default function GuestListPage() {
   const [waBlock, setWaBlock] = useState<string | null>(null);
   const [eventInfo, setEventInfo] = useState<EventInfo>({ date: '25 August', time: '8:00 PM', venue: 'Pleine Nature' });
   const [menu, setMenu] = useState<{ group: Group; x: number; y: number } | null>(null);
+  const [circles, setCircles] = useState<string[]>(CIRCLES);
+  const [showSettings, setShowSettings] = useState(false);
   const isMobile = useIsMobile();
   const fileRef = useRef<HTMLInputElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -106,6 +108,7 @@ export default function GuestListPage() {
           time: st.eventTime || '8:00 PM',
           venue: st.venueNameEn || 'Pleine Nature',
         });
+        if (Array.isArray(st.circles) && st.circles.length) setCircles(st.circles);
       } catch { /* keep defaults */ }
       // seat assignments (from the seating map) — optional; column just shows — if unavailable
       try {
@@ -240,6 +243,25 @@ export default function GuestListPage() {
     } catch { setGroups(prev); flash('Could not update RSVP tracking', true); }
   };
 
+  // Save the managed circle list; renames cascade to every guest in that circle.
+  const saveCircles = async (newCircles: string[], renames: { from: string; to: string }[]) => {
+    setBusy(true);
+    try {
+      for (const r of renames) {
+        if (r.from !== r.to) {
+          await fetch('/api/guests', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ renameCircle: r }) });
+        }
+      }
+      const res = await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ circles: newCircles }) });
+      if (!res.ok) throw new Error('save failed');
+      setCircles(newCircles);
+      setShowSettings(false);
+      await load();
+      flash('Circles saved');
+    } catch { flash('Could not save circles', true); }
+    setBusy(false);
+  };
+
   // record that the invite link was sent to this guest (increments the counter)
   const markWaSent = async (guest: Guest) => {
     patchGuestLocal(guest.id, { waSentCount: (guest.waSentCount || 0) + 1, waSentAt: new Date().toISOString() });
@@ -349,6 +371,12 @@ export default function GuestListPage() {
           <h1 className="ad-title">Guest List</h1>
           <p className="ad-page-desc">Manage everyone by side. Click any cell to edit. Names past a group&rsquo;s seats show in red.</p>
         </div>
+        <button className="ad-icon-btn gl-gear" onClick={() => setShowSettings(true)} aria-label="Circle settings" title="Settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
       </header>
 
       {/* Tabs */}
@@ -429,7 +457,7 @@ export default function GuestListPage() {
                           <EditText value={gu.name} onSave={(v) => saveGuest(gu.id, 'name', v)} placeholder="Name" strong />
                           <div className="gl-mguest__line">
                             <EditText value={gu.phone || ''} onSave={(v) => saveGuest(gu.id, 'phone', v)} placeholder="+ add phone" mono />
-                            <EditSelect value={gu.circle || ''} options={CIRCLES} onSave={(v) => saveGuest(gu.id, 'circle', v)} placeholder="circle" allowBlank />
+                            <EditSelect value={gu.circle || ''} options={circles} onSave={(v) => saveGuest(gu.id, 'circle', v)} placeholder="circle" allowBlank />
                           </div>
                           <div className="gl-mguest__line gl-mguest__meta">
                             <RsvpCell guest={gu} auto={autoRsvp(g)} onSave={(v) => saveGuest(gu.id, 'rsvpManual', v)} />
@@ -474,7 +502,7 @@ export default function GuestListPage() {
                                 <EditSelect value={g.side} options={['bride', 'groom']} onSave={(v) => setSide(g, v)} cap />
                               </td>
                             )}
-                            <td><EditSelect value={gu.circle || ''} options={CIRCLES} onSave={(v) => saveGuest(gu.id, 'circle', v)} placeholder="—" allowBlank /></td>
+                            <td><EditSelect value={gu.circle || ''} options={circles} onSave={(v) => saveGuest(gu.id, 'circle', v)} placeholder="—" allowBlank /></td>
                             {i === 0 && (
                               <td rowSpan={g.guests.length} className="gl-c-group gl-c-center">
                                 <SeatsStepper seats={g.maxGuests} count={g.guests.length} onChange={(s) => setSeats(g, s)} />
@@ -530,6 +558,7 @@ export default function GuestListPage() {
           defaultGroup={nextGroupCode()}
           side={tab}
           busy={busy}
+          circles={circles}
           onClose={() => setShowAdd(false)}
           onSave={addGuest}
         />
@@ -558,6 +587,10 @@ export default function GuestListPage() {
           onClose={() => setNotePopup(null)}
           onSave={(v) => { saveGuest(notePopup.id, 'notes', v); setNotePopup(null); }}
         />
+      )}
+
+      {showSettings && (
+        <CircleSettingsModal circles={circles} busy={busy} onClose={() => setShowSettings(false)} onSave={saveCircles} />
       )}
 
       {menu && (
@@ -684,8 +717,8 @@ function SeatsStepper({ seats, count, onChange }: { seats: number; count: number
 }
 
 // ── Add modal ────────────────────────────────────────────────────────────────
-function AddGuestModal({ defaultGroup, side, busy, onClose, onSave }: {
-  defaultGroup: string; side: string; busy: boolean; onClose: () => void; onSave: (p: any) => void;
+function AddGuestModal({ defaultGroup, side, busy, circles, onClose, onSave }: {
+  defaultGroup: string; side: string; busy: boolean; circles: string[]; onClose: () => void; onSave: (p: any) => void;
 }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -703,7 +736,7 @@ function AddGuestModal({ defaultGroup, side, busy, onClose, onSave }: {
           <label className="gl-field"><span>Circle</span>
             <select className="ad-input" value={circle} onChange={(e) => setCircle(e.target.value)}>
               <option value="">—</option>
-              {CIRCLES.map((c) => <option key={c} value={c}>{c}</option>)}
+              {circles.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </label>
           <div className="gl-form-row">
@@ -739,6 +772,56 @@ function NoteModal({ guest, onClose, onSave }: { guest: Guest; onClose: () => vo
           {guest.notes && <button className="ad-btn ad-btn--outline gl-danger" style={{ marginRight: 'auto' }} onClick={() => onSave('')}>Clear</button>}
           <button className="ad-btn ad-btn--outline" onClick={onClose}>Cancel</button>
           <button className="ad-btn ad-btn--primary" onClick={() => onSave(draft.trim())}>Save note</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CircleSettingsModal({ circles, busy, onClose, onSave }: {
+  circles: string[]; busy: boolean; onClose: () => void; onSave: (c: string[], renames: { from: string; to: string }[]) => void;
+}) {
+  const [items, setItems] = useState(() => circles.map((c, i) => ({ key: `c${i}-${c}`, name: c, original: c as string | null })));
+  const [newName, setNewName] = useState('');
+  const addCircle = () => {
+    const n = newName.trim();
+    if (!n || items.some((i) => i.name.toLowerCase() === n.toLowerCase())) return;
+    setItems([...items, { key: `new-${items.length}-${n}`, name: n, original: null }]);
+    setNewName('');
+  };
+  const save = () => {
+    const cleaned = items.map((i) => ({ ...i, name: i.name.trim() })).filter((i) => i.name);
+    const newCircles = Array.from(new Set(cleaned.map((i) => i.name)));
+    const renames = cleaned.filter((i) => i.original && i.original !== i.name).map((i) => ({ from: i.original as string, to: i.name }));
+    onSave(newCircles, renames);
+  };
+  return (
+    <div className="gl-modal-scrim" onClick={() => !busy && onClose()}>
+      <div className="gl-modal" onClick={(e) => e.stopPropagation()} style={{ width: 'min(94vw, 460px)' }}>
+        <div className="gl-settings-tabs" role="tablist">
+          <span className="gl-settings-tab is-active" role="tab" aria-selected="true">Circles</span>
+        </div>
+        <p className="ad-page-desc" style={{ marginTop: '0.6rem', fontSize: '0.82rem' }}>
+          Add, rename, or remove the circles used to group guests. Renaming updates every guest in that circle.
+        </p>
+        <div className="gl-circle-list">
+          {items.map((it) => (
+            <div key={it.key} className="gl-circle-row">
+              <input className="ad-input" value={it.name} onChange={(e) => setItems((arr) => arr.map((x) => (x.key === it.key ? { ...x, name: e.target.value } : x)))} />
+              <button className="ad-icon-btn gl-danger" onClick={() => setItems((arr) => arr.filter((x) => x.key !== it.key))} aria-label={`Remove ${it.name}`}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 6h18M8 6V4h8v2m-9 0v14a2 2 0 002 2h6a2 2 0 002-2V6" /></svg>
+              </button>
+            </div>
+          ))}
+          {items.length === 0 && <p className="ad-empty">No circles yet — add one below.</p>}
+        </div>
+        <div className="gl-circle-add">
+          <input className="ad-input" value={newName} placeholder="New circle name…" onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCircle(); } }} />
+          <button className="ad-btn ad-btn--outline" onClick={addCircle} disabled={!newName.trim()}>Add</button>
+        </div>
+        <div className="gl-modal__actions">
+          <button className="ad-btn ad-btn--outline" onClick={onClose} disabled={busy}>Cancel</button>
+          <button className="ad-btn ad-btn--primary" onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Save'}</button>
         </div>
       </div>
     </div>
@@ -846,6 +929,14 @@ function GuestListStyles() {
     .gl-modal--alert { width: min(94vw, 430px); }
     .gl-alert-icon { width: 52px; height: 52px; border-radius: 50%; background: var(--ad-bad-soft); color: var(--ad-bad); display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 0.7rem; }
     .gl-note-area { width: 100%; margin-top: 0.9rem; resize: vertical; font: inherit; line-height: 1.5; }
+    .gl-gear { margin-inline-start: auto; align-self: flex-start; }
+    .gl-settings-tabs { display: flex; gap: 0.75rem; border-bottom: 1px solid var(--ad-border); }
+    .gl-settings-tab { padding: 0.4rem 0.15rem; font-size: 0.92rem; font-weight: 600; color: var(--ad-ink); border-bottom: 2px solid var(--ad-accent-strong); }
+    .gl-circle-list { display: flex; flex-direction: column; gap: 0.45rem; margin: 0.9rem 0; max-height: 46vh; overflow-y: auto; }
+    .gl-circle-row { display: flex; align-items: center; gap: 0.5rem; }
+    .gl-circle-row .ad-input { flex: 1; }
+    .gl-circle-add { display: flex; gap: 0.5rem; margin-top: 0.2rem; }
+    .gl-circle-add .ad-input { flex: 1; }
 
     .gl-modal-scrim { position: fixed; inset: 0; z-index: 80; background: rgba(20,18,15,0.44); display: flex; align-items: center; justify-content: center; padding: 1rem; }
     .gl-modal { background: var(--ad-surface); border: 1px solid var(--ad-border); border-radius: var(--ad-r-card); box-shadow: var(--ad-shadow); padding: 1.4rem; width: min(94vw, 440px); }

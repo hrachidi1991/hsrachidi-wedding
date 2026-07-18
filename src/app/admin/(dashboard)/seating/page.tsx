@@ -27,6 +27,7 @@ export default function SeatingPage() {
   const [initError, setInitError] = useState(false); // Seat table not migrated
   const [loadError, setLoadError] = useState<string | null>(null);
   const [guests, setGuests] = useState<SeatGuest[]>([]);
+  const [confirmedIds, setConfirmedIds] = useState<Set<string>>(new Set());
 
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const [moveGuest, setMoveGuest] = useState<GuestLite | null>(null);
@@ -61,6 +62,32 @@ export default function SeatingPage() {
       }
       const data = await res.json();
       setGuests(Array.isArray(data.guests) ? data.guests : []);
+      // Only guests who CONFIRMED attendance may be seated — derive that set from RSVP data.
+      try {
+        const gr = await fetch('/api/groups');
+        if (gr.ok) {
+          const groups = await gr.json();
+          const conf = new Set<string>();
+          for (const grp of (Array.isArray(groups) ? groups : [])) {
+            const gn = grp.rsvpResponse?.guestNames;
+            const nameMap = new Map<string, boolean>();
+            if (Array.isArray(gn) && gn.length && typeof gn[0] === 'object' && gn[0] && 'name' in gn[0]) {
+              for (const x of gn) nameMap.set(String(x.name).toLowerCase(), !!x.attending);
+            }
+            for (const gu of (grp.guests || [])) {
+              const online = nameMap.get(String(gu.name).toLowerCase());
+              const attending =
+                online !== undefined ? online
+                : gu.rsvpManual === 'Coming' ? true
+                : gu.rsvpManual === 'Not coming' ? false
+                : grp.rsvpResponse ? !!grp.rsvpResponse.attending
+                : false;
+              if (attending) conf.add(gu.id);
+            }
+          }
+          setConfirmedIds(conf);
+        }
+      } catch { /* leave confirmed set empty */ }
     } catch {
       setLoadError('Could not load seating data. Please try again.');
     }
@@ -87,8 +114,9 @@ export default function SeatingPage() {
     return m;
   }, [guests]);
 
-  const unseated = useMemo(() => guests.filter((g) => !g.seatCode), [guests]);
-  const seatedCount = guests.length - unseated.length;
+  // Only CONFIRMED (attending) guests can be seated, so the picker + "still need a seat" count use this.
+  const unseated = useMemo(() => guests.filter((g) => !g.seatCode && confirmedIds.has(g.id)), [guests, confirmedIds]);
+  const seatedCount = guests.filter((g) => g.seatCode).length;
   const seatedBride = guests.filter((g) => g.seatCode && g.side === 'bride').length;
   const seatedGroom = guests.filter((g) => g.seatCode && g.side === 'groom').length;
 
@@ -521,6 +549,9 @@ function EmptyPanel({ seat, unseated, search, setSearch, onPick, onClose }: {
   return (
     <div className="seat-panel__body">
       <PanelHead title={seat.code} sub={`${seat.zone} · empty`} onClose={onClose} />
+      <p style={{ fontSize: '0.74rem', color: 'var(--ad-muted)', margin: '-0.25rem 0 0.65rem' }}>
+        Only guests who confirmed attendance can be seated.
+      </p>
       <div className="ad-search" style={{ marginBottom: '0.75rem' }}>
         <span className="ad-search__icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
@@ -538,7 +569,7 @@ function EmptyPanel({ seat, unseated, search, setSearch, onPick, onClose }: {
       </div>
 
       {unseated.length === 0 ? (
-        <p className="ad-empty">Everyone has a seat.</p>
+        <p className="ad-empty">No confirmed guests are waiting for a seat.</p>
       ) : list.length === 0 ? (
         <p className="ad-empty">No unseated guests match &ldquo;{search}&rdquo;.</p>
       ) : (

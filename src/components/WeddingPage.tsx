@@ -119,10 +119,20 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
         a.load();
       });
     const fonts = (document as any).fonts?.ready?.then(() => {}).catch(() => {}) ?? Promise.resolve();
-    const all = Promise.all([...images.map(loadImage), ...videos.map(loadVideo), loadAudio(settings.musicFile), fonts]);
-    const hardCap = new Promise<void>((res) => window.setTimeout(res, 22000)); // absolute fallback
-    const minShow = new Promise<void>((res) => window.setTimeout(res, 1400));  // avoid a jarring flash
-    Promise.all([Promise.race([all, hardCap]), minShow]).then(() => { if (!cancelled) setAssetsReady(true); });
+    // Block the reveal ONLY on the small critical assets (posters + fonts). The heavy
+    // videos are NOT waited on — their grayscale posters cover them, so scroll stays
+    // smooth while they buffer in the background. This is what makes the gate open fast
+    // on weak connections (previously it waited on all 4 videos, up to 22s).
+    const critical = Promise.all([...images.map(loadImage), fonts]);
+    const hardCap = new Promise<void>((res) => window.setTimeout(res, 8000)); // absolute fallback (was 22s)
+    const minShow = new Promise<void>((res) => window.setTimeout(res, 900));   // avoid a jarring flash
+    Promise.all([Promise.race([critical, hardCap]), minShow]).then(() => {
+      if (cancelled) return;
+      setAssetsReady(true);
+      // Warm the videos + music AFTER reveal so they don't compete for bandwidth or delay it.
+      videos.forEach((v) => { loadVideo(v); });
+      loadAudio(settings.musicFile);
+    });
     return () => { cancelled = true; };
   }, []);
 

@@ -69,6 +69,16 @@ export async function PATCH(request: NextRequest) {
   }
   try {
     const data = await request.json();
+
+    // Bulk rename a circle across all guests (from Guest List → circle settings).
+    if (data.renameCircle?.from && data.renameCircle?.to) {
+      const r = await prisma.guest.updateMany({
+        where: { circle: data.renameCircle.from },
+        data: { circle: data.renameCircle.to },
+      });
+      return NextResponse.json({ renamed: r.count });
+    }
+
     if (!data.id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
     // Mark a WhatsApp invite as sent — increments the per-guest counter.

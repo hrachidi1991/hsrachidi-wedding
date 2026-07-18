@@ -81,6 +81,9 @@ export interface SiteContent {
   musicFile: string;
   musicFileAr: string;
 
+  // Guest circles (managed from Guest List → settings)
+  circles: string[];
+
   // General
   primaryColor: string;
 }
@@ -154,6 +157,8 @@ export const defaultSettings: SiteContent = {
 
   musicFile: '/audio/wedding-song.mp3',
   musicFileAr: '/audio/wedding-song.mp3',
+
+  circles: ['Immediate Fam', 'Fathers', 'Mothers', 'Ghassan Guests', 'Ranas Guests', 'Friends', 'Social'],
 
   primaryColor: '#7a8b69',
 };
