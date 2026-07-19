@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useIsMobile } from '@/lib/useIsMobile';
+import { inviteLink, whatsAppUrl, eventInfoFromSettings, defaultEventInfo } from '@/lib/whatsapp';
 
 interface GuestAttendance {
   name: string;
@@ -76,25 +77,68 @@ export default function RsvpTracking() {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<GroupWithRsvp | null>(null);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  const [eventInfo, setEventInfo] = useState(defaultEventInfo);
+  const [busy, setBusy] = useState(false);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
   const isMobile = useIsMobile();
+
+  const loadGroups = () =>
+    fetch('/api/groups')
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setGroups(data); });
 
   // The couple's "update link" re-enables editing for a group that already responded.
   const copyUpdateLink = (g: GroupWithRsvp) => {
-    const url = `${window.location.origin}/?g=${g.groupCode}&edit=${g.token}`;
-    navigator.clipboard.writeText(url).then(() => {
+    navigator.clipboard.writeText(inviteLink(g.groupCode, 'en', g.token)).then(() => {
       setCopiedLink(g.id);
       setTimeout(() => setCopiedLink(null), 2500);
     }).catch(() => {});
   };
 
+  // Send the update link on WhatsApp (Arabic or English) to the group's first guest
+  // that has a phone. The link re-opens editing for this group.
+  const sendWhatsAppUpdate = (g: GroupWithRsvp, lang: 'en' | 'ar') => {
+    const withPhone = g.guests.find((x) => x.phone);
+    if (!withPhone?.phone) {
+      setActionMsg('This group has no phone number on any guest — add one in the Guest List first.');
+      return;
+    }
+    const link = inviteLink(g.groupCode, lang, g.token);
+    window.open(whatsAppUrl(withPhone.phone, withPhone.name, link, eventInfo, lang), '_blank', 'noopener,noreferrer');
+  };
+
+  // Remove a group's submission so its link is no longer locked — resend it and the
+  // group can confirm again from scratch.
+  const removeSubmission = async (g: GroupWithRsvp) => {
+    if (!window.confirm('Remove this group’s submission? Their link will work fresh so they can confirm again.')) return;
+    setBusy(true); setActionMsg(null);
+    try {
+      const res = await fetch('/api/rsvp/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: g.id }),
+      });
+      if (!res.ok) throw new Error();
+      await loadGroups();
+      setSelected((prev) => (prev && prev.id === g.id ? { ...prev, rsvpResponse: null } : prev));
+      setActionMsg('Submission removed — you can resend the link and they can confirm again.');
+    } catch {
+      setActionMsg('Could not remove the submission. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   useEffect(() => {
-    fetch('/api/groups')
+    loadGroups().finally(() => setLoading(false));
+    fetch('/api/settings')
       .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setGroups(data);
-      })
-      .finally(() => setLoading(false));
+      .then((raw) => setEventInfo(eventInfoFromSettings(raw?.settings || raw || {})))
+      .catch(() => {});
   }, []);
+
+  // Clear any action message when the open group changes (or the popup closes).
+  useEffect(() => { setActionMsg(null); }, [selected?.id]);
 
   // Only groups that are in RSVP tracking (invite sent, or added manually) appear here.
   const tracked = groups.filter((g) => g.inRsvp);
@@ -340,15 +384,37 @@ export default function RsvpTracking() {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
               </button>
             </div>
-            <button className="ad-btn ad-btn--outline" style={{ width: '100%', marginBottom: '1rem' }} onClick={() => copyUpdateLink(selected)}>
+            {/* Send the update link on WhatsApp — choose the language, like the Guest List */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.55rem' }}>
+              <button className="ad-btn" style={{ flex: 1, background: '#25D366', color: '#fff', border: 'none' }} onClick={() => sendWhatsAppUpdate(selected, 'ar')}>
+                <WaGlyph /> عربي
+              </button>
+              <button className="ad-btn" style={{ flex: 1, background: '#25D366', color: '#fff', border: 'none' }} onClick={() => sendWhatsAppUpdate(selected, 'en')}>
+                <WaGlyph /> English
+              </button>
+            </div>
+            <button className="ad-btn ad-btn--outline" style={{ width: '100%', marginBottom: '0.55rem' }} onClick={() => copyUpdateLink(selected)}>
               {copiedLink === selected.id ? (
                 <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg> Update link copied</>
               ) : (
                 <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg> Copy update link</>
               )}
             </button>
-            <p style={{ fontSize: '0.74rem', color: 'var(--ad-muted)', margin: '-0.5rem 0 0.9rem' }}>
-              Send this only if a guest asks to change their reply — it re-opens editing for this group.
+            {selected.rsvpResponse && (
+              <button
+                className="ad-btn"
+                style={{ width: '100%', marginBottom: '0.55rem', background: 'transparent', color: 'var(--ad-bad)', border: '1px solid var(--ad-bad)' }}
+                disabled={busy}
+                onClick={() => removeSubmission(selected)}
+              >
+                {busy ? 'Removing…' : 'Remove submission (unlock link)'}
+              </button>
+            )}
+            {actionMsg && (
+              <p style={{ fontSize: '0.78rem', color: 'var(--ad-ink)', margin: '0 0 0.7rem', lineHeight: 1.4 }}>{actionMsg}</p>
+            )}
+            <p style={{ fontSize: '0.74rem', color: 'var(--ad-muted)', margin: '0 0 0.9rem', lineHeight: 1.4 }}>
+              WhatsApp sends the <strong>update link</strong> (re-opens editing). <strong>Remove submission</strong> clears their reply so the normal link works fresh again.
             </p>
             {selected.guests?.length ? (
               <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -376,3 +442,11 @@ export default function RsvpTracking() {
 }
 
 function cap(s: string) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+function WaGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2 22l5.3-1.38a9.86 9.86 0 0 0 4.73 1.2h.01c5.46 0 9.9-4.44 9.9-9.9 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 1.8c2.16 0 4.19.84 5.72 2.37a8.06 8.06 0 0 1 2.37 5.73c0 4.46-3.63 8.09-8.1 8.09a8.1 8.1 0 0 1-4.12-1.13l-.3-.18-3.06.8.82-2.99-.2-.31a8.03 8.03 0 0 1-1.24-4.28c0-4.46 3.63-8.1 8.1-8.1Zm-4.6 4.29c-.15 0-.4.06-.6.29-.2.23-.79.77-.79 1.88 0 1.1.81 2.17.92 2.32.11.15 1.58 2.5 3.94 3.4 1.96.75 2.36.6 2.79.56.42-.04 1.37-.56 1.56-1.1.19-.54.19-1 .13-1.1-.06-.1-.2-.15-.43-.27-.23-.11-1.37-.68-1.58-.75-.21-.08-.37-.11-.52.12-.15.23-.6.75-.73.9-.14.15-.27.17-.5.06-.23-.12-.98-.36-1.86-1.15-.69-.61-1.15-1.37-1.29-1.6-.13-.23-.01-.35.1-.47.1-.1.23-.27.34-.4.11-.14.15-.23.23-.39.08-.15.04-.29-.02-.4-.06-.12-.52-1.26-.72-1.72-.18-.44-.37-.38-.52-.39-.13 0-.29-.01-.44-.01Z" />
+    </svg>
+  );
+}
