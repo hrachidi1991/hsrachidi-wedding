@@ -4,9 +4,12 @@ import WeddingPage from '@/components/WeddingPage';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ g?: string; token?: string; edit?: string }> }) {
+export default async function Home({ searchParams }: { searchParams: Promise<{ g?: string; token?: string; edit?: string; lang?: string }> }) {
   const params = await searchParams;
   const settings = await getSettings();
+
+  // Language-specific invite links (?lang=ar) open the page directly in that language.
+  const initialLocale = params.lang === 'ar' ? 'ar' : 'en';
 
   // Support both ?g=<groupCode> (new short link) and ?token=<uuid> (legacy)
   const groupCode = params.g;
@@ -51,6 +54,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ g
     <WeddingPage
       settings={settings}
       rsvpData={rsvpData}
+      initialLocale={initialLocale}
     />
   );
 }

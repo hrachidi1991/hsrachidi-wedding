@@ -36,8 +36,9 @@ const CIRCLES = ['Immediate Fam', 'Fathers', 'Mothers', 'Ghassan Guests', 'Ranas
 const RSVP_OPTIONS = ['Pending', 'Coming', 'Not coming'];
 
 // Same invite-link format as the old section: a short link off the site root, keyed by group code.
-const inviteLink = (groupCode: string) =>
-  `${typeof window !== 'undefined' ? window.location.origin : ''}/?g=${groupCode}`;
+// An Arabic link carries ?lang=ar so the page opens directly in Arabic.
+const inviteLink = (groupCode: string, lang: 'en' | 'ar' = 'en') =>
+  `${typeof window !== 'undefined' ? window.location.origin : ''}/?g=${groupCode}${lang === 'ar' ? '&lang=ar' : ''}`;
 
 // Normalize a phone for wa.me (default Lebanon +961), then strip the leading + so wa.me gets pure digits.
 function formatPhoneForWhatsApp(phone: string): string {
@@ -49,14 +50,20 @@ function formatPhoneForWhatsApp(phone: string): string {
   return p.replace('+', '');
 }
 
-interface EventInfo { date: string; time: string; venue: string }
-function whatsAppUrl(phone: string, name: string, link: string, ev: EventInfo): string {
+interface EventInfo { date: string; time: string; venue: string; dateAr: string; timeAr: string; venueAr: string }
+function whatsAppUrl(phone: string, name: string, link: string, ev: EventInfo, lang: 'en' | 'ar' = 'en'): string {
   const msg =
-    `Hello ${name}! You're warmly invited to Hussein & Suzan's wedding 💍\n` +
-    `📅 ${ev.date}\n` +
-    `🕐 ${ev.time}\n` +
-    `📍 ${ev.venue}\n` +
-    `Kindly RSVP here: ${link}`;
+    lang === 'ar'
+      ? `مرحباً ${name}! يسعدنا دعوتكم لحضور حفل زفاف حسين وسوزان 💍\n` +
+        `📅 ${ev.dateAr}\n` +
+        `🕐 ${ev.timeAr}\n` +
+        `📍 ${ev.venueAr}\n` +
+        `نرجو تأكيد الحضور من هنا: ${link}`
+      : `Hello ${name}! You're warmly invited to Hussein & Suzan's wedding 💍\n` +
+        `📅 ${ev.date}\n` +
+        `🕐 ${ev.time}\n` +
+        `📍 ${ev.venue}\n` +
+        `Kindly RSVP here: ${link}`;
   return `https://wa.me/${formatPhoneForWhatsApp(phone)}?text=${encodeURIComponent(msg)}`;
 }
 
@@ -74,7 +81,8 @@ export default function GuestListPage() {
   const [seatByGuestId, setSeatByGuestId] = useState<Record<string, string>>({});
   const [notePopup, setNotePopup] = useState<Guest | null>(null);
   const [waBlock, setWaBlock] = useState<string | null>(null);
-  const [eventInfo, setEventInfo] = useState<EventInfo>({ date: '25 August', time: '8:00 PM', venue: 'Pleine Nature' });
+  const [waLang, setWaLang] = useState<{ group: Group; guest: Guest } | null>(null);
+  const [eventInfo, setEventInfo] = useState<EventInfo>({ date: '25 August', time: '8:00 PM', venue: 'Pleine Nature', dateAr: '٢٥ آب', timeAr: '٨:٠٠ مساءً', venueAr: 'Pleine Nature' });
   const [menu, setMenu] = useState<{ group: Group; x: number; y: number } | null>(null);
   const [circles, setCircles] = useState<string[]>(CIRCLES);
   const [showSettings, setShowSettings] = useState(false);
@@ -103,10 +111,14 @@ export default function GuestListPage() {
         const raw = await (await fetch('/api/settings')).json();
         const st = raw?.settings || raw || {};
         const d = new Date(st.eventDate);
+        const validD = !isNaN(d.getTime());
         setEventInfo({
-          date: isNaN(d.getTime()) ? (st.eventDate || '25 August') : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }),
+          date: validD ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : (st.eventDate || '25 August'),
           time: st.eventTime || '8:00 PM',
           venue: st.venueNameEn || 'Pleine Nature',
+          dateAr: validD ? d.toLocaleDateString('ar', { day: 'numeric', month: 'long' }) : (st.eventDate || '٢٥ آب'),
+          timeAr: st.eventTimeAr || st.eventTime || '٨:٠٠ مساءً',
+          venueAr: st.venueNameAr || st.venueNameEn || 'Pleine Nature',
         });
         if (Array.isArray(st.circles) && st.circles.length) setCircles(st.circles);
       } catch { /* keep defaults */ }
@@ -209,6 +221,7 @@ export default function GuestListPage() {
   };
 
   // WhatsApp: one shared invite link per group. Blocked unless the group's guest count == its seats.
+  // Validates, then asks whether to send the Arabic or English invite link.
   const sendWhatsApp = (group: Group, guest: Guest) => {
     const n = group.guests.length, seats = group.maxGuests;
     if (n !== seats) {
@@ -224,7 +237,14 @@ export default function GuestListPage() {
       setWaBlock(`${guest.name} has no phone number yet. Add a phone number to this guest to send the invite link on WhatsApp.`);
       return;
     }
-    window.open(whatsAppUrl(guest.phone, guest.name, inviteLink(group.groupCode), eventInfo), '_blank', 'noopener,noreferrer');
+    setWaLang({ group, guest }); // open the Arabic / English chooser
+  };
+
+  // Actually open WhatsApp with the chosen-language invite link + message.
+  const doSendWhatsApp = (group: Group, guest: Guest, lang: 'en' | 'ar') => {
+    setWaLang(null);
+    if (!guest.phone) return;
+    window.open(whatsAppUrl(guest.phone, guest.name, inviteLink(group.groupCode, lang), eventInfo, lang), '_blank', 'noopener,noreferrer');
     markWaSent(guest);
     if (!group.inRsvp) setGroupInRsvp(group, true); // sending the link adds the group to RSVP tracking
   };
@@ -619,6 +639,24 @@ export default function GuestListPage() {
             <p className="ad-page-desc" style={{ textAlign: 'center', marginTop: '0.5rem' }}>{waBlock}</p>
             <div className="gl-modal__actions" style={{ justifyContent: 'center' }}>
               <button className="ad-btn ad-btn--primary" onClick={() => setWaBlock(null)}>Got it</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {waLang && (
+        <div className="gl-modal-scrim" onClick={() => setWaLang(null)}>
+          <div className="gl-modal gl-modal--alert" onClick={(e) => e.stopPropagation()}>
+            <h3 className="ad-section-title" style={{ textAlign: 'center' }}>Which language?</h3>
+            <p className="ad-page-desc" style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+              Send {waLang.guest.name} the invite in&hellip; The link opens the page directly in that language.
+            </p>
+            <div className="gl-modal__actions" style={{ justifyContent: 'center', gap: '0.75rem' }}>
+              <button className="ad-btn ad-btn--primary" onClick={() => doSendWhatsApp(waLang.group, waLang.guest, 'ar')}>🇱🇧 عربي</button>
+              <button className="ad-btn ad-btn--primary" onClick={() => doSendWhatsApp(waLang.group, waLang.guest, 'en')}>🇬🇧 English</button>
+            </div>
+            <div className="gl-modal__actions" style={{ justifyContent: 'center', marginTop: '0.6rem' }}>
+              <button className="ad-btn" onClick={() => setWaLang(null)}>Cancel</button>
             </div>
           </div>
         </div>

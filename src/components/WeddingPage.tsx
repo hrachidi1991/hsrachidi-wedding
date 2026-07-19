@@ -33,6 +33,7 @@ interface RsvpData {
 interface Props {
   settings: SiteContent;
   rsvpData: RsvpData | null;
+  initialLocale?: Locale;
 }
 
 function ScrollArrow({ cue }: { cue?: boolean }) {
@@ -48,8 +49,8 @@ function ScrollArrow({ cue }: { cue?: boolean }) {
   );
 }
 
-export default function WeddingPage({ settings, rsvpData }: Props) {
-  const [locale, setLocale] = useState<Locale>('en');
+export default function WeddingPage({ settings, rsvpData, initialLocale }: Props) {
+  const [locale, setLocale] = useState<Locale>(initialLocale ?? 'en');
   const [envelopeOpened, setEnvelopeOpened] = useState(false);
   const [sealBreaking, setSealBreaking] = useState(false);
   const [flapsOpening, setFlapsOpening] = useState(false);

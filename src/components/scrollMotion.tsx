@@ -476,6 +476,27 @@ export function initChapterScroll({
         .filter((el) => !el.matches('[data-bismillah]'));
       if (!els.length) return;
 
+      // The blessing "writes on" once, on first open. Any LATER re-init (language
+      // toggle, breakpoint change) rebuilds this engine — but re-running the
+      // prehide+type choreography is fragile: the prehide (context-bound) offsets
+      // each word by yPercent:110, while the reveal tween that pulls it back to 0
+      // runs later in an async callback OUTSIDE the GSAP context, so it isn't
+      // reliably fired/completed. That strands the words at yPercent:110, clipped
+      // inside their overflow-hidden masks — so the aya "disappears" in the other
+      // language. On re-init we therefore skip the choreography entirely and just
+      // force every §2 line to its final, visible state.
+      if (blessingIntroPlayed) {
+        els.forEach((el) => {
+          const units = el.querySelectorAll<HTMLElement>('.gsap-word, .gsap-char, .wo-word');
+          if (units.length) gsap.set(units, { clearProps: 'transform,opacity,visibility' });
+          gsap.set(el, { clearProps: 'opacity,visibility' });
+          el.style.clipPath = '';
+          (el.style as unknown as { webkitClipPath: string }).webkitClipPath = '';
+        });
+        return;
+      }
+      blessingIntroPlayed = true;
+
       // strip harakat / superscript-alef / tatweel / Quranic marks / whitespace for step count
       const STRIP = /[ً-ٰٕـۖ-ۭ\s]/g;
       const stepsOf = (t: string) => Math.max(6, Math.min(38, (t || '').replace(STRIP, '').length));
@@ -610,12 +631,11 @@ export function initChapterScroll({
       const players = els.map(makeWriteOn);
       players.forEach((p) => p.prehide()); // pre-paint hide (runs inside the layout effect)
 
-      // First open → chain the in-view items just AFTER the Bismillah (≈0.25 + ~1.7s).
-      // Re-init (locale toggle / breakpoint) → snap them in quickly, no dead wait.
-      const first = !blessingIntroPlayed;
-      blessingIntroPlayed = true;
+      // Chain the in-view items just AFTER the Bismillah (≈0.25 + ~1.7s). Re-init is
+      // handled by the force-visible early return above, so we only reach here on
+      // the very first open.
       const vh = window.innerHeight || 800;
-      let chain = first ? 2.2 : 0.15;
+      let chain = 2.2;
       players.forEach((p) => {
         const guard = { done: false };
         const fire = () => {
