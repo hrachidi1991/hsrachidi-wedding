@@ -164,6 +164,7 @@ export function MediaCard({
   const posterOnly = usePosterOnly();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [videoReady, setVideoReady] = useState(false);
 
   // Lazy-load + autoplay the video when the card is near (fetch as you approach,
   // play as soon as it's shown). Never force-pause — it just loops.
@@ -199,20 +200,23 @@ export function MediaCard({
       className={`media-card media-${ratio}${shape === 'arch' ? ' media-arch' : ''}${fit === 'contain' ? ' media-contain' : ''}`}
       aria-hidden="true"
     >
-      {showVideo ? (
+      {/* The poster is ALWAYS rendered underneath so the frame is never blank
+          (iOS Safari shows a blank box for a not-yet-loaded <video>). The video
+          sits on top and fades in only once it can actually play. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="media-el media-poster" src={poster} alt="" draggable={false} />
+      {showVideo && (
         <video
           ref={videoRef}
-          className="media-el"
+          className={`media-el media-video${videoReady ? ' is-ready' : ''}`}
           src={src}
-          poster={poster}
           muted
           playsInline
           loop
           preload="none"
+          onCanPlay={() => setVideoReady(true)}
+          onPlaying={() => setVideoReady(true)}
         />
-      ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img className="media-el" src={poster} alt="" draggable={false} />
       )}
     </div>
   );

@@ -22,9 +22,11 @@ export async function GET(request: NextRequest) {
     if (!group) {
       return NextResponse.json({ error: 'Invalid invitation link' }, { status: 404 });
     }
-    // Get guest records for this group
+    // Public read — expose ONLY names (never phone/relation/circle/notes/rsvpManual).
     const guests = await prisma.guest.findMany({
       where: { groupCode: group.groupCode },
+      select: { id: true, name: true, sortOrder: true },
+      orderBy: { sortOrder: 'asc' },
     });
     return NextResponse.json({
       groupCode: group.groupCode,
@@ -124,6 +126,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, updated: false });
     }
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error('RSVP POST error:', e);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

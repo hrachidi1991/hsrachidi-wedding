@@ -225,6 +225,19 @@ html.no-scroll body {
   object-position: center;
   display: block;
 }
+/* Poster always visible underneath; the video fades in over it once playable,
+   so the frame is never blank (fixes the blank video box on iOS/slow loads). */
+.media-video {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 1;
+}
+.media-video.is-ready {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .media-video { transition: none; }
+}
 @media (min-width: 768px) {
   .media-card.media-portrait { height: min(78svh, calc(46vw * 16 / 9)); }
   .media-card.media-landscape { width: min(70%, 620px); }

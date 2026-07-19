@@ -193,6 +193,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
   useEffect(() => {
     const target = new Date(settings.countdownDate).getTime();
+    if (Number.isNaN(target)) { setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 }); return; }
     const tick = () => {
       const now = Date.now();
       const diff = Math.max(0, target - now);
@@ -278,8 +279,9 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
 
   const isRtl = locale === 'ar';
 
-  // Document-level lang/dir follow the language toggle
-  useEffect(() => {
+  // Document-level lang/dir follow the language toggle. Layout effect + declared
+  // before the scroll-engine effect so `dir` is correct when the engine re-reads it.
+  useIsoLayoutEffect(() => {
     document.documentElement.lang = locale;
     document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
   }, [locale, isRtl]);
@@ -375,6 +377,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
   const handleRsvpSubmit = async () => {
     if (!rsvpData?.groupCode || guestAttendance.length === 0) return;
     setRsvpLoading(true);
+    setRsvpMessage('');
     try {
       const res = await fetch('/api/rsvp', {
         method: 'POST',
@@ -1121,7 +1124,7 @@ export default function WeddingPage({ settings, rsvpData }: Props) {
                   )}
                 </button>
 
-                {rsvpMessage && !rsvpSubmitted && (
+                {rsvpMessage && isEditing && (
                   <p className="mt-3 text-sm text-red-500">{rsvpMessage}</p>
                 )}
               </div>

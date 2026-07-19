@@ -21,8 +21,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ g
         // Editing an already-submitted response is only allowed via the couple's
         // update link (?edit=<group token>). The normal invite link is submit-once.
         const allowEdit = !!(params.edit && params.edit === group.token);
+        // Public read — expose ONLY what the RSVP form needs (names). Never ship
+        // phone / relation / circle / notes / rsvpManual to the client.
         const guests = await prisma.guest.findMany({
           where: { groupCode: group.groupCode },
+          select: { id: true, name: true, sortOrder: true },
+          orderBy: { sortOrder: 'asc' },
         });
         rsvpData = {
           groupCode: group.groupCode,

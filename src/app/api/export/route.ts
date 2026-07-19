@@ -13,6 +13,14 @@ export async function GET(request: NextRequest) {
     });
     const guests = await prisma.guest.findMany();
 
+    // CSV-safe cell: neutralize spreadsheet formula injection (=,+,-,@,tab,CR),
+    // escape embedded quotes, and always wrap — guest names come from public RSVP input.
+    const csvCell = (v: any): string => {
+      let s = v == null ? '' : String(v);
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+      return '"' + s.replace(/"/g, '""') + '"';
+    };
+
     const rows: string[] = [
       'Group Code,Side,Max Guests,RSVP Status,Number Attending,Guest Names,Guests in Group,Token,Last Updated',
     ];
@@ -43,11 +51,11 @@ export async function GET(request: NextRequest) {
           group.maxGuests,
           status,
           numAttending,
-          `"${submittedNames}"`,
-          `"${guestNamesList}"`,
+          submittedNames,
+          guestNamesList,
           group.token,
           lastUpdated,
-        ].join(',')
+        ].map(csvCell).join(',')
       );
     }
 
