@@ -725,8 +725,11 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
               const weddingDate = new Date(settings.countdownDate);
               const dayNum = weddingDate.getDate();
               const year = weddingDate.getFullYear();
-              const dayName = weddingDate.toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { weekday: 'long' });
-              const monthName = weddingDate.toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { month: 'long' });
+              // Levantine (solar) Arabic month names — "آب" for August, NOT the Hijri
+              // month ("ربيع الأول") that `ar-SA` would return via the Islamic calendar.
+              const LEVANT_MONTHS_AR = ['كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران', 'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'];
+              const dayName = weddingDate.toLocaleDateString(locale === 'ar' ? 'ar' : 'en-US', { weekday: 'long', calendar: 'gregory' });
+              const monthName = locale === 'ar' ? LEVANT_MONTHS_AR[weddingDate.getMonth()] : weddingDate.toLocaleDateString('en-US', { month: 'long' });
 
               // Arabic-Indic digits in the AR version (fixes "25"→"52" reversal + reads native)
               const arDigits = (s: string) =>
