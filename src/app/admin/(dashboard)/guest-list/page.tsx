@@ -85,6 +85,7 @@ export default function GuestListPage() {
   const [eventInfo, setEventInfo] = useState<EventInfo>({ date: '25 August', time: '8:00 PM', venue: 'Pleine Nature', dateAr: '٢٥ آب', timeAr: '٨:٠٠ مساءً', venueAr: 'Pleine Nature' });
   const [menu, setMenu] = useState<{ group: Group; x: number; y: number } | null>(null);
   const [circles, setCircles] = useState<string[]>(CIRCLES);
+  const [hdGroups, setHdGroups] = useState<Set<string>>(new Set());
   const [showSettings, setShowSettings] = useState(false);
   const isMobile = useIsMobile();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -94,6 +95,22 @@ export default function GuestListPage() {
     setToast({ msg, bad });
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 3400);
+  };
+
+  // HD = a printed (hard-copy) invitation was delivered to this group. Stored in
+  // settings.hardCopySent (list of group codes); the tick box is off by default.
+  const toggleHd = async (groupCode: string) => {
+    const prev = hdGroups;
+    const next = new Set(prev);
+    if (next.has(groupCode)) next.delete(groupCode); else next.add(groupCode);
+    setHdGroups(next);
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hardCopySent: [...next] }),
+      });
+      if (!res.ok) throw new Error();
+    } catch { setHdGroups(prev); flash('Could not save HD — please try again.', true); }
   };
 
   const load = async () => {
@@ -121,6 +138,7 @@ export default function GuestListPage() {
           venueAr: st.venueNameAr || st.venueNameEn || 'Pleine Nature',
         });
         if (Array.isArray(st.circles) && st.circles.length) setCircles(st.circles);
+        if (Array.isArray(st.hardCopySent)) setHdGroups(new Set(st.hardCopySent));
       } catch { /* keep defaults */ }
       // seat assignments (from the seating map) — optional; column just shows — if unavailable
       try {
@@ -372,10 +390,10 @@ export default function GuestListPage() {
         Name: gu.name, Phone: gu.phone || '', Side: g.side,
         Circle: gu.circle || '', Seats: g.maxGuests, 'Group ID': g.groupCode,
         RSVP: gu.rsvpManual || autoRsvp(g), Seat: seatByGuestId[gu.id] ? seatLabel(gu.id) : '',
-        Sent: gu.waSentCount || '', Notes: gu.notes || '',
+        Sent: gu.waSentCount || '', HD: hdGroups.has(g.groupCode) ? 'Y' : 'N', Notes: gu.notes || '',
       }))
     );
-    const ws = XLSX.utils.json_to_sheet(rows, { header: ['Name', 'Phone', 'Side', 'Circle', 'Seats', 'Group ID', 'RSVP', 'Seat', 'Sent', 'Notes'] });
+    const ws = XLSX.utils.json_to_sheet(rows, { header: ['Name', 'Phone', 'Side', 'Circle', 'Seats', 'Group ID', 'RSVP', 'Seat', 'Sent', 'HD', 'Notes'] });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, tab === 'bride' ? 'Bride' : 'Groom');
     XLSX.writeFile(wb, `${tab}-guest-list.xlsx`);
@@ -469,6 +487,10 @@ export default function GuestListPage() {
                         ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                         : <span className="gl-track-dot" />}
                     </button>
+                    <label className="gl-mcard__hd" title="Hard copy invitation sent">
+                      <input type="checkbox" className="gl-hd" checked={hdGroups.has(g.groupCode)} onChange={() => toggleHd(g.groupCode)} aria-label={`Hard copy sent to group ${g.groupCode}`} />
+                      <span>HD</span>
+                    </label>
                   </div>
                   <div className="gl-mcard__body">
                     {g.guests.map((gu, i) => (
@@ -505,7 +527,7 @@ export default function GuestListPage() {
                   <thead>
                     <tr>
                       <th>Name</th><th>Phone</th><th>Side</th><th>Circle</th>
-                      <th className="gl-c-center">Seats</th><th>Group ID</th><th className="gl-c-center">In RSVP</th><th>RSVP</th><th className="gl-c-center">Seat</th><th className="gl-c-center">Sent</th><th aria-label="actions" />
+                      <th className="gl-c-center">Seats</th><th>Group ID</th><th className="gl-c-center">In RSVP</th><th className="gl-c-center" title="Hard copy invitation sent">HD</th><th>RSVP</th><th className="gl-c-center">Seat</th><th className="gl-c-center">Sent</th><th aria-label="actions" />
                     </tr>
                   </thead>
                   <tbody>
@@ -538,6 +560,11 @@ export default function GuestListPage() {
                                     ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                                     : <span className="gl-track-dot" />}
                                 </button>
+                              </td>
+                            )}
+                            {i === 0 && (
+                              <td rowSpan={g.guests.length} className="gl-c-group gl-c-center">
+                                <input type="checkbox" className="gl-hd" checked={hdGroups.has(g.groupCode)} onChange={() => toggleHd(g.groupCode)} title="Hard copy invitation sent" aria-label={`Hard copy sent to group ${g.groupCode}`} />
                               </td>
                             )}
                             <td><RsvpCell guest={gu} auto={autoRsvp(g)} onSave={(v) => saveGuest(gu.id, 'rsvpManual', v)} /></td>
@@ -956,6 +983,8 @@ function GuestListStyles() {
     .gl-track:hover { border-color: var(--ad-ok); }
     .gl-track.is-on { background: var(--ad-ok, #1c8f54); border-color: var(--ad-ok, #1c8f54); color: #fff; }
     .gl-track-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ad-border-strong); }
+    .gl-hd { width: 17px; height: 17px; accent-color: var(--ad-accent, #7a8b69); cursor: pointer; }
+    .gl-mcard__hd { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; color: var(--ad-muted); margin-inline-start: 0.4rem; cursor: pointer; }
     .gl-menu-scrim { position: fixed; inset: 0; z-index: 85; }
     .gl-menu { position: fixed; z-index: 86; min-width: 220px; background: var(--ad-surface); border: 1px solid var(--ad-border); border-radius: 10px; box-shadow: var(--ad-shadow); padding: 0.3rem; overflow: hidden; }
     .gl-menu-head { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ad-muted); padding: 0.4rem 0.6rem 0.3rem; }
