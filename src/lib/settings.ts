@@ -84,6 +84,11 @@ export interface SiteContent {
   // Guest circles (managed from Guest List → settings)
   circles: string[];
 
+  // Seating tables — custom chair→table grouping drawn in the Seating Map's "Edit
+  // tables" mode. When set, overrides the built-in divider-based grouping. Each
+  // entry is a table with its display name + the seat codes (S###) it contains.
+  seatTables?: { name: string; codes: string[] }[];
+
   // General
   primaryColor: string;
 }

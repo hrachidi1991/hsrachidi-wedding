@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   SEATS,
-  TABLES,
   PLAN_IMAGE,
   VIEWBOX,
   SEAT_COUNT,
@@ -22,6 +21,44 @@ interface SeatGuest extends GuestLite {
   seatCode: string | null;
 }
 
+// ── Table grouping helpers (Edit-tables mode) ────────────────────────────────
+type TableDef = { name: string; codes: string[] };
+const TABLE_COLORS = ['#e5484d', '#4593e5', '#45c07a', '#e0a83b', '#a259e5', '#e5629a', '#37b7c0', '#c0693a', '#7a9a3c', '#d24bd2', '#5a6ee0', '#b7912b', '#ff8c42', '#2dd4bf', '#f43f9d', '#84cc16', '#eab308', '#8b5cf6', '#14b8a6', '#f97316'];
+function tableColor(name: string, order: string[]): string {
+  const i = order.indexOf(name);
+  return TABLE_COLORS[(i < 0 ? 0 : i) % TABLE_COLORS.length];
+}
+function nextLetter(existing: string[]): string {
+  for (let i = 0; i < 26; i++) { const L = String.fromCharCode(65 + i); if (!existing.includes(L)) return L; }
+  for (let i = 0; i < 26; i++) for (let j = 0; j < 26; j++) { const L = String.fromCharCode(65 + i) + String.fromCharCode(65 + j); if (!existing.includes(L)) return L; }
+  return 'A1';
+}
+// The built-in (divider-based) grouping, as a { name, codes } list.
+function defaultTableList(): TableDef[] {
+  const m = new Map<string, string[]>();
+  for (const s of SEATS) { const a = m.get(s.table) || []; a.push(s.code); m.set(s.table, a); }
+  return [...m.entries()].map(([name, codes]) => ({ name, codes }));
+}
+// code -> table name from a list.
+function codeToName(list: TableDef[]): Record<string, string> {
+  const m: Record<string, string> = {};
+  for (const t of list) for (const c of t.codes) m[c] = t.name;
+  return m;
+}
+// Group a code->name map back into a reading-order-sorted table list (+ centroids).
+function mapToTables(map: Record<string, string>): (TableDef & { cx: number; cy: number })[] {
+  const by: Record<string, string[]> = {};
+  for (const [code, name] of Object.entries(map)) { if (!name) continue; (by[name] = by[name] || []).push(code); }
+  const out = Object.entries(by).map(([name, codes]) => {
+    const pts = codes.map((c) => SEAT_BY_CODE[c]).filter(Boolean);
+    const cx = pts.reduce((s, p) => s + p.x, 0) / (pts.length || 1);
+    const cy = pts.reduce((s, p) => s + p.y, 0) / (pts.length || 1);
+    return { name, codes, cx, cy };
+  });
+  out.sort((a, b) => (Math.round(a.cy / 90) - Math.round(b.cy / 90)) || a.cx - b.cx);
+  return out;
+}
+
 // ── Page ────────────────────────────────────────────────────────────────────
 export default function SeatingPage() {
   const [loading, setLoading] = useState(true);
@@ -37,6 +74,13 @@ export default function SeatingPage() {
   const [tip, setTip] = useState<{ code: string; left: number; top: number } | null>(null);
   const [focusedCode, setFocusedCode] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Edit-tables mode (draw your own table grouping)
+  const [customTables, setCustomTables] = useState<TableDef[] | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editMap, setEditMap] = useState<Record<string, string>>({});
+  const [activeTable, setActiveTable] = useState('A');
+  const [savingTables, setSavingTables] = useState(false);
 
   const stageRef = useRef<HTMLDivElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -89,6 +133,15 @@ export default function SeatingPage() {
           setConfirmedIds(conf);
         }
       } catch { /* leave confirmed set empty */ }
+      // Custom table grouping drawn in Edit-tables mode (overrides the default).
+      try {
+        const sr = await fetch('/api/settings');
+        if (sr.ok) {
+          const raw = await sr.json();
+          const st = (raw?.settings || raw || {}).seatTables;
+          if (Array.isArray(st) && st.length) setCustomTables(st);
+        }
+      } catch { /* use the built-in grouping */ }
     } catch {
       setLoadError('Could not load seating data. Please try again.');
     }
@@ -114,6 +167,51 @@ export default function SeatingPage() {
     for (const g of guests) if (g.seatCode && SEAT_BY_CODE[g.seatCode]) m[g.seatCode] = g;
     return m;
   }, [guests]);
+
+  // ── Table grouping (custom drawn tables override the built-in divider tables) ──
+  const baseTables = useMemo<TableDef[]>(() => (customTables && customTables.length ? customTables : defaultTableList()), [customTables]);
+  const liveTables = useMemo(() => (editMode ? mapToTables(editMap) : mapToTables(codeToName(baseTables))), [editMode, editMap, baseTables]);
+  const codeName = useMemo<Record<string, string>>(() => (editMode ? editMap : codeToName(baseTables)), [editMode, editMap, baseTables]);
+  const tableNames = useMemo(() => liveTables.map((t) => t.name), [liveTables]);
+  const zoneOf = (code: string) => {
+    const name = codeName[code];
+    if (name) {
+      const t = liveTables.find((x) => x.name === name);
+      const idx = t ? t.codes.indexOf(code) + 1 : 0;
+      return `Table ${name} · Seat ${String(idx).padStart(2, '0')}`;
+    }
+    return SEAT_BY_CODE[code]?.zone || code;
+  };
+
+  const enterEditMode = () => {
+    setEditMap(codeToName(baseTables));
+    setActiveTable(baseTables[0]?.name || 'A');
+    setSelectedCode(null); setMoveGuest(null);
+    setEditMode(true);
+  };
+  const assignToActive = (code: string) => setEditMap((m) => ({ ...m, [code]: activeTable }));
+  const addNewTable = () => setActiveTable(nextLetter([...new Set(Object.values(editMap))].filter(Boolean)));
+  const deleteActiveTable = () => setEditMap((m) => { const n = { ...m }; for (const c of Object.keys(n)) if (n[c] === activeTable) delete n[c]; return n; });
+  const saveTables = async () => {
+    setSavingTables(true);
+    const tables = mapToTables(editMap).map((t) => ({ name: t.name, codes: t.codes }));
+    try {
+      const res = await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seatTables: tables }) });
+      if (!res.ok) throw new Error();
+      setCustomTables(tables); setEditMode(false); flash(`Saved ${tables.length} tables.`);
+    } catch { flash('Could not save tables — please try again.'); }
+    setSavingTables(false);
+  };
+  const resetTablesToDefault = async () => {
+    if (!window.confirm('Reset to the built-in divider tables and discard your custom grouping?')) return;
+    setSavingTables(true);
+    try {
+      const res = await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seatTables: [] }) });
+      if (!res.ok) throw new Error();
+      setCustomTables(null); setEditMode(false); flash('Reset to the default tables.');
+    } catch { flash('Could not reset — please try again.'); }
+    setSavingTables(false);
+  };
 
   // Only CONFIRMED (attending) guests can be seated, so the picker + "still need a seat" count use this.
   const unseated = useMemo(() => guests.filter((g) => !g.seatCode && confirmedIds.has(g.id)), [guests, confirmedIds]);
@@ -163,6 +261,7 @@ export default function SeatingPage() {
 
   // ── Chair interaction ─────────────────────────────────────────────────────
   const onChairActivate = (code: string) => {
+    if (editMode) { assignToActive(code); return; }
     if (moveGuest) {
       doAssign(code, moveGuest);
       setMoveGuest(null);
@@ -298,6 +397,38 @@ export default function SeatingPage() {
               </div>
             </div>
 
+            {editMode ? (
+              <div className="seat-editbar">
+                <div className="seat-editbar__row">
+                  <span className="seat-editbar__label">Adding chairs to</span>
+                  <span className="seat-edit-active" style={{ background: tableColor(activeTable, tableNames) }}>{activeTable}</span>
+                  <button type="button" className="ad-btn ad-btn--outline seat-editbar__btn" onClick={addNewTable}>+ New table</button>
+                  <button type="button" className="ad-btn ad-btn--outline seat-editbar__btn" onClick={deleteActiveTable}>Clear {activeTable}</button>
+                  <span className="seat-editbar__hint">Tap chairs on the plan to put them in <strong>{activeTable}</strong>. Pick another table below to edit it.</span>
+                </div>
+                {tableNames.length > 0 && (
+                  <div className="seat-edit-chips">
+                    {tableNames.map((n) => (
+                      <button key={n} type="button" className={`seat-chip${n === activeTable ? ' is-active' : ''}`} style={{ ['--chip' as string]: tableColor(n, tableNames) } as React.CSSProperties} onClick={() => setActiveTable(n)}>{n}</button>
+                    ))}
+                  </div>
+                )}
+                <div className="seat-editbar__row seat-editbar__actions">
+                  <button type="button" className="ad-btn ad-btn--primary" disabled={savingTables} onClick={saveTables}>{savingTables ? 'Saving…' : 'Save tables'}</button>
+                  <button type="button" className="ad-btn ad-btn--outline" onClick={() => setEditMode(false)}>Cancel</button>
+                  <button type="button" className="ad-btn ad-btn--outline" onClick={resetTablesToDefault} disabled={savingTables}>Reset to default</button>
+                </div>
+              </div>
+            ) : (
+              <div className="seat-editbar seat-editbar--collapsed">
+                <button type="button" className="ad-btn ad-btn--outline" onClick={enterEditMode}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                  Edit tables
+                </button>
+                <span className="seat-editbar__hint">Draw your own tables — tap chairs to group them, name each one.</span>
+              </div>
+            )}
+
             {moveGuest && (
               <div className="ad-notice ad-notice--info seat-movebar" role="status">
                 <span>Click a chair to move <strong>{moveGuest.name}</strong>.</span>
@@ -313,6 +444,10 @@ export default function SeatingPage() {
                     selectedCode={selectedCode}
                     focusedCode={focusedCode}
                     moveActive={!!moveGuest}
+                    editMode={editMode}
+                    codeName={codeName}
+                    tableNames={tableNames}
+                    tables={liveTables}
                     onActivate={onChairActivate}
                     onHover={(code, el) => { setFocusedCode(code); showTip(code, el); }}
                     onLeave={() => { setTip(null); }}
@@ -329,14 +464,19 @@ export default function SeatingPage() {
                 if (!s) return null;
                 return (
                   <div className="seat-tip" style={{ left: tip.left, top: tip.top }} role="tooltip">
-                    {occ ? (
+                    {editMode ? (
+                      <>
+                        <span className="seat-tip__name">{codeName[tip.code] ? `Table ${codeName[tip.code]}` : 'No table'}</span>
+                        <span className="seat-tip__meta">Tap to add to {activeTable}</span>
+                      </>
+                    ) : occ ? (
                       <>
                         <span className="seat-tip__name">{occ.name}</span>
-                        <span className="seat-tip__meta">{s.zone} &middot; {cap(occ.side)}</span>
+                        <span className="seat-tip__meta">{zoneOf(tip.code)} &middot; {cap(occ.side)}</span>
                       </>
                     ) : (
                       <>
-                        <span className="seat-tip__name">{s.zone}</span>
+                        <span className="seat-tip__name">{zoneOf(tip.code)}</span>
                         <span className="seat-tip__meta">Empty</span>
                       </>
                     )}
@@ -358,6 +498,7 @@ export default function SeatingPage() {
               selectedOccupant ? (
                 <FilledPanel
                   seat={selectedSeat}
+                  zone={zoneOf(selectedSeat.code)}
                   guest={selectedOccupant}
                   onMove={() => startMove(selectedOccupant)}
                   onClear={() => { doClear(selectedSeat.code); }}
@@ -366,6 +507,7 @@ export default function SeatingPage() {
               ) : (
                 <EmptyPanel
                   seat={selectedSeat}
+                  zone={zoneOf(selectedSeat.code)}
                   unseated={unseated}
                   search={search}
                   setSearch={setSearch}
@@ -401,6 +543,10 @@ function FloorPlan({
   selectedCode,
   focusedCode,
   moveActive,
+  editMode,
+  codeName,
+  tableNames,
+  tables,
   onActivate,
   onHover,
   onLeave,
@@ -411,6 +557,10 @@ function FloorPlan({
   selectedCode: string | null;
   focusedCode: string | null;
   moveActive: boolean;
+  editMode: boolean;
+  codeName: Record<string, string>;
+  tableNames: string[];
+  tables: { name: string; cx: number; cy: number }[];
   onActivate: (code: string) => void;
   onHover: (code: string, el: SVGGElement | null) => void;
   onLeave: () => void;
@@ -462,18 +612,27 @@ function FloorPlan({
           >
             {/* enlarged transparent hit area for pointer/touch */}
             <rect className="seat-chair-hit" x={-hw - 3} y={-hw - 3} width={2 * hw + 6} height={2 * hw + 6} />
-            {/* seat body: invisible when empty (the plan image shows the seat), coloured when filled/hovered */}
-            <rect className="seat-chair-body" x={-s.w / 2} y={-s.h / 2} width={s.w} height={s.h} rx={1.6} />
+            {/* seat body: invisible when empty (the plan image shows the seat), coloured when filled/hovered.
+                In Edit-tables mode every chair is tinted by its table colour instead. */}
+            <rect
+              className="seat-chair-body"
+              x={-s.w / 2}
+              y={-s.h / 2}
+              width={s.w}
+              height={s.h}
+              rx={1.6}
+              style={editMode ? { fill: codeName[s.code] ? tableColor(codeName[s.code], tableNames) : '#5a5550', stroke: 'rgba(0,0,0,0.35)' } : undefined}
+            />
           </g>
         );
       })}
 
-      {/* table letters — float over each table's centre (round tables) or middle
-          (curved runs). pointer-events:none so chairs underneath stay clickable. */}
-      {TABLES.map((t) => (
-        <g key={`tl-${t.letter}`} className="seat-tablelabel" aria-hidden="true">
+      {/* table letters — float over each table's centre. pointer-events:none so
+          chairs underneath stay clickable. Reflects custom/edited tables live. */}
+      {tables.map((t) => (
+        <g key={`tl-${t.name}`} className="seat-tablelabel" aria-hidden="true">
           <circle cx={t.cx} cy={t.cy} r={9.5} />
-          <text x={t.cx} y={t.cy} textAnchor="middle" dominantBaseline="central">{t.letter}</text>
+          <text x={t.cx} y={t.cy} textAnchor="middle" dominantBaseline="central">{t.name}</text>
         </g>
       ))}
 
@@ -518,12 +677,12 @@ function SidePill({ side }: { side: string }) {
   return <span className={`ad-pill ${side === 'bride' ? 'ad-pill--accent' : 'ad-pill--neutral'}`}>{cap(side)}</span>;
 }
 
-function FilledPanel({ seat, guest, onMove, onClear, onClose }: {
-  seat: SeatDef; guest: SeatGuest; onMove: () => void; onClear: () => void; onClose: () => void;
+function FilledPanel({ seat, zone, guest, onMove, onClear, onClose }: {
+  seat: SeatDef; zone: string; guest: SeatGuest; onMove: () => void; onClear: () => void; onClose: () => void;
 }) {
   return (
     <div className="seat-panel__body">
-      <PanelHead title={seat.zone} sub="Seated guest" onClose={onClose} />
+      <PanelHead title={zone} sub="Seated guest" onClose={onClose} />
       <div className="seat-guestcard">
         <div className="seat-guestcard__avatar" aria-hidden="true">{initials(guest.name)}</div>
         <div style={{ minWidth: 0 }}>
@@ -548,8 +707,8 @@ function FilledPanel({ seat, guest, onMove, onClear, onClose }: {
   );
 }
 
-function EmptyPanel({ seat, unseated, search, setSearch, onPick, onClose }: {
-  seat: SeatDef; unseated: SeatGuest[]; search: string; setSearch: (v: string) => void;
+function EmptyPanel({ seat, zone, unseated, search, setSearch, onPick, onClose }: {
+  seat: SeatDef; zone: string; unseated: SeatGuest[]; search: string; setSearch: (v: string) => void;
   onPick: (g: SeatGuest) => void; onClose: () => void;
 }) {
   const q = search.toLowerCase().trim();
@@ -558,7 +717,7 @@ function EmptyPanel({ seat, unseated, search, setSearch, onPick, onClose }: {
     : unseated;
   return (
     <div className="seat-panel__body">
-      <PanelHead title={seat.zone} sub="Empty seat" onClose={onClose} />
+      <PanelHead title={zone} sub="Empty seat" onClose={onClose} />
       <p style={{ fontSize: '0.74rem', color: 'var(--ad-muted)', margin: '-0.25rem 0 0.65rem' }}>
         Only guests who confirmed attendance can be seated.
       </p>
@@ -707,6 +866,19 @@ function SeatingStyles() {
     .seat-zoom__val { font-size: 0.76rem; color: var(--ad-muted); min-width: 42px; text-align: center; }
 
     .seat-movebar { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.75rem; }
+
+    /* Edit-tables mode bar */
+    .seat-editbar { display: flex; flex-direction: column; gap: 0.55rem; margin-bottom: 0.75rem; padding: 0.7rem 0.85rem; background: var(--ad-raised); border: 1px solid var(--ad-border); border-radius: var(--ad-r-ctrl); }
+    .seat-editbar--collapsed { flex-direction: row; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    .seat-editbar__row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .seat-editbar__actions { margin-top: 0.15rem; }
+    .seat-editbar__label { font-size: 0.8rem; color: var(--ad-body); }
+    .seat-editbar__btn { padding: 0.32rem 0.55rem; font-size: 0.78rem; }
+    .seat-editbar__hint { font-size: 0.74rem; color: var(--ad-muted); flex: 1 1 200px; min-width: 0; }
+    .seat-edit-active { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 26px; padding: 0 0.5rem; border-radius: 7px; color: #fff; font-weight: 700; font-family: var(--ad-font-serif, Georgia, serif); }
+    .seat-edit-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; max-height: 96px; overflow-y: auto; }
+    .seat-chip { min-width: 28px; height: 26px; padding: 0 0.35rem; border-radius: 6px; border: 2px solid transparent; background: var(--ad-surface); color: var(--ad-ink); font-weight: 700; font-size: 0.78rem; cursor: pointer; box-shadow: inset 0 0 0 2px var(--chip); }
+    .seat-chip.is-active { border-color: var(--chip); background: var(--chip); color: #fff; box-shadow: none; }
 
     .seat-stage-wrap { position: relative; }
     .seat-scroll {
