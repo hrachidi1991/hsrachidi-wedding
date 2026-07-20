@@ -192,6 +192,11 @@ export default function SeatingPage() {
   const assignToActive = (code: string) => setEditMap((m) => ({ ...m, [code]: activeTable }));
   const addNewTable = () => setActiveTable(nextLetter([...new Set(Object.values(editMap))].filter(Boolean)));
   const deleteActiveTable = () => setEditMap((m) => { const n = { ...m }; for (const c of Object.keys(n)) if (n[c] === activeTable) delete n[c]; return n; });
+  const clearAllTables = () => {
+    if (!window.confirm('Remove ALL table markings so you can start from a blank plan? (Nothing is saved until you press “Save tables”.)')) return;
+    setEditMap({});
+    setActiveTable('A');
+  };
   const saveTables = async () => {
     setSavingTables(true);
     const tables = mapToTables(editMap).map((t) => ({ name: t.name, codes: t.codes }));
@@ -416,6 +421,7 @@ export default function SeatingPage() {
                 <div className="seat-editbar__row seat-editbar__actions">
                   <button type="button" className="ad-btn ad-btn--primary" disabled={savingTables} onClick={saveTables}>{savingTables ? 'Saving…' : 'Save tables'}</button>
                   <button type="button" className="ad-btn ad-btn--outline" onClick={() => setEditMode(false)}>Cancel</button>
+                  <button type="button" className="ad-btn ad-btn--outline seat-btn-danger" onClick={clearAllTables}>Clear all</button>
                   <button type="button" className="ad-btn ad-btn--outline" onClick={resetTablesToDefault} disabled={savingTables}>Reset to default</button>
                 </div>
               </div>
