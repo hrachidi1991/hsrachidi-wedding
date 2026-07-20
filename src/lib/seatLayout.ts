@@ -1,7 +1,7 @@
 // AUTO-GENERATED from the Blossom venue CAD (Hussein_Suzy_final_fp.dxf).
 // The floor-plan artwork is rendered from the SAME CAD to /public/seating-plan.png
 // (walls, aisles, tables, stage, theater, trees) — this file holds only the
-// 239 interactive chairs that sit ON TOP of that image, in the same
+// 240 interactive chairs that sit ON TOP of that image, in the same
 // coordinate space. Each row: [x, y, rotation(deg), width, height].
 export interface SeatDef { code: string; table: string; seatNo: number; zone: string; num: number; x: number; y: number; rot: number; w: number; h: number; }
 export const VIEWBOX = { w: 1600, h: 1110 };
@@ -245,7 +245,8 @@ const RAW: [number, number, number, number, number][] = [
   [298.4,577.5,72.1,13.1,13.1],
   [312.9,570.1,52.5,14.5,14.5],
   [323.6,559,33.5,14.4,14.3],
-  [330,545,15.8,12.8,12.8]
+  [330,545,15.8,12.8,12.8],
+  [796.1,621.7,-135,10.6,0.5]
 ];
 // Chairs grouped into TABLES using the CAD's own black divider lines (extracted
 // from the DXF): the 3 octagonal round tables (Q, Z, AG) stay whole; each curved
@@ -289,7 +290,7 @@ const TABLE_ORDER: Record<string, number[]> = {
   AH: [82,81,80,83,84,85],
   AI: [89,88,86,87],
   AJ: [105,104,103,100,101,102],
-  AK: [106,107,108],
+  AK: [106,107,108,239],
   AL: [118,117,115,116],
   AM: [111,110,109,112,113,114],
 };
