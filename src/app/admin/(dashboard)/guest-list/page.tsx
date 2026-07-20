@@ -390,10 +390,10 @@ export default function GuestListPage() {
         Name: gu.name, Phone: gu.phone || '', Side: g.side,
         Circle: gu.circle || '', Seats: g.maxGuests, 'Group ID': g.groupCode,
         RSVP: gu.rsvpManual || autoRsvp(g), Seat: seatByGuestId[gu.id] ? seatLabel(gu.id) : '',
-        Sent: gu.waSentCount || '', HD: hdGroups.has(g.groupCode) ? 'Y' : 'N', Notes: gu.notes || '',
+        Sent: gu.waSentCount || '', 'H.Copy': hdGroups.has(g.groupCode) ? 'Y' : 'N', Notes: gu.notes || '',
       }))
     );
-    const ws = XLSX.utils.json_to_sheet(rows, { header: ['Name', 'Phone', 'Side', 'Circle', 'Seats', 'Group ID', 'RSVP', 'Seat', 'Sent', 'HD', 'Notes'] });
+    const ws = XLSX.utils.json_to_sheet(rows, { header: ['Name', 'Phone', 'Side', 'Circle', 'Seats', 'Group ID', 'RSVP', 'Seat', 'Sent', 'H.Copy', 'Notes'] });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, tab === 'bride' ? 'Bride' : 'Groom');
     XLSX.writeFile(wb, `${tab}-guest-list.xlsx`);
@@ -487,9 +487,9 @@ export default function GuestListPage() {
                         ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                         : <span className="gl-track-dot" />}
                     </button>
-                    <label className="gl-mcard__hd" title="Hard copy invitation sent">
-                      <input type="checkbox" className="gl-hd" checked={hdGroups.has(g.groupCode)} onChange={() => toggleHd(g.groupCode)} aria-label={`Hard copy sent to group ${g.groupCode}`} />
-                      <span>HD</span>
+                    <label className="gl-mcard__hd" title="Hard-copy (printed) invitation delivered">
+                      <input type="checkbox" className="gl-hd" checked={hdGroups.has(g.groupCode)} onChange={() => toggleHd(g.groupCode)} aria-label={`Hard copy delivered to group ${g.groupCode}`} />
+                      <span>H.Copy</span>
                     </label>
                   </div>
                   <div className="gl-mcard__body">
@@ -527,7 +527,7 @@ export default function GuestListPage() {
                   <thead>
                     <tr>
                       <th>Name</th><th>Phone</th><th>Side</th><th>Circle</th>
-                      <th className="gl-c-center">Seats</th><th>Group ID</th><th className="gl-c-center">In RSVP</th><th className="gl-c-center" title="Hard copy invitation sent">HD</th><th>RSVP</th><th className="gl-c-center">Seat</th><th className="gl-c-center">Sent</th><th aria-label="actions" />
+                      <th className="gl-c-center">Seats</th><th>Group ID</th><th className="gl-c-center">In RSVP</th><th>RSVP</th><th className="gl-c-center">Seat</th><th className="gl-c-center">Sent</th><th className="gl-c-center" title="Hard-copy (printed) invitation delivered">H.Copy</th><th aria-label="actions" />
                     </tr>
                   </thead>
                   <tbody>
@@ -562,11 +562,6 @@ export default function GuestListPage() {
                                 </button>
                               </td>
                             )}
-                            {i === 0 && (
-                              <td rowSpan={g.guests.length} className="gl-c-group gl-c-center">
-                                <input type="checkbox" className="gl-hd" checked={hdGroups.has(g.groupCode)} onChange={() => toggleHd(g.groupCode)} title="Hard copy invitation sent" aria-label={`Hard copy sent to group ${g.groupCode}`} />
-                              </td>
-                            )}
                             <td><RsvpCell guest={gu} auto={autoRsvp(g)} onSave={(v) => saveGuest(gu.id, 'rsvpManual', v)} /></td>
                             <td className="gl-c-center"><span className={`gl-seatlbl ad-nums${seatByGuestId[gu.id] ? '' : ' gl-seatlbl--empty'}`}>{seatLabel(gu.id)}</span></td>
                             <td className="gl-c-center">
@@ -577,6 +572,11 @@ export default function GuestListPage() {
                                 </span>
                               ) : <span className="gl-sent-none">—</span>}
                             </td>
+                            {i === 0 && (
+                              <td rowSpan={g.guests.length} className="gl-c-group gl-c-center">
+                                <input type="checkbox" className="gl-hd" checked={hdGroups.has(g.groupCode)} onChange={() => toggleHd(g.groupCode)} title="Hard-copy (printed) invitation delivered" aria-label={`Hard copy delivered to group ${g.groupCode}`} />
+                              </td>
+                            )}
                             <td className="gl-c-actions">
                               <button className="gl-act gl-act--wa" onClick={() => sendWhatsApp(g, gu)} title="Send invite link on WhatsApp" aria-label={`Send invite link to ${gu.name} on WhatsApp`}>
                                 <WaIcon />
