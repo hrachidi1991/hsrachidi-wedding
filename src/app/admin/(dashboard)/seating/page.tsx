@@ -331,12 +331,12 @@ export default function SeatingPage() {
                     {occ ? (
                       <>
                         <span className="seat-tip__name">{occ.name}</span>
-                        <span className="seat-tip__meta">{cap(occ.side)} &middot; {occ.groupCode}</span>
+                        <span className="seat-tip__meta">{s.zone} &middot; {cap(occ.side)}</span>
                       </>
                     ) : (
                       <>
                         <span className="seat-tip__name">{s.zone}</span>
-                        <span className="seat-tip__meta">Seat {s.num} &middot; {s.code}</span>
+                        <span className="seat-tip__meta">Empty</span>
                       </>
                     )}
                   </div>
@@ -376,7 +376,7 @@ export default function SeatingPage() {
               <div className="seat-panel__idle">
                 <h3 className="ad-section-title">Plan the room</h3>
                 <p className="ad-page-desc" style={{ marginTop: '0.4rem' }}>
-                  Select any chair on the plan to seat a guest. Dark (filled) chairs are already
+                  Select any chair on the plan to seat a guest. Red (filled) chairs are already
                   taken — click one to move or clear it.
                 </p>
                 <div className="seat-idle-stat">
@@ -513,7 +513,7 @@ function FilledPanel({ seat, guest, onMove, onClear, onClose }: {
 }) {
   return (
     <div className="seat-panel__body">
-      <PanelHead title={seat.code} sub={seat.zone} onClose={onClose} />
+      <PanelHead title={seat.zone} sub="Seated guest" onClose={onClose} />
       <div className="seat-guestcard">
         <div className="seat-guestcard__avatar" aria-hidden="true">{initials(guest.name)}</div>
         <div style={{ minWidth: 0 }}>
@@ -548,7 +548,7 @@ function EmptyPanel({ seat, unseated, search, setSearch, onPick, onClose }: {
     : unseated;
   return (
     <div className="seat-panel__body">
-      <PanelHead title={seat.code} sub={`${seat.zone} · empty`} onClose={onClose} />
+      <PanelHead title={seat.zone} sub="Empty seat" onClose={onClose} />
       <p style={{ fontSize: '0.74rem', color: 'var(--ad-muted)', margin: '-0.25rem 0 0.65rem' }}>
         Only guests who confirmed attendance can be seated.
       </p>
@@ -689,7 +689,7 @@ function SeatingStyles() {
     .seat-legend__item { display: inline-flex; align-items: center; gap: 0.4rem; }
     .seat-swatch { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto; display: inline-block; }
     .seat-swatch--empty { background: #efece6; border: 1px solid #b3a89a; }
-    .seat-swatch--filled { background: var(--ad-accent); }
+    .seat-swatch--filled { background: #e5484d; }
     .seat-legend__hint { color: var(--ad-muted); font-size: 0.72rem; }
     @media (max-width: 560px) { .seat-legend__hint { display: none; } }
 
@@ -715,9 +715,9 @@ function SeatingStyles() {
     .seat-chair:focus { outline: none; }
     .seat-chair-hit { fill: transparent; }
     .seat-chair-body { fill: transparent; stroke: transparent; stroke-width: 0.8; transition: fill 0.14s ease, stroke 0.14s ease; }
-    .seat-chair.is-filled .seat-chair-body { fill: var(--ad-accent); stroke: var(--ad-accent-strong); }
+    .seat-chair.is-filled .seat-chair-body { fill: #e5484d; stroke: #b42318; }
     .seat-chair.is-empty:hover .seat-chair-body { fill: var(--ad-accent-soft); stroke: var(--ad-accent); }
-    .seat-chair.is-filled:hover .seat-chair-body { fill: #2a2724; stroke: #1c1a17; }
+    .seat-chair.is-filled:hover .seat-chair-body { fill: #c0362f; stroke: #8a1c14; }
     .seat-chair.is-target .seat-chair-body { fill: var(--ad-accent-soft); stroke: var(--ad-accent); stroke-width: 1; stroke-dasharray: 2.4 1.8; animation: seat-pulse 1.4s ease-in-out infinite; }
     @keyframes seat-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
