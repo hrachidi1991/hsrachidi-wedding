@@ -9,6 +9,7 @@ import { useIsMobile } from '@/lib/useIsMobile';
 interface Guest {
   id: string;
   name: string;
+  displayName: string | null;
   phone: string | null;
   side: string;
   relation: string;
@@ -80,6 +81,7 @@ export default function GuestListPage() {
   const [busy, setBusy] = useState(false);
   const [seatByGuestId, setSeatByGuestId] = useState<Record<string, string>>({});
   const [notePopup, setNotePopup] = useState<Guest | null>(null);
+  const [dnPopup, setDnPopup] = useState<Guest | null>(null);
   const [waBlock, setWaBlock] = useState<string | null>(null);
   const [waLang, setWaLang] = useState<{ group: Group; guest: Guest } | null>(null);
   const [eventInfo, setEventInfo] = useState<EventInfo>({ date: '25 August', time: '8:00 PM', venue: 'Pleine Nature', dateAr: '٢٥ آب', timeAr: '٨:٠٠ مساءً', venueAr: 'Pleine Nature' });
@@ -269,6 +271,17 @@ export default function GuestListPage() {
 
   // add/remove a group from RSVP tracking (also set by right-clicking a group)
   const setGroupInRsvp = async (group: Group, inRsvp: boolean) => {
+    // Case-aware confirmation before changing RSVP tracking.
+    if (inRsvp) {
+      if (!window.confirm(`Add group ${group.groupCode} to RSVP tracking?\n\nIt will appear in the RSVP section so you can send its link and follow its reply.`)) return;
+    } else {
+      const linkSent = group.guests.some((gu) => (gu.waSentCount || 0) > 0);
+      const responded = !!group.rsvpResponse;
+      let msg = `Remove group ${group.groupCode} from RSVP tracking?\n\nIt goes back to the Guest List only — no longer shown in the RSVP section.`;
+      if (responded) msg += `\n\n⚠ This group has ALREADY submitted their RSVP. Their reply stays saved, but you'll stop tracking them here.`;
+      if (linkSent) msg += `\n\n⚠ The invitation link was already SENT to this group.`;
+      if (!window.confirm(msg)) return;
+    }
     const prev = groups;
     setGroups((g) => g.map((x) => (x.id === group.id ? { ...x, inRsvp } : x)));
     try {
@@ -496,7 +509,10 @@ export default function GuestListPage() {
                     {g.guests.map((gu, i) => (
                       <div key={gu.id} className={`gl-mguest${i >= g.maxGuests ? ' is-over' : ''}`}>
                         <div className="gl-mguest__info">
-                          <EditText value={gu.name} onSave={(v) => saveGuest(gu.id, 'name', v)} placeholder="Name" strong />
+                          <div className="gl-name-cell">
+                            <EditText value={gu.name} onSave={(v) => saveGuest(gu.id, 'name', v)} placeholder="Name" strong />
+                            <button type="button" className={`gl-dn-btn${gu.displayName && gu.displayName !== gu.name ? ' has-dn' : ''}`} onClick={() => setDnPopup(gu)} title="Set the name shown on the invitation link" aria-label={`Display name for ${gu.name}`}><DnIcon /></button>
+                          </div>
                           <div className="gl-mguest__line">
                             <EditText value={gu.phone || ''} onSave={(v) => saveGuest(gu.id, 'phone', v)} placeholder="+ add phone" mono />
                             <EditSelect value={gu.circle || ''} options={circles} onSave={(v) => saveGuest(gu.id, 'circle', v)} placeholder="circle" allowBlank />
@@ -537,7 +553,14 @@ export default function GuestListPage() {
                         const rowCls = `gl-row${i === 0 ? ' gl-row--groupstart' : ''}${gi % 2 ? ' gl-row--band' : ''}${over ? ' gl-row--over' : ''}`;
                         return (
                           <tr key={gu.id} className={rowCls} onContextMenu={(e) => { e.preventDefault(); setMenu({ group: g, x: e.clientX, y: e.clientY }); }}>
-                            <td><EditText value={gu.name} onSave={(v) => saveGuest(gu.id, 'name', v)} placeholder="Name" strong /></td>
+                            <td>
+                              <div className="gl-name-cell">
+                                <EditText value={gu.name} onSave={(v) => saveGuest(gu.id, 'name', v)} placeholder="Name" strong />
+                                <button type="button" className={`gl-dn-btn${gu.displayName && gu.displayName !== gu.name ? ' has-dn' : ''}`} onClick={() => setDnPopup(gu)} title={gu.displayName && gu.displayName !== gu.name ? `Shows on the link: ${gu.displayName}` : 'Set the name shown on the invitation link'} aria-label={`Display name for ${gu.name}`}>
+                                  <DnIcon />
+                                </button>
+                              </div>
+                            </td>
                             <td><EditText value={gu.phone || ''} onSave={(v) => saveGuest(gu.id, 'phone', v)} placeholder="—" mono /></td>
                             {i === 0 && (
                               <td rowSpan={g.guests.length} className="gl-c-group">
@@ -633,6 +656,15 @@ export default function GuestListPage() {
           guest={notePopup}
           onClose={() => setNotePopup(null)}
           onSave={(v) => { saveGuest(notePopup.id, 'notes', v); setNotePopup(null); }}
+        />
+      )}
+
+      {dnPopup && (
+        <DisplayNameModal
+          key={dnPopup.id}
+          guest={dnPopup}
+          onClose={() => setDnPopup(null)}
+          onSave={(v) => { saveGuest(dnPopup.id, 'displayName', v); setDnPopup(null); }}
         />
       )}
 
@@ -843,6 +875,42 @@ function NoteModal({ guest, onClose, onSave }: { guest: Guest; onClose: () => vo
   );
 }
 
+function DnIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+// Popup to set the name shown on the guest's invitation link (defaults to the real name).
+function DisplayNameModal({ guest, onClose, onSave }: { guest: Guest; onClose: () => void; onSave: (v: string) => void }) {
+  const [draft, setDraft] = useState(guest.displayName || '');
+  return (
+    <div className="gl-modal-scrim" onClick={onClose}>
+      <div className="gl-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="ad-eyebrow">Display name — shown on the link</div>
+        <h3 className="ad-section-title" style={{ fontSize: '1.15rem' }}>{guest.name}</h3>
+        <input
+          className="ad-input" value={draft} autoFocus
+          placeholder={guest.name}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') onSave(draft.trim()); }}
+          style={{ marginTop: '0.4rem' }}
+        />
+        <p className="ad-page-desc" style={{ marginTop: '0.5rem', fontSize: '0.78rem' }}>
+          This is what the guest sees on their invitation link. Leave blank to use the real name (<strong>{guest.name}</strong>).
+        </p>
+        <div className="gl-modal__actions">
+          {guest.displayName && <button className="ad-btn ad-btn--outline gl-danger" style={{ marginRight: 'auto' }} onClick={() => onSave('')}>Reset to name</button>}
+          <button className="ad-btn ad-btn--outline" onClick={onClose}>Cancel</button>
+          <button className="ad-btn ad-btn--primary" onClick={() => onSave(draft.trim())}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CircleSettingsModal({ circles, busy, onClose, onSave }: {
   circles: string[]; busy: boolean; onClose: () => void; onSave: (c: string[], renames: { from: string; to: string }[]) => void;
 }) {
@@ -985,6 +1053,10 @@ function GuestListStyles() {
     .gl-track-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ad-border-strong); }
     .gl-hd { width: 17px; height: 17px; accent-color: var(--ad-accent, #7a8b69); cursor: pointer; }
     .gl-mcard__hd { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; color: var(--ad-muted); margin-inline-start: 0.4rem; cursor: pointer; }
+    .gl-name-cell { display: inline-flex; align-items: center; gap: 0.35rem; min-width: 0; }
+    .gl-dn-btn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; border: none; background: transparent; color: var(--ad-muted); cursor: pointer; opacity: 0.5; transition: all 0.14s ease; flex-shrink: 0; }
+    .gl-dn-btn:hover { opacity: 1; background: var(--ad-raised); color: var(--ad-ink); }
+    .gl-dn-btn.has-dn { color: var(--ad-accent, #7a8b69); opacity: 1; }
     .gl-menu-scrim { position: fixed; inset: 0; z-index: 85; }
     .gl-menu { position: fixed; z-index: 86; min-width: 220px; background: var(--ad-surface); border: 1px solid var(--ad-border); border-radius: 10px; box-shadow: var(--ad-shadow); padding: 0.3rem; overflow: hidden; }
     .gl-menu-head { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ad-muted); padding: 0.4rem 0.6rem 0.3rem; }

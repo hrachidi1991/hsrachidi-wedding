@@ -16,8 +16,9 @@ import {
 const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 interface GuestAttendance {
-  name: string;
-  attending: boolean;
+  name: string;              // real name — used for identity, submission, admin matching
+  displayName: string;       // name shown on the invitation link
+  attending: boolean | null; // null = the guest hasn't chosen yet
 }
 
 interface RsvpData {
@@ -165,8 +166,9 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
       // Match by full name, or first name for legacy data
       const matchFull = rsvpMap.get(key);
       const matchFirst = rsvpMap.get(fullName.split(' ')[0]?.toLowerCase());
-      const attending = matchFull !== undefined ? matchFull : (matchFirst !== undefined ? matchFirst : true);
-      return { name: fullName, attending };
+      // Default to NULL (not chosen) for a fresh form; keep the saved choice when editing.
+      const attending = matchFull !== undefined ? matchFull : (matchFirst !== undefined ? matchFirst : null);
+      return { name: fullName, displayName: g.displayName || fullName, attending };
     });
   };
 
@@ -367,16 +369,17 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
     return isRtl ? `الفصل ${romanAr} · ${nm[1]}` : `${roman} · ${nm[0]}`;
   };
 
-  const toggleGuestAttendance = (index: number) => {
+  const setGuestAttend = (index: number, value: boolean) => {
     setGuestAttendance((prev) =>
-      prev.map((g, i) => (i === index ? { ...g, attending: !g.attending } : g))
+      prev.map((g, i) => (i === index ? { ...g, attending: value } : g))
     );
   };
 
-  const attendingCount = guestAttendance.filter((g) => g.attending).length;
+  const attendingCount = guestAttendance.filter((g) => g.attending === true).length;
+  const allChosen = guestAttendance.length > 0 && guestAttendance.every((g) => g.attending !== null);
 
   const handleRsvpSubmit = async () => {
-    if (!rsvpData?.groupCode || guestAttendance.length === 0) return;
+    if (!rsvpData?.groupCode || guestAttendance.length === 0 || !allChosen) return;
     setRsvpLoading(true);
     setRsvpMessage('');
     try {
@@ -385,7 +388,8 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           groupCode: rsvpData.groupCode,
-          guestAttendance,
+          // Submit the REAL name (for admin matching) + the chosen boolean.
+          guestAttendance: guestAttendance.map((g) => ({ name: g.name, attending: !!g.attending })),
           language: locale,
           editToken: rsvpData.editToken,
         }),
@@ -1037,7 +1041,7 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
                           </svg>
                         )}
                       </div>
-                      <span className={`text-lg text-black/80 ${isRtl ? 'font-arabic' : 'font-body'}`}>{g.name}</span>
+                      <span className={`text-lg text-black/80 ${isRtl ? 'font-arabic' : 'font-body'}`}>{g.displayName}</span>
                     </div>
                   ))}
                 </div>
@@ -1062,60 +1066,63 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
                 )}
               </div>
             ) : (
-              /* ═══ EDITING STATE — per-guest toggle form ═══ */
-              <div className="bg-black/5 backdrop-blur-sm rounded-lg p-6 sm:p-8 border border-black/10 max-w-lg mx-auto">
-                {/* Per-guest attendance toggles */}
-                <div className="space-y-4 mb-6">
+              /* ═══ EDITING STATE — per-guest attendance selection ═══ */
+              <div className="bg-black/5 backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-black/10 max-w-lg mx-auto text-left">
+                {/* Friendly lead-in that guides what to do */}
+                <p className={`text-[0.95rem] sm:text-base text-black/60 mb-5 text-center leading-relaxed ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                  {isRtl
+                    ? 'يسعدنا أن نعرف من سيشاركنا فرحتنا — اختاروا لكل ضيف ثم أكّدوا الحضور.'
+                    : "We'd love to know who's celebrating with us — choose for each guest, then confirm."}
+                </p>
+
+                {/* Per-guest: two clear options side by side, nothing pre-selected */}
+                <div className="divide-y divide-black/5 mb-5">
                   {guestAttendance.map((g, i) => (
-                    <div key={i} className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                      {/* Attending toggle */}
-                      <button
-                        onClick={() => toggleGuestAttendance(i)}
-                        className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
-                          g.attending
-                            ? 'bg-green-500 text-white shadow-md shadow-green-500/30'
-                            : 'bg-black/5 border-2 border-black/20 text-black/30 hover:border-green-400'
-                        }`}
-                        aria-label={g.attending ? t(locale, 'perGuestAttending') : t(locale, 'perGuestNotAttending')}
-                      >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </button>
-
-                      {/* Guest name */}
-                      <span className={`flex-1 text-lg text-black/80 ${isRtl ? 'text-right font-arabic' : 'font-body'}`}>
-                        {g.name}
-                      </span>
-
-                      {/* Not attending toggle */}
-                      <button
-                        onClick={() => toggleGuestAttendance(i)}
-                        className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
-                          !g.attending
-                            ? 'bg-red-500 text-white shadow-md shadow-red-500/30'
-                            : 'bg-black/5 border-2 border-black/20 text-black/30 hover:border-red-400'
-                        }`}
-                        aria-label={!g.attending ? t(locale, 'perGuestNotAttending') : t(locale, 'perGuestAttending')}
-                      >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      </button>
+                    <div key={i} className="flex items-center justify-between gap-3 flex-wrap py-2.5">
+                      <span className={`text-lg text-black/80 ${isRtl ? 'font-arabic' : 'font-body'}`}>{g.displayName}</span>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setGuestAttend(i, true)}
+                          aria-pressed={g.attending === true}
+                          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm border-2 transition-all duration-200 ${isRtl ? 'font-arabic' : 'font-body'} ${
+                            g.attending === true
+                              ? 'bg-green-600 text-white border-green-600 shadow-md shadow-green-600/25'
+                              : 'bg-transparent text-black/45 border-black/15 hover:border-green-500 hover:text-green-700'
+                          }`}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
+                          {isRtl ? 'سنحضر' : 'Attending'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setGuestAttend(i, false)}
+                          aria-pressed={g.attending === false}
+                          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm border-2 transition-all duration-200 ${isRtl ? 'font-arabic' : 'font-body'} ${
+                            g.attending === false
+                              ? 'bg-red-500 text-white border-red-500 shadow-md shadow-red-500/25'
+                              : 'bg-transparent text-black/45 border-black/15 hover:border-red-400 hover:text-red-600'
+                          }`}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                          {isRtl ? 'نعتذر' : "Can't make it"}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Attendance summary */}
-                <p className={`text-base text-black/50 mb-6 ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                  {attendingCount} / {guestAttendance.length} {t(locale, 'perGuestAttending').toLowerCase()}
+                {/* Live summary once everyone is chosen, else a gentle nudge */}
+                <p className={`text-sm text-black/45 mb-5 text-center ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                  {allChosen
+                    ? (isRtl ? `${attendingCount} من ${guestAttendance.length} سيحضرون` : `${attendingCount} of ${guestAttendance.length} attending`)
+                    : (isRtl ? 'يرجى الاختيار لكل ضيف' : 'Please choose for each guest')}
                 </p>
 
                 {/* Confirm button */}
                 <button
                   onClick={handleRsvpSubmit}
-                  disabled={rsvpLoading}
+                  disabled={rsvpLoading || !allChosen}
                   className="btn-gold w-full disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {rsvpLoading ? (
@@ -1134,6 +1141,11 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
               </div>
             )}
             </div>
+
+            {/* Share your wishes — two-way message thread, only on a group's link */}
+            {rsvpData?.groupCode && (
+              <GuestChat groupCode={rsvpData.groupCode} isRtl={isRtl} />
+            )}
 
             {/* WhatsApp */}
             {settings.whatsappUrl && (
@@ -1230,6 +1242,126 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Share-your-wishes: a compact two-way message thread, private to each group's
+// link. Guests post/edit/delete their own; the couple replies from the admin.
+interface ChatMsg { id: string; sender: string; body: string; createdAt: string; updatedAt: string; }
+
+function GuestChat({ groupCode, isRtl }: { groupCode: string; isRtl: boolean }) {
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const load = () =>
+    fetch(`/api/messages?g=${encodeURIComponent(groupCode)}`)
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d.messages)) setMessages(d.messages); })
+      .catch(() => {});
+
+  // Load on mount + poll every 30s so the couple's replies show up without a reload.
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 30000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupCode]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages.length]);
+
+  const send = async () => {
+    const body = text.trim();
+    if (!body || busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ groupCode, body }) });
+      if (res.ok) { const d = await res.json(); if (d.message) setMessages((m) => [...m, d.message]); setText(''); }
+    } catch { /* ignore */ }
+    setBusy(false);
+  };
+
+  const saveEdit = async (id: string) => {
+    const body = editText.trim();
+    if (!body) { setEditingId(null); return; }
+    try {
+      const res = await fetch('/api/messages', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, groupCode, body }) });
+      if (res.ok) { const d = await res.json(); setMessages((m) => m.map((x) => (x.id === id ? d.message : x))); }
+    } catch { /* ignore */ }
+    setEditingId(null);
+  };
+
+  const del = async (id: string) => {
+    setMessages((m) => m.filter((x) => x.id !== id));
+    try { await fetch('/api/messages', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, groupCode }) }); }
+    catch { load(); }
+  };
+
+  const fmt = (iso: string) => { try { return new Date(iso).toLocaleDateString(isRtl ? 'ar' : 'en-GB', { day: 'numeric', month: 'short' }); } catch { return ''; } };
+
+  return (
+    <div className="mt-8 max-w-lg mx-auto text-left">
+      <div className="bg-black/5 backdrop-blur-sm rounded-2xl border border-black/10 overflow-hidden">
+        <div className="px-5 pt-4 pb-2">
+          <h3 className={`text-lg text-[#1F4A3A] ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>{isRtl ? 'شاركونا أمنياتكم' : 'Share your wishes'}</h3>
+          <p className={`text-xs text-black/45 mt-0.5 ${isRtl ? 'font-arabic' : 'font-body'}`}>{isRtl ? 'اكتبوا رسالة للعروسين — يمكنكم التعديل أو الحذف.' : 'Leave the couple a message — you can edit or delete it.'}</p>
+        </div>
+        {messages.length > 0 && (
+          <div ref={scrollRef} className="px-4 py-2 max-h-56 overflow-y-auto flex flex-col gap-2">
+            {messages.map((m) => {
+              const mine = m.sender === 'guest';
+              if (editingId === m.id) {
+                return (
+                  <div key={m.id} className="self-end w-full flex flex-col gap-1">
+                    <textarea value={editText} onChange={(e) => setEditText(e.target.value)} rows={2} className="w-full text-sm rounded-xl border border-black/15 bg-white/70 p-2 resize-none focus:outline-none" />
+                    <div className="flex gap-3 justify-end">
+                      <button type="button" onClick={() => setEditingId(null)} className="text-xs text-black/40">{isRtl ? 'إلغاء' : 'Cancel'}</button>
+                      <button type="button" onClick={() => saveEdit(m.id)} className="text-xs text-[#1F4A3A] font-medium">{isRtl ? 'حفظ' : 'Save'}</button>
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <div key={m.id} className={`max-w-[85%] ${mine ? 'self-end' : 'self-start'}`}>
+                  <div className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words ${mine ? 'bg-[#1F4A3A] text-white rounded-br-sm' : 'bg-[#efe3cf] text-black/80 rounded-bl-sm'} ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                    {!mine && <span className="block text-[0.65rem] font-semibold text-[#9c7b3f] mb-0.5">{isRtl ? 'العروسان' : 'Hussein & Suzan'}</span>}
+                    {m.body}
+                  </div>
+                  <div className={`flex items-center gap-2 mt-0.5 px-1 ${mine ? 'justify-end' : 'justify-start'}`}>
+                    <span className="text-[0.6rem] text-black/30">{fmt(m.createdAt)}</span>
+                    {mine && (
+                      <>
+                        <button type="button" onClick={() => { setEditingId(m.id); setEditText(m.body); }} className="text-[0.6rem] text-black/40 hover:text-black/70">{isRtl ? 'تعديل' : 'Edit'}</button>
+                        <button type="button" onClick={() => del(m.id)} className="text-[0.6rem] text-black/40 hover:text-red-500">{isRtl ? 'حذف' : 'Delete'}</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <div className="flex items-end gap-2 p-3 border-t border-black/5">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+            rows={1}
+            placeholder={isRtl ? 'اكتب رسالتك…' : 'Type your message…'}
+            className={`flex-1 text-sm rounded-xl border border-black/15 bg-white/70 px-3 py-2 resize-none max-h-24 focus:outline-none focus:border-[#1F4A3A]/40 ${isRtl ? 'font-arabic text-right' : 'font-body'}`}
+          />
+          <button type="button" onClick={send} disabled={busy || !text.trim()} className="flex-shrink-0 w-10 h-10 rounded-full bg-[#1F4A3A] text-white flex items-center justify-center disabled:opacity-40 transition-opacity" aria-label={isRtl ? 'إرسال' : 'Send'}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

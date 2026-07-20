@@ -1,0 +1,87 @@
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/db';
+import { requireAdmin } from '@/lib/auth';
+
+const MAX_LEN = 2000;
+
+// Resolve a group by groupCode OR legacy token; returns its groupCode or null.
+async function resolveGroupCode(identifier: string): Promise<string | null> {
+  if (!identifier) return null;
+  let g = await prisma.guestGroup.findUnique({ where: { groupCode: identifier }, select: { groupCode: true } });
+  if (!g) g = await prisma.guestGroup.findUnique({ where: { token: identifier }, select: { groupCode: true } });
+  return g?.groupCode ?? null;
+}
+
+// GET ?g=<groupCode|token> — the group's chat thread (public, per link).
+export async function GET(request: NextRequest) {
+  const id = request.nextUrl.searchParams.get('g') || request.nextUrl.searchParams.get('token') || '';
+  const groupCode = await resolveGroupCode(id);
+  if (!groupCode) return NextResponse.json({ messages: [] });
+  const messages = await prisma.guestMessage.findMany({
+    where: { groupCode },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true, sender: true, body: true, createdAt: true, updatedAt: true },
+  });
+  return NextResponse.json({ messages });
+}
+
+// POST { groupCode, body } — admin (couple) reply if authed, else a guest message.
+export async function POST(request: NextRequest) {
+  try {
+    const { groupCode: rawCode, body } = await request.json();
+    const text = String(body || '').trim().slice(0, MAX_LEN);
+    if (!text) return NextResponse.json({ error: 'Empty message' }, { status: 400 });
+    const groupCode = await resolveGroupCode(rawCode);
+    if (!groupCode) return NextResponse.json({ error: 'Invalid link' }, { status: 404 });
+    const sender = requireAdmin(request) ? 'couple' : 'guest';
+    const msg = await prisma.guestMessage.create({
+      data: { groupCode, sender, body: text },
+      select: { id: true, sender: true, body: true, createdAt: true, updatedAt: true },
+    });
+    return NextResponse.json({ message: msg });
+  } catch (e) {
+    console.error('message POST error:', e);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}
+
+// PUT { id, groupCode, body } — edit. Admin may edit any; a guest only 'guest' msgs.
+export async function PUT(request: NextRequest) {
+  try {
+    const { id, groupCode: rawCode, body } = await request.json();
+    const text = String(body || '').trim().slice(0, MAX_LEN);
+    if (!id || !text) return NextResponse.json({ error: 'Missing id or body' }, { status: 400 });
+    const groupCode = await resolveGroupCode(rawCode);
+    const existing = await prisma.guestMessage.findUnique({ where: { id } });
+    if (!existing || existing.groupCode !== groupCode) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    const isAdmin = requireAdmin(request);
+    if (!isAdmin && existing.sender !== 'guest') return NextResponse.json({ error: 'Not allowed' }, { status: 403 });
+    const msg = await prisma.guestMessage.update({
+      where: { id },
+      data: { body: text },
+      select: { id: true, sender: true, body: true, createdAt: true, updatedAt: true },
+    });
+    return NextResponse.json({ message: msg });
+  } catch (e) {
+    console.error('message PUT error:', e);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}
+
+// DELETE { id, groupCode } — delete. Admin may delete any; a guest only 'guest' msgs.
+export async function DELETE(request: NextRequest) {
+  try {
+    const { id, groupCode: rawCode } = await request.json();
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+    const groupCode = await resolveGroupCode(rawCode);
+    const existing = await prisma.guestMessage.findUnique({ where: { id } });
+    if (!existing || existing.groupCode !== groupCode) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    const isAdmin = requireAdmin(request);
+    if (!isAdmin && existing.sender !== 'guest') return NextResponse.json({ error: 'Not allowed' }, { status: 403 });
+    await prisma.guestMessage.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    console.error('message DELETE error:', e);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}

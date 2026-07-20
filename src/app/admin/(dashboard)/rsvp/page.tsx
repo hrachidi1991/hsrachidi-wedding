@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useIsMobile } from '@/lib/useIsMobile';
 import { inviteLink, whatsAppUrl, eventInfoFromSettings, defaultEventInfo } from '@/lib/whatsapp';
 
@@ -124,6 +124,25 @@ export default function RsvpTracking() {
       setActionMsg('Submission removed — you can resend the link and they can confirm again.');
     } catch {
       setActionMsg('Could not remove the submission. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Remove a group from RSVP tracking — it returns to the Guest List. Their reply is kept.
+  const removeFromRsvp = async (g: GroupWithRsvp) => {
+    if (!window.confirm(`Remove group ${g.groupCode} from RSVP tracking?\n\nIt returns to the Guest List. Their submitted reply (if any) stays saved in case you re-add them.`)) return;
+    setBusy(true); setActionMsg(null);
+    try {
+      const res = await fetch('/api/groups', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: g.id, inRsvp: false }),
+      });
+      if (!res.ok) throw new Error();
+      setSelected(null);
+      await loadGroups();
+    } catch {
+      setActionMsg('Could not remove from RSVP — please try again.');
     } finally {
       setBusy(false);
     }
@@ -434,6 +453,20 @@ export default function RsvpTracking() {
             ) : (
               <p className="ad-empty">No registered guests in this group.</p>
             )}
+
+            {/* Couple ⇄ guest chat for this group */}
+            <AdminChat groupCode={selected.groupCode} />
+
+            {/* Remove the group from RSVP tracking (back to the Guest List) */}
+            <button
+              type="button"
+              className="ad-btn ad-btn--outline"
+              style={{ width: '100%', marginTop: '1.1rem', color: 'var(--ad-bad)', borderColor: 'var(--ad-bad)' }}
+              disabled={busy}
+              onClick={() => removeFromRsvp(selected)}
+            >
+              Remove group from RSVP tracking
+            </button>
           </div>
         </div>
       )}
@@ -442,6 +475,71 @@ export default function RsvpTracking() {
 }
 
 function cap(s: string) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+// The couple's side of the two-way chat with a group (guest posts via their link).
+interface ChatMsg { id: string; sender: string; body: string; createdAt: string; updatedAt: string; }
+function AdminChat({ groupCode }: { groupCode: string }) {
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const load = () => fetch(`/api/messages?g=${encodeURIComponent(groupCode)}`).then((r) => r.json()).then((d) => { if (Array.isArray(d.messages)) setMessages(d.messages); }).catch(() => {});
+  useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [groupCode]);
+  useEffect(() => { const el = scrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, [messages.length]);
+
+  const send = async () => {
+    const body = text.trim(); if (!body || busy) return; setBusy(true);
+    try { const res = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ groupCode, body }) }); if (res.ok) { const d = await res.json(); if (d.message) setMessages((m) => [...m, d.message]); setText(''); } } catch { /* ignore */ }
+    setBusy(false);
+  };
+  const saveEdit = async (id: string) => {
+    const body = editText.trim(); if (!body) { setEditingId(null); return; }
+    try { const res = await fetch('/api/messages', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, groupCode, body }) }); if (res.ok) { const d = await res.json(); setMessages((m) => m.map((x) => (x.id === id ? d.message : x))); } } catch { /* ignore */ }
+    setEditingId(null);
+  };
+  const del = async (id: string) => { setMessages((m) => m.filter((x) => x.id !== id)); try { await fetch('/api/messages', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, groupCode }) }); } catch { load(); } };
+
+  return (
+    <div style={{ marginTop: '1.1rem', borderTop: '1px solid var(--ad-border)', paddingTop: '0.9rem' }}>
+      <div className="ad-eyebrow" style={{ marginBottom: '0.5rem' }}>Messages with this group</div>
+      {messages.length > 0 && (
+        <div ref={scrollRef} style={{ maxHeight: 200, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.6rem' }}>
+          {messages.map((m) => {
+            const mine = m.sender === 'couple';
+            if (editingId === m.id) return (
+              <div key={m.id} style={{ alignSelf: 'flex-end', width: '100%' }}>
+                <textarea value={editText} onChange={(e) => setEditText(e.target.value)} rows={2} className="ad-input" style={{ width: '100%', resize: 'none' }} />
+                <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end', marginTop: '0.3rem' }}>
+                  <button className="ad-link-btn" onClick={() => setEditingId(null)}>Cancel</button>
+                  <button className="ad-link-btn" onClick={() => saveEdit(m.id)}>Save</button>
+                </div>
+              </div>
+            );
+            return (
+              <div key={m.id} style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
+                <div style={{ borderRadius: 12, padding: '0.4rem 0.6rem', fontSize: '0.82rem', lineHeight: 1.4, whiteSpace: 'pre-wrap', wordBreak: 'break-word', background: mine ? '#1F4A3A' : 'var(--ad-raised)', color: mine ? '#fff' : 'var(--ad-ink)', border: mine ? 'none' : '1px solid var(--ad-border)' }}>
+                  {!mine && <span style={{ display: 'block', fontSize: '0.62rem', fontWeight: 600, color: 'var(--ad-muted)', marginBottom: 2 }}>Guest</span>}
+                  {m.body}
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: 2, justifyContent: mine ? 'flex-end' : 'flex-start', fontSize: '0.62rem', color: 'var(--ad-muted)' }}>
+                  <span>{new Date(m.createdAt).toLocaleDateString()}</span>
+                  {mine && <><button className="ad-link-btn" style={{ fontSize: '0.62rem' }} onClick={() => { setEditingId(m.id); setEditText(m.body); }}>Edit</button><button className="ad-link-btn" style={{ fontSize: '0.62rem' }} onClick={() => del(m.id)}>Delete</button></>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'flex-end' }}>
+        <textarea value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} rows={1} placeholder="Reply to this group…" className="ad-input" style={{ flex: 1, resize: 'none', maxHeight: 80 }} />
+        <button className="ad-btn ad-btn--primary" disabled={busy || !text.trim()} onClick={send} style={{ flexShrink: 0 }}>Send</button>
+      </div>
+    </div>
+  );
+}
 
 function WaGlyph() {
   return (

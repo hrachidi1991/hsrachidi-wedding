@@ -91,7 +91,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const patch: Record<string, any> = {};
-    for (const f of ['name', 'phone', 'side', 'relation', 'circle', 'rsvpManual', 'notes', 'groupCode'] as const) {
+    for (const f of ['name', 'displayName', 'phone', 'side', 'relation', 'circle', 'rsvpManual', 'notes', 'groupCode'] as const) {
       if (f in data) patch[f] = data[f] === '' ? null : data[f];
     }
     if ('waSentCount' in data) patch.waSentCount = Math.max(0, parseInt(data.waSentCount) || 0);

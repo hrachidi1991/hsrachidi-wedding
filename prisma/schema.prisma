@@ -27,6 +27,7 @@ model TimelineItem {
 model Guest {
   id          String   @id @default(uuid())
   name        String
+  displayName String?  // name shown on the invitation link (defaults to `name`)
   phone       String?
   side        String   @default("groom") // "bride" | "groom"
   relation    String   @default("friend")
@@ -83,4 +84,18 @@ model RsvpResponse {
   updatedAt       DateTime @updatedAt
 
   @@index([groupId])
+}
+
+// Two-way chat between a guest (via their private invite link) and the couple
+// (via the admin RSVP panel). Scoped to a group by groupCode — only that link
+// sees its own thread. `sender` is "guest" or "couple".
+model GuestMessage {
+  id        String   @id @default(uuid())
+  groupCode String
+  sender    String   @default("guest") // "guest" | "couple"
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([groupCode])
 }

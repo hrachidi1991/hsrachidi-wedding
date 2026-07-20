@@ -28,7 +28,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ g
         // phone / relation / circle / notes / rsvpManual to the client.
         const guests = await prisma.guest.findMany({
           where: { groupCode: group.groupCode },
-          select: { id: true, name: true, sortOrder: true },
+          select: { id: true, name: true, displayName: true, sortOrder: true },
           orderBy: { sortOrder: 'asc' },
         });
         rsvpData = {
