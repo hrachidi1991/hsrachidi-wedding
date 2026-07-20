@@ -472,7 +472,7 @@ function FloorPlan({
           (curved runs). pointer-events:none so chairs underneath stay clickable. */}
       {TABLES.map((t) => (
         <g key={`tl-${t.letter}`} className="seat-tablelabel" aria-hidden="true">
-          <circle cx={t.cx} cy={t.cy} r={11} />
+          <circle cx={t.cx} cy={t.cy} r={9.5} />
           <text x={t.cx} y={t.cy} textAnchor="middle" dominantBaseline="central">{t.letter}</text>
         </g>
       ))}
@@ -734,7 +734,7 @@ function SeatingStyles() {
     /* table letters over the plan */
     .seat-tablelabel { pointer-events: none; }
     .seat-tablelabel circle { fill: rgba(15, 13, 10, 0.64); stroke: rgba(255, 255, 255, 0.55); stroke-width: 0.8; }
-    .seat-tablelabel text { fill: #fff; font-size: 15px; font-weight: 700; font-family: var(--ad-font-serif, Georgia, serif); }
+    .seat-tablelabel text { fill: #fff; font-size: 12px; font-weight: 700; font-family: var(--ad-font-serif, Georgia, serif); }
 
     .seat-ring { fill: none; pointer-events: none; }
     .seat-ring--sel { stroke: var(--ad-accent); stroke-width: 1.6; }
