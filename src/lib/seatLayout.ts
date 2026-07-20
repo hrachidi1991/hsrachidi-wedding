@@ -282,4 +282,14 @@ export const SEATS: SeatDef[] = RAW.map((r, i) => {
 });
 export const SEAT_COUNT = SEATS.length;
 export const TABLE_LETTERS = Object.keys(TABLE_ORDER);
+
+// One entry per table with its centroid (label anchor) + seat count. For the round
+// tables the centroid is the ring centre; for the curved runs it's the run's middle.
+export interface TableInfo { letter: string; cx: number; cy: number; count: number; }
+export const TABLES: TableInfo[] = TABLE_LETTERS.map((letter) => {
+  const seats = SEATS.filter((s) => s.table === letter);
+  const cx = seats.reduce((a, s) => a + s.x, 0) / seats.length;
+  const cy = seats.reduce((a, s) => a + s.y, 0) / seats.length;
+  return { letter, cx, cy, count: seats.length };
+});
 export const SEAT_BY_CODE: Record<string, SeatDef> = Object.fromEntries(SEATS.map((x) => [x.code, x]));

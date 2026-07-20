@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   SEATS,
+  TABLES,
   PLAN_IMAGE,
   VIEWBOX,
   SEAT_COUNT,
@@ -467,6 +468,15 @@ function FloorPlan({
         );
       })}
 
+      {/* table letters — float over each table's centre (round tables) or middle
+          (curved runs). pointer-events:none so chairs underneath stay clickable. */}
+      {TABLES.map((t) => (
+        <g key={`tl-${t.letter}`} className="seat-tablelabel" aria-hidden="true">
+          <circle cx={t.cx} cy={t.cy} r={14} />
+          <text x={t.cx} y={t.cy} textAnchor="middle" dominantBaseline="central">{t.letter}</text>
+        </g>
+      ))}
+
       {/* selection / focus ring drawn on top */}
       {[selectedCode, focusedCode].map((code, i) => {
         if (!code || (i === 1 && code === selectedCode)) return null;
@@ -720,6 +730,11 @@ function SeatingStyles() {
     .seat-chair.is-filled:hover .seat-chair-body { fill: #c0362f; stroke: #8a1c14; }
     .seat-chair.is-target .seat-chair-body { fill: var(--ad-accent-soft); stroke: var(--ad-accent); stroke-width: 1; stroke-dasharray: 2.4 1.8; animation: seat-pulse 1.4s ease-in-out infinite; }
     @keyframes seat-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    /* table letters over the plan */
+    .seat-tablelabel { pointer-events: none; }
+    .seat-tablelabel circle { fill: rgba(15, 13, 10, 0.64); stroke: rgba(255, 255, 255, 0.55); stroke-width: 0.8; }
+    .seat-tablelabel text { fill: #fff; font-size: 20px; font-weight: 700; font-family: var(--ad-font-serif, Georgia, serif); }
 
     .seat-ring { fill: none; pointer-events: none; }
     .seat-ring--sel { stroke: var(--ad-accent); stroke-width: 1.6; }
