@@ -1097,17 +1097,24 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
                     : "We'd love to know who's celebrating with us — choose for each guest, then confirm."}
                 </p>
 
-                {/* Per-guest: two clear options side by side, nothing pre-selected */}
-                <div className="divide-y divide-black/5 mb-5">
+                {/* Per-guest: each guest in its own bubble. On phones the name sits on
+                    its own line above its two choices, so it's clear the answer belongs
+                    to that name; on wider screens name and choices sit on one row. */}
+                <div className="space-y-2.5 mb-5">
                   {guestAttendance.map((g, i) => (
-                    <div key={i} className="flex items-center justify-between gap-3 flex-wrap py-2.5">
-                      <span className={`text-lg text-black/80 ${isRtl ? 'font-arabic' : 'font-body'}`}>{g.displayName}</span>
-                      <div className="flex gap-2 flex-shrink-0">
+                    <div
+                      key={i}
+                      className={`rounded-xl border px-3.5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 transition-colors ${
+                        g.attending === null ? 'border-black/10 bg-black/[0.02]' : 'border-black/15 bg-white/50'
+                      }`}
+                    >
+                      <span className={`text-lg text-black/80 ${isRtl ? 'font-arabic text-right' : 'font-body'}`}>{g.displayName}</span>
+                      <div className="flex gap-2">
                         <button
                           type="button"
                           onClick={() => setGuestAttend(i, true)}
                           aria-pressed={g.attending === true}
-                          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm border-2 transition-all duration-200 ${isRtl ? 'font-arabic' : 'font-body'} ${
+                          className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm border-2 transition-all duration-200 ${isRtl ? 'font-arabic' : 'font-body'} ${
                             g.attending === true
                               ? 'bg-green-600 text-white border-green-600 shadow-md shadow-green-600/25'
                               : 'bg-transparent text-black/45 border-black/15 hover:border-green-500 hover:text-green-700'
@@ -1120,7 +1127,7 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
                           type="button"
                           onClick={() => setGuestAttend(i, false)}
                           aria-pressed={g.attending === false}
-                          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm border-2 transition-all duration-200 ${isRtl ? 'font-arabic' : 'font-body'} ${
+                          className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm border-2 transition-all duration-200 ${isRtl ? 'font-arabic' : 'font-body'} ${
                             g.attending === false
                               ? 'bg-red-500 text-white border-red-500 shadow-md shadow-red-500/25'
                               : 'bg-transparent text-black/45 border-black/15 hover:border-red-400 hover:text-red-600'
@@ -1286,6 +1293,7 @@ function GuestChat({ groupCode, isRtl }: { groupCode: string; isRtl: boolean }) 
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [sendError, setSendError] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const load = () =>
@@ -1313,7 +1321,8 @@ function GuestChat({ groupCode, isRtl }: { groupCode: string; isRtl: boolean }) 
     setBusy(true);
     try {
       const res = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ groupCode, body }) });
-      if (res.ok) { const d = await res.json(); if (d.message) setMessages((m) => [...m, d.message]); setText(''); }
+      if (res.ok) { const d = await res.json(); if (d.message) setMessages((m) => [...m, d.message]); setText(''); setSendError(''); }
+      else if (res.status === 429) setSendError(isRtl ? 'أمهلونا لحظة قبل إرسال المزيد.' : 'Please wait a moment before sending more.');
     } catch { /* ignore */ }
     setBusy(false);
   };
@@ -1390,6 +1399,9 @@ function GuestChat({ groupCode, isRtl }: { groupCode: string; isRtl: boolean }) 
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
           </button>
         </div>
+        {sendError && (
+          <p className={`px-3 pb-2 -mt-1 text-xs text-red-500 ${isRtl ? 'font-arabic text-right' : 'font-body'}`}>{sendError}</p>
+        )}
       </div>
     </div>
   );

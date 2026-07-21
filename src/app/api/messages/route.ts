@@ -68,6 +68,13 @@ export async function POST(request: NextRequest) {
     const groupCode = await resolveGroupCode(rawCode);
     if (!groupCode) return NextResponse.json({ error: 'Invalid link' }, { status: 404 });
     const sender = requireAdmin(request) ? 'couple' : 'guest';
+    // Rate limit guests (not the couple): max 5 messages per link per minute — a
+    // simple spam guard. DB-backed so it holds across serverless instances.
+    if (sender === 'guest') {
+      const since = new Date(Date.now() - 60_000);
+      const recent = await prisma.guestMessage.count({ where: { groupCode, sender: 'guest', createdAt: { gte: since } } });
+      if (recent >= 5) return NextResponse.json({ error: 'Please wait a moment before sending more messages.' }, { status: 429 });
+    }
     const msg = await prisma.guestMessage.create({
       data: { groupCode, sender, body: text },
       select: { id: true, sender: true, body: true, createdAt: true, updatedAt: true },
