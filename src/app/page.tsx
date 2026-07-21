@@ -23,7 +23,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ g
       // that isn't a short code, so plaintext links keep working.
       const decoded = groupCode ? decodeGroupCode(groupCode) : null;
       let group = decoded
-        ? await prisma.guestGroup.findUnique({ where: { groupCode: decoded }, include: { rsvpResponse: true } })
+        ? await prisma.guestGroup.findFirst({ where: { groupCode: { equals: decoded, mode: 'insensitive' } }, include: { rsvpResponse: true } })
         : null;
       if (!group && groupCode) group = await prisma.guestGroup.findUnique({ where: { groupCode }, include: { rsvpResponse: true } });
       if (!group && legacyToken) group = await prisma.guestGroup.findUnique({ where: { token: legacyToken }, include: { rsvpResponse: true } });

@@ -129,9 +129,46 @@ export default function RsvpTracking() {
     }
   };
 
-  // Remove a group from RSVP tracking — it returns to the Guest List. Their reply is kept.
+  // Remove a group from RSVP tracking — it returns to the Guest List. If they've
+  // already responded we warn and clear that response first, otherwise the old
+  // response would reappear the moment you resend the link. Chat messages are kept.
   const removeFromRsvp = async (g: GroupWithRsvp) => {
-    if (!window.confirm(`Remove group ${g.groupCode} from RSVP tracking?\n\nIt returns to the Guest List. Their submitted reply (if any) stays saved in case you re-add them.`)) return;
+    if (g.rsvpResponse) {
+      const att = g.rsvpResponse.numberAttending;
+      const total = g.guests.length;
+      const ok1 = window.confirm(
+        `⚠️ Group ${g.groupCode} has already RESPONDED (${att}/${total} attending).\n\n` +
+        `Before removing them from RSVP, their response must be cleared — otherwise it reappears if you resend the link.\n\n` +
+        `OK = clear their response now.\nCancel = keep them in RSVP.`
+      );
+      if (!ok1) return;
+      setBusy(true); setActionMsg(null);
+      try {
+        const res = await fetch('/api/rsvp/reset', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: g.id }),
+        });
+        if (!res.ok) throw new Error();
+      } catch {
+        setActionMsg('Could not clear the response — please try again.');
+        setBusy(false);
+        return;
+      }
+      setBusy(false);
+      const ok2 = window.confirm(
+        `Response cleared. Remove group ${g.groupCode} from RSVP tracking too?\n\n` +
+        `OK = remove from RSVP (returns to the Guest List; resend the link anytime to bring it back).\n` +
+        `Cancel = keep it in RSVP with no response.`
+      );
+      if (!ok2) {
+        await loadGroups();
+        setSelected((prev) => (prev && prev.id === g.id ? { ...prev, rsvpResponse: null } : prev));
+        return;
+      }
+    } else if (!window.confirm(`Remove group ${g.groupCode} from RSVP tracking?\n\nIt returns to the Guest List. Resend the link anytime to bring it back.`)) {
+      return;
+    }
+    // Remove the flag
     setBusy(true); setActionMsg(null);
     try {
       const res = await fetch('/api/groups', {

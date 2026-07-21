@@ -10,7 +10,7 @@ async function resolveGroupCode(identifier: string): Promise<string | null> {
   if (!identifier) return null;
   const decoded = decodeGroupCode(identifier);
   if (decoded) {
-    const g = await prisma.guestGroup.findUnique({ where: { groupCode: decoded }, select: { groupCode: true } });
+    const g = await prisma.guestGroup.findFirst({ where: { groupCode: { equals: decoded, mode: 'insensitive' } }, select: { groupCode: true } });
     if (g) return g.groupCode;
   }
   let g = await prisma.guestGroup.findUnique({ where: { groupCode: identifier }, select: { groupCode: true } });

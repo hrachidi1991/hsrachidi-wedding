@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     // Short code → plaintext group code (legacy) → token (legacy)
     const decoded = decodeGroupCode(groupCode);
     let group = decoded
-      ? await prisma.guestGroup.findUnique({ where: { groupCode: decoded }, include: { rsvpResponse: true } })
+      ? await prisma.guestGroup.findFirst({ where: { groupCode: { equals: decoded, mode: 'insensitive' } }, include: { rsvpResponse: true } })
       : null;
     if (!group) {
       group = await prisma.guestGroup.findUnique({
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     // Short code → plaintext group code (legacy) → token (legacy)
     const decoded = decodeGroupCode(identifier);
     let group = decoded
-      ? await prisma.guestGroup.findUnique({ where: { groupCode: decoded }, include: { rsvpResponse: true } })
+      ? await prisma.guestGroup.findFirst({ where: { groupCode: { equals: decoded, mode: 'insensitive' } }, include: { rsvpResponse: true } })
       : null;
     if (!group) {
       group = await prisma.guestGroup.findUnique({
