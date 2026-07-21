@@ -277,7 +277,7 @@ export default function GuestListPage() {
   const doSendWhatsApp = (group: Group, guest: Guest, lang: 'en' | 'ar') => {
     setWaLang(null);
     if (!guest.phone) return;
-    window.open(whatsAppUrl(guest.phone, guest.name, inviteLink(group.groupCode, lang), eventInfo, lang), '_blank', 'noopener,noreferrer');
+    window.open(whatsAppUrl(guest.phone, guest.displayName || guest.name, inviteLink(group.groupCode, lang), eventInfo, lang), '_blank', 'noopener,noreferrer');
     markWaSent(guest);
     if (!group.inRsvp) setGroupInRsvp(group, true); // sending the link adds the group to RSVP tracking
   };

@@ -16,7 +16,7 @@ interface GroupWithRsvp {
   side: string;
   token: string;
   inRsvp: boolean;
-  guests: { name: string; phone: string | null; rsvpManual?: string | null }[];
+  guests: { name: string; displayName?: string | null; phone: string | null; rsvpManual?: string | null }[];
   rsvpResponse: {
     attending: boolean;
     numberAttending: number;
@@ -104,7 +104,7 @@ export default function RsvpTracking() {
       return;
     }
     const link = inviteLink(g.groupCode, lang, g.token);
-    window.open(whatsAppUrl(withPhone.phone, withPhone.name, link, eventInfo, lang), '_blank', 'noopener,noreferrer');
+    window.open(whatsAppUrl(withPhone.phone, withPhone.displayName || withPhone.name, link, eventInfo, lang), '_blank', 'noopener,noreferrer');
   };
 
   // Remove a group's submission so its link is no longer locked — resend it and the
