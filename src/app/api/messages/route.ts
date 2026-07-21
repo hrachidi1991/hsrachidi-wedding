@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
       const msgs = all.filter((m) => m.groupCode === code);
       return {
         groupCode: code,
+        head: gs[0]?.name || code,               // the group's head guest (first by sortOrder)
         label: gs.map((x) => x.name).join(', ') || code,
         side: grp?.side || gs[0]?.side || '',
         messages: msgs.map((m) => ({ id: m.id, sender: m.sender, body: m.body, createdAt: m.createdAt })),

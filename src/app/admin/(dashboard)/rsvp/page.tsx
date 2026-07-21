@@ -543,11 +543,11 @@ function AdminChat({ groupCode }: { groupCode: string }) {
     <div style={{ marginTop: '1.1rem', borderTop: '1px solid var(--ad-border)', paddingTop: '0.9rem' }}>
       <div className="ad-eyebrow" style={{ marginBottom: '0.5rem' }}>Messages with this group</div>
       {messages.length > 0 && (
-        <div ref={scrollRef} style={{ maxHeight: 200, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.6rem' }}>
-          {messages.map((m) => {
-            const mine = m.sender === 'couple';
+        /* Plain thread — messages stacked one under another, same side, no bubbles/colors. */
+        <div ref={scrollRef} style={{ maxHeight: 200, overflowY: 'auto', display: 'flex', flexDirection: 'column', marginBottom: '0.6rem' }}>
+          {messages.map((m, idx) => {
             if (editingId === m.id) return (
-              <div key={m.id} style={{ alignSelf: 'flex-end', width: '100%' }}>
+              <div key={m.id} style={{ width: '100%', padding: '0.5rem 0', borderTop: idx === 0 ? 'none' : '1px solid var(--ad-border)' }}>
                 <textarea value={editText} onChange={(e) => setEditText(e.target.value)} rows={2} className="ad-input" style={{ width: '100%', resize: 'none' }} />
                 <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end', marginTop: '0.3rem' }}>
                   <button className="ad-link-btn" onClick={() => setEditingId(null)}>Cancel</button>
@@ -555,17 +555,15 @@ function AdminChat({ groupCode }: { groupCode: string }) {
                 </div>
               </div>
             );
+            const mine = m.sender === 'couple';
             return (
-              <div key={m.id} style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
-                <div style={{ borderRadius: 12, padding: '0.4rem 0.6rem', fontSize: '0.82rem', lineHeight: 1.4, whiteSpace: 'pre-wrap', wordBreak: 'break-word', background: mine ? '#1F4A3A' : 'var(--ad-raised)', color: mine ? '#fff' : 'var(--ad-ink)', border: mine ? 'none' : '1px solid var(--ad-border)' }}>
-                  {!mine && <span style={{ display: 'block', fontSize: '0.62rem', fontWeight: 600, color: 'var(--ad-muted)', marginBottom: 2 }}>Guest</span>}
-                  {m.body}
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: 2, justifyContent: mine ? 'flex-end' : 'flex-start', fontSize: '0.62rem', color: 'var(--ad-muted)' }}>
-                  <span>{new Date(m.createdAt).toLocaleDateString()}</span>
-                  {mine
-                    ? <><button className="ad-link-btn" style={{ fontSize: '0.62rem' }} onClick={() => { setEditingId(m.id); setEditText(m.body); }}>Edit</button><button className="ad-link-btn" style={{ fontSize: '0.62rem' }} onClick={() => del(m.id)}>Delete</button></>
-                    : <button className="ad-link-btn" style={{ fontSize: '0.62rem' }} onClick={() => del(m.id)}>Delete</button>}
+              <div key={m.id} style={{ padding: '0.5rem 0', borderTop: idx === 0 ? 'none' : '1px solid var(--ad-border)' }}>
+                <div style={{ fontSize: '0.85rem', lineHeight: 1.45, whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: 'var(--ad-ink)' }}>{m.body}</div>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: 3, fontSize: '0.62rem', color: 'var(--ad-muted)' }}>
+                  <span style={{ fontWeight: 600 }}>{mine ? 'You' : 'Guest'}</span>
+                  <span>· {new Date(m.createdAt).toLocaleDateString()}</span>
+                  {mine && <button className="ad-link-btn" style={{ fontSize: '0.62rem' }} onClick={() => { setEditingId(m.id); setEditText(m.body); }}>Edit</button>}
+                  <button className="ad-link-btn" style={{ fontSize: '0.62rem' }} onClick={() => del(m.id)}>Delete</button>
                 </div>
               </div>
             );

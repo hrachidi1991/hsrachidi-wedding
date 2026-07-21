@@ -1353,12 +1353,14 @@ function GuestChat({ groupCode, isRtl }: { groupCode: string; isRtl: boolean }) 
           <p className={`text-xs text-black/45 mt-0.5 ${isRtl ? 'font-arabic' : 'font-body'}`}>{isRtl ? 'اكتبوا رسالة للعروسين — يمكنكم التعديل أو الحذف.' : 'Leave the couple a message — you can edit or delete it.'}</p>
         </div>
         {messages.length > 0 && (
-          <div ref={scrollRef} className="px-4 py-2 max-h-56 overflow-y-auto flex flex-col gap-2">
-            {messages.map((m) => {
+          /* Plain thread — every message stacked one under another on the same
+             side, no bubbles or colors; it reads as simple notes, not a chat. */
+          <div ref={scrollRef} className="px-4 py-1 max-h-56 overflow-y-auto flex flex-col">
+            {messages.map((m, idx) => {
               const mine = m.sender === 'guest';
               if (editingId === m.id) {
                 return (
-                  <div key={m.id} className="self-end w-full flex flex-col gap-1">
+                  <div key={m.id} className={`w-full flex flex-col gap-1 py-2 ${idx > 0 ? 'border-t border-black/5' : ''}`}>
                     <textarea value={editText} onChange={(e) => setEditText(e.target.value)} rows={2} className="w-full text-sm rounded-xl border border-black/15 bg-white/70 p-2 resize-none focus:outline-none" />
                     <div className="flex gap-3 justify-end">
                       <button type="button" onClick={() => setEditingId(null)} className="text-xs text-black/40">{isRtl ? 'إلغاء' : 'Cancel'}</button>
@@ -1368,11 +1370,9 @@ function GuestChat({ groupCode, isRtl }: { groupCode: string; isRtl: boolean }) 
                 );
               }
               return (
-                <div key={m.id} className={`max-w-[85%] ${mine ? 'self-end' : 'self-start'}`}>
-                  <div className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words ${mine ? 'bg-[#1F4A3A] text-white rounded-br-sm' : 'bg-[#efe3cf] text-black/80 rounded-bl-sm'} ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                    {m.body}
-                  </div>
-                  <div className={`flex items-center gap-2 mt-0.5 px-1 ${mine ? 'justify-end' : 'justify-start'}`}>
+                <div key={m.id} className={`py-2 ${idx > 0 ? 'border-t border-black/5' : ''}`}>
+                  <p className={`text-sm leading-relaxed whitespace-pre-wrap break-words text-black/80 ${isRtl ? 'font-arabic text-right' : 'font-body'}`}>{m.body}</p>
+                  <div className={`flex items-center gap-2 mt-0.5 ${isRtl ? 'justify-end' : 'justify-start'}`}>
                     <span className="text-[0.6rem] text-black/30">{fmt(m.createdAt)}</span>
                     {mine && (
                       <>
