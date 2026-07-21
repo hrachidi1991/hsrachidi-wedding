@@ -57,7 +57,7 @@ function whatsAppUrl(phone: string, name: string, link: string, ev: EventInfo, l
   const msg =
     lang === 'ar'
       ? `مرحباً *${name}*،\n` +
-        `*يسعدنا دعوتكم لحضور حفل زفاف حسين وسوزان* 💍\n` +
+        `يسعدنا دعوتكم لحضور حفل زفاف *حسين وسوزان* 💍\n` +
         `\n\n` +
         `📅 ${ev.dateAr}\n` +
         `🕐 ${ev.timeAr}\n` +
@@ -66,7 +66,7 @@ function whatsAppUrl(phone: string, name: string, link: string, ev: EventInfo, l
         `نرجو تأكيد الحضور من هنا:\n` +
         `${link}`
       : `Hello *${name}*,\n` +
-        `*You're warmly invited to Hussein & Suzan's wedding* 💍\n` +
+        `You're warmly invited to the wedding of *Hussein & Suzan* 💍\n` +
         `\n\n` +
         `📅 ${ev.date}\n` +
         `🕐 ${ev.time}\n` +
