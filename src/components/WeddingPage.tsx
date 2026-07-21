@@ -1063,7 +1063,7 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
                           </svg>
                         )}
                       </div>
-                      <span className={`text-lg text-black/80 ${isRtl ? 'font-arabic' : 'font-body'}`}>{g.displayName}</span>
+                      <span className={`text-xl font-semibold text-black/90 tracking-wide ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>{g.displayName}</span>
                     </div>
                   ))}
                 </div>
@@ -1108,7 +1108,7 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
                         g.attending === null ? 'border-black/10 bg-black/[0.02]' : 'border-black/15 bg-white/50'
                       }`}
                     >
-                      <span className={`text-lg text-black/80 ${isRtl ? 'font-arabic text-right' : 'font-body'}`}>{g.displayName}</span>
+                      <span className={`text-xl font-semibold text-black/90 tracking-wide ${isRtl ? 'font-arabicDisplay text-right' : 'font-display'}`}>{g.displayName}</span>
                       <div className="flex gap-2">
                         <button
                           type="button"
@@ -1346,7 +1346,7 @@ function GuestChat({ groupCode, isRtl }: { groupCode: string; isRtl: boolean }) 
   const fmt = (iso: string) => { try { return new Date(iso).toLocaleDateString(isRtl ? 'ar' : 'en-GB', { day: 'numeric', month: 'short' }); } catch { return ''; } };
 
   return (
-    <div className="mt-8 w-full max-w-lg mx-auto text-left">
+    <div className={`mt-8 w-full max-w-lg mx-auto ${isRtl ? 'text-right' : 'text-left'}`}>
       <div className="bg-black/5 backdrop-blur-sm rounded-2xl border border-black/10 overflow-hidden">
         <div className="px-5 pt-4 pb-2">
           <h3 className={`text-lg text-[#1F4A3A] ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>{isRtl ? 'شاركونا أمنياتكم' : 'Share your wishes'}</h3>
