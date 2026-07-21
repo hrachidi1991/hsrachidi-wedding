@@ -50,15 +50,23 @@ export function inviteLink(groupCode: string, lang: 'en' | 'ar' = 'en', editToke
 export function whatsAppUrl(phone: string, name: string, link: string, ev: EventInfo, lang: 'en' | 'ar' = 'en'): string {
   const msg =
     lang === 'ar'
-      ? `مرحباً ${name}! يسعدنا دعوتكم لحضور حفل زفاف حسين وسوزان 💍\n` +
+      ? `مرحباً *${name}*،\n` +
+        `*يسعدنا دعوتكم لحضور حفل زفاف حسين وسوزان* 💍\n` +
+        `\n\n` +
         `📅 ${ev.dateAr}\n` +
         `🕐 ${ev.timeAr}\n` +
         `📍 ${ev.venueAr}\n` +
-        `نرجو تأكيد الحضور من هنا: ${link}`
-      : `Hello ${name}! You're warmly invited to Hussein & Suzan's wedding 💍\n` +
+        `\n` +
+        `نرجو تأكيد الحضور من هنا:\n` +
+        `${link}`
+      : `Hello *${name}*,\n` +
+        `*You're warmly invited to Hussein & Suzan's wedding* 💍\n` +
+        `\n\n` +
         `📅 ${ev.date}\n` +
         `🕐 ${ev.time}\n` +
         `📍 ${ev.venue}\n` +
-        `Kindly RSVP here: ${link}`;
+        `\n` +
+        `Kindly RSVP here:\n` +
+        `${link}`;
   return `https://wa.me/${formatPhoneForWhatsApp(phone)}?text=${encodeURIComponent(msg)}`;
 }
