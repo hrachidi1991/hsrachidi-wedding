@@ -1361,7 +1361,6 @@ function GuestChat({ groupCode, isRtl }: { groupCode: string; isRtl: boolean }) 
               return (
                 <div key={m.id} className={`max-w-[85%] ${mine ? 'self-end' : 'self-start'}`}>
                   <div className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words ${mine ? 'bg-[#1F4A3A] text-white rounded-br-sm' : 'bg-[#efe3cf] text-black/80 rounded-bl-sm'} ${isRtl ? 'font-arabic' : 'font-body'}`}>
-                    {!mine && <span className="block text-[0.65rem] font-semibold text-[#9c7b3f] mb-0.5">{isRtl ? 'العروسان' : 'Hussein & Suzan'}</span>}
                     {m.body}
                   </div>
                   <div className={`flex items-center gap-2 mt-0.5 px-1 ${mine ? 'justify-end' : 'justify-start'}`}>
@@ -1384,7 +1383,7 @@ function GuestChat({ groupCode, isRtl }: { groupCode: string; isRtl: boolean }) 
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
             rows={1}
-            placeholder={isRtl ? 'اكتب رسالتك…' : 'Type your message…'}
+            placeholder={isRtl ? 'خاصّ برابطكم — اكتبوا رسالتكم…' : 'Private to your link — type your message…'}
             className={`flex-1 text-sm rounded-xl border border-black/15 bg-white/70 px-3 py-2 resize-none max-h-24 focus:outline-none focus:border-[#1F4A3A]/40 ${isRtl ? 'font-arabic text-right' : 'font-body'}`}
           />
           <button type="button" onClick={send} disabled={busy || !text.trim()} className="flex-shrink-0 w-10 h-10 rounded-full bg-[#1F4A3A] text-white flex items-center justify-center disabled:opacity-40 transition-opacity" aria-label={isRtl ? 'إرسال' : 'Send'}>
