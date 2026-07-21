@@ -60,6 +60,7 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
   const [assetsReady, setAssetsReady] = useState(false);
   const [loaderGone, setLoaderGone] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const wasPlayingRef = useRef(false); // was music playing when the tab was backgrounded?
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const chapterScrollRef = useRef<ChapterScrollHandle | null>(null);
@@ -177,6 +178,7 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
   const [isEditing, setIsEditing] = useState(!rsvpData?.rsvp || !!rsvpData?.allowEdit);
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [rsvpMessage, setRsvpMessage] = useState('');
+  const [rsvpNeedsAll, setRsvpNeedsAll] = useState(false); // shown if Confirm is hit before every guest is chosen
 
   // Copy to clipboard state
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -230,6 +232,23 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
       audio.play().then(() => setIsPlaying(true)).catch(() => {});
     }
   }, [locale, settings.musicFile, settings.musicFileAr]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pause the music when the tab/app is backgrounded (phone locked, app switched,
+  // tab hidden) and resume it on return — otherwise it keeps playing off-screen.
+  useEffect(() => {
+    const onVisibility = () => {
+      const a = audioRef.current;
+      if (!a) return;
+      if (document.hidden) {
+        wasPlayingRef.current = isPlaying;
+        if (isPlaying) a.pause();
+      } else if (wasPlayingRef.current) {
+        a.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [isPlaying]);
 
   // Reduced-motion flag (declared before the open handler that reads it)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -379,7 +398,10 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
   const allChosen = guestAttendance.length > 0 && guestAttendance.every((g) => g.attending !== null);
 
   const handleRsvpSubmit = async () => {
-    if (!rsvpData?.groupCode || guestAttendance.length === 0 || !allChosen) return;
+    if (!rsvpData?.groupCode || guestAttendance.length === 0) return;
+    // Require a choice for every guest — otherwise show the inline reminder and stop.
+    if (!allChosen) { setRsvpNeedsAll(true); return; }
+    setRsvpNeedsAll(false);
     setRsvpLoading(true);
     setRsvpMessage('');
     try {
@@ -997,7 +1019,7 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
             </p>
 
             {/* RSVP form (one interactive card — reveals once, never cycles) */}
-            <div data-reveal-as="card" data-hold>
+            <div data-reveal-as="card" data-hold className="w-full max-w-lg mx-auto">
             {!rsvpData?.groupCode ? (
               <div className="bg-black/5 backdrop-blur-sm rounded-lg p-8 border border-black/10">
                 <p className={`text-black/60 ${isRtl ? 'font-arabic' : 'font-body'}`}>
@@ -1119,10 +1141,10 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
                     : (isRtl ? 'يرجى الاختيار لكل ضيف' : 'Please choose for each guest')}
                 </p>
 
-                {/* Confirm button */}
+                {/* Confirm button — always clickable; validates on click */}
                 <button
                   onClick={handleRsvpSubmit}
-                  disabled={rsvpLoading || !allChosen}
+                  disabled={rsvpLoading}
                   className="btn-gold w-full disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {rsvpLoading ? (
@@ -1134,6 +1156,14 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
                     t(locale, 'confirm')
                   )}
                 </button>
+
+                {rsvpNeedsAll && !allChosen && (
+                  <p className={`mt-3 text-sm text-red-500 text-center ${isRtl ? 'font-arabic' : 'font-body'}`}>
+                    {isRtl
+                      ? 'يرجى اختيار إجابة لكل ضيف قبل التأكيد.'
+                      : 'Please choose a response for every guest before confirming.'}
+                  </p>
+                )}
 
                 {rsvpMessage && isEditing && (
                   <p className="mt-3 text-sm text-red-500">{rsvpMessage}</p>
@@ -1307,7 +1337,7 @@ function GuestChat({ groupCode, isRtl }: { groupCode: string; isRtl: boolean }) 
   const fmt = (iso: string) => { try { return new Date(iso).toLocaleDateString(isRtl ? 'ar' : 'en-GB', { day: 'numeric', month: 'short' }); } catch { return ''; } };
 
   return (
-    <div className="mt-8 max-w-lg mx-auto text-left">
+    <div className="mt-8 w-full max-w-lg mx-auto text-left">
       <div className="bg-black/5 backdrop-blur-sm rounded-2xl border border-black/10 overflow-hidden">
         <div className="px-5 pt-4 pb-2">
           <h3 className={`text-lg text-[#1F4A3A] ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>{isRtl ? 'شاركونا أمنياتكم' : 'Share your wishes'}</h3>
