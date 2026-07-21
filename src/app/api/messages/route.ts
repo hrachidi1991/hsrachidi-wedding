@@ -4,6 +4,9 @@ import { requireAdmin } from '@/lib/auth';
 import { decodeGroupCode } from '@/lib/linkCode';
 
 const MAX_LEN = 2000;
+// A guest may edit/delete their own message only within this window after sending
+// (a shared link has no per-person identity, so the time window is the guard).
+const EDIT_WINDOW_MS = 10 * 60 * 1000;
 
 // Resolve a group by opaque short code, plaintext groupCode, OR legacy token.
 async function resolveGroupCode(identifier: string): Promise<string | null> {
@@ -97,7 +100,9 @@ export async function PUT(request: NextRequest) {
     const existing = await prisma.guestMessage.findUnique({ where: { id } });
     if (!existing || existing.groupCode !== groupCode) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     const isAdmin = requireAdmin(request);
-    if (!isAdmin && existing.sender !== 'guest') return NextResponse.json({ error: 'Not allowed' }, { status: 403 });
+    if (!isAdmin && (existing.sender !== 'guest' || Date.now() - new Date(existing.createdAt).getTime() > EDIT_WINDOW_MS)) {
+      return NextResponse.json({ error: 'This message can no longer be edited or deleted.' }, { status: 403 });
+    }
     const msg = await prisma.guestMessage.update({
       where: { id },
       data: { body: text },
@@ -119,7 +124,9 @@ export async function DELETE(request: NextRequest) {
     const existing = await prisma.guestMessage.findUnique({ where: { id } });
     if (!existing || existing.groupCode !== groupCode) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     const isAdmin = requireAdmin(request);
-    if (!isAdmin && existing.sender !== 'guest') return NextResponse.json({ error: 'Not allowed' }, { status: 403 });
+    if (!isAdmin && (existing.sender !== 'guest' || Date.now() - new Date(existing.createdAt).getTime() > EDIT_WINDOW_MS)) {
+      return NextResponse.json({ error: 'This message can no longer be edited or deleted.' }, { status: 403 });
+    }
     await prisma.guestMessage.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (e) {

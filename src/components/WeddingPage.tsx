@@ -1350,7 +1350,7 @@ function GuestChat({ groupCode, isRtl }: { groupCode: string; isRtl: boolean }) 
       <div className="bg-black/5 backdrop-blur-sm rounded-2xl border border-black/10 overflow-hidden">
         <div className="px-5 pt-4 pb-2">
           <h3 className={`text-lg text-[#1F4A3A] ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>{isRtl ? 'شاركونا أمنياتكم' : 'Share your wishes'}</h3>
-          <p className={`text-xs text-black/45 mt-0.5 ${isRtl ? 'font-arabic' : 'font-body'}`}>{isRtl ? 'اكتبوا رسالة للعروسين — يمكنكم التعديل أو الحذف.' : 'Leave the couple a message — you can edit or delete it.'}</p>
+          <p className={`text-xs text-black/45 mt-0.5 ${isRtl ? 'font-arabic' : 'font-body'}`}>{isRtl ? 'اكتبوا رسالة للعروسين — يمكن التعديل أو الحذف خلال دقائق من الإرسال.' : 'Leave the couple a message — editable for a few minutes after sending.'}</p>
         </div>
         {messages.length > 0 && (
           /* Plain thread — every message stacked one under another on the same
@@ -1374,7 +1374,9 @@ function GuestChat({ groupCode, isRtl }: { groupCode: string; isRtl: boolean }) 
                   <p className={`text-sm leading-relaxed whitespace-pre-wrap break-words text-black/80 ${isRtl ? 'font-arabic text-right' : 'font-body'}`}>{m.body}</p>
                   <div className={`flex items-center gap-2 mt-0.5 ${isRtl ? 'justify-end' : 'justify-start'}`}>
                     <span className="text-[0.6rem] text-black/30">{fmt(m.createdAt)}</span>
-                    {mine && (
+                    {/* Editable/deletable only for ~10 minutes after sending (no per-person
+                        identity on a shared link, so a short time window is the guard). */}
+                    {mine && Date.now() - new Date(m.createdAt).getTime() < 600000 && (
                       <>
                         <button type="button" onClick={() => { setEditingId(m.id); setEditText(m.body); }} className="text-[0.6rem] text-black/40 hover:text-black/70">{isRtl ? 'تعديل' : 'Edit'}</button>
                         <button type="button" onClick={() => del(m.id)} className="text-[0.6rem] text-black/40 hover:text-red-500">{isRtl ? 'حذف' : 'Delete'}</button>
@@ -1386,17 +1388,22 @@ function GuestChat({ groupCode, isRtl }: { groupCode: string; isRtl: boolean }) 
             })}
           </div>
         )}
-        <div className="flex items-end gap-2 p-3 border-t border-black/5">
+        <div className="p-3 border-t border-black/5">
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-            rows={1}
+            rows={2}
             placeholder={isRtl ? 'خاصّ برابطكم — اكتبوا رسالتكم…' : 'Private to your link — type your message…'}
-            className={`flex-1 text-sm rounded-xl border border-black/15 bg-white/70 px-3 py-2 resize-none max-h-24 focus:outline-none focus:border-[#1F4A3A]/40 ${isRtl ? 'font-arabic text-right' : 'font-body'}`}
+            className={`w-full text-sm rounded-xl border border-black/15 bg-white/70 px-3 py-2 resize-none min-h-[2.75rem] max-h-40 focus:outline-none focus:border-[#1F4A3A]/40 ${isRtl ? 'font-arabic text-right' : 'font-body'}`}
           />
-          <button type="button" onClick={send} disabled={busy || !text.trim()} className="flex-shrink-0 w-10 h-10 rounded-full bg-[#1F4A3A] text-white flex items-center justify-center disabled:opacity-40 transition-opacity" aria-label={isRtl ? 'إرسال' : 'Send'}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+          <button
+            type="button"
+            onClick={send}
+            disabled={busy || !text.trim()}
+            className={`mt-2 w-full py-2.5 rounded-full bg-[#1F4A3A] text-white text-sm font-medium inline-flex items-center justify-center gap-2 disabled:opacity-40 transition-opacity ${isRtl ? 'font-arabic' : 'font-body'}`}
+          >
+            {isRtl ? 'إرسال' : 'Send'}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
           </button>
         </div>
         {sendError && (
