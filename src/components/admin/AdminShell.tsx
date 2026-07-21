@@ -65,6 +65,14 @@ function RsvpIcon({ className }: IconProps) {
   );
 }
 
+function MessagesIcon({ className }: IconProps) {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" className={className} {...stroke}>
+      <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.9-.9L3 21l1.9-5.6a8.5 8.5 0 0 1-.9-3.9A8.38 8.38 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5Z" />
+    </svg>
+  );
+}
+
 function GlobeIcon({ className }: IconProps) {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" className={className} {...stroke}>
@@ -91,6 +99,7 @@ const navItems = [
   { href: '/admin/guest-list', label: 'Guest List', Icon: GuestListIcon },
   { href: '/admin/seating', label: 'Seating Map', Icon: SeatingIcon },
   { href: '/admin/rsvp', label: 'RSVP Tracking', Icon: RsvpIcon },
+  { href: '/admin/messages', label: 'Messages', Icon: MessagesIcon },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {

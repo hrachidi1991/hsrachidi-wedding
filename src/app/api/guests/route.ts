@@ -87,6 +87,11 @@ export async function PATCH(request: NextRequest) {
         where: { id: data.id },
         data: { waSentCount: { increment: 1 }, waSentAt: new Date() },
       });
+      // Sending the invite link puts the group into RSVP tracking.
+      await prisma.guestGroup.updateMany({
+        where: { groupCode: guest.groupCode, inRsvp: false },
+        data: { inRsvp: true },
+      });
       return NextResponse.json(guest);
     }
 

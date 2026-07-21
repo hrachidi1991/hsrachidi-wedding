@@ -526,7 +526,9 @@ function AdminChat({ groupCode }: { groupCode: string }) {
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: 2, justifyContent: mine ? 'flex-end' : 'flex-start', fontSize: '0.62rem', color: 'var(--ad-muted)' }}>
                   <span>{new Date(m.createdAt).toLocaleDateString()}</span>
-                  {mine && <><button className="ad-link-btn" style={{ fontSize: '0.62rem' }} onClick={() => { setEditingId(m.id); setEditText(m.body); }}>Edit</button><button className="ad-link-btn" style={{ fontSize: '0.62rem' }} onClick={() => del(m.id)}>Delete</button></>}
+                  {mine
+                    ? <><button className="ad-link-btn" style={{ fontSize: '0.62rem' }} onClick={() => { setEditingId(m.id); setEditText(m.body); }}>Edit</button><button className="ad-link-btn" style={{ fontSize: '0.62rem' }} onClick={() => del(m.id)}>Delete</button></>
+                    : <button className="ad-link-btn" style={{ fontSize: '0.62rem' }} onClick={() => del(m.id)}>Delete</button>}
                 </div>
               </div>
             );

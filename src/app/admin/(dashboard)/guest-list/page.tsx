@@ -89,6 +89,7 @@ export default function GuestListPage() {
   const [circles, setCircles] = useState<string[]>(CIRCLES);
   const [hdGroups, setHdGroups] = useState<Set<string>>(new Set());
   const [showSettings, setShowSettings] = useState(false);
+  const [search, setSearch] = useState('');
   const isMobile = useIsMobile();
   const fileRef = useRef<HTMLInputElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -157,13 +158,24 @@ export default function GuestListPage() {
   };
   useEffect(() => { load(); return () => { if (toastTimer.current) clearTimeout(toastTimer.current); }; }, []);
 
-  // groups for the active side, ordered by group code (b001, b002 …)
-  const sideGroups = useMemo(() =>
-    groups
+  // groups for the active side, ordered by group code (b001, b002 …), filtered by search
+  const sideGroups = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const digits = q.replace(/\D/g, '');
+    return groups
       .filter((g) => g.side === tab && g.guests.length > 0)
+      .filter((g) => {
+        if (!q) return true;
+        if (g.groupCode.toLowerCase().includes(q)) return true;
+        return g.guests.some((gu) =>
+          gu.name.toLowerCase().includes(q) ||
+          (gu.displayName || '').toLowerCase().includes(q) ||
+          (!!digits && (gu.phone || '').replace(/\D/g, '').includes(digits))
+        );
+      })
       .map((g) => ({ ...g, guests: [...g.guests].sort((a, b) => a.sortOrder - b.sortOrder) }))
-      .sort((a, b) => a.groupCode.localeCompare(b.groupCode, undefined, { numeric: true })),
-  [groups, tab]);
+      .sort((a, b) => a.groupCode.localeCompare(b.groupCode, undefined, { numeric: true }));
+  }, [groups, tab, search]);
 
   const totalGuests = sideGroups.reduce((s, g) => s + g.guests.length, 0);
   const overCount = sideGroups.reduce((s, g) => s + Math.max(0, g.guests.length - g.maxGuests), 0);
@@ -438,6 +450,23 @@ export default function GuestListPage() {
         <button role="tab" aria-selected={tab === 'groom'} className={`gl-tab${tab === 'groom' ? ' is-active' : ''}`} onClick={() => setTab('groom')}>
           Groom <span className="gl-tab__count">{groomCount}</span>
         </button>
+      </div>
+
+      {/* Search: name, phone, or group code (within the active side) */}
+      <div style={{ margin: '0 0 0.9rem' }}>
+        <input
+          className="ad-input"
+          type="search"
+          placeholder="Search name, phone, or group…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ maxWidth: 360, width: '100%' }}
+        />
+        {search.trim() && (
+          <span style={{ marginLeft: '0.6rem', fontSize: '0.8rem', color: 'var(--ad-muted)' }}>
+            {sideGroups.length} group{sideGroups.length === 1 ? '' : 's'} on this side
+          </span>
+        )}
       </div>
 
       {schemaOutdated ? (

@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
           language: language || 'en',
         },
       });
+      if (!group.inRsvp) await prisma.guestGroup.update({ where: { id: group.id }, data: { inRsvp: true } });
       return NextResponse.json({ success: true, updated: true });
     } else {
       // Create new
@@ -123,6 +124,8 @@ export async function POST(request: NextRequest) {
           language: language || 'en',
         },
       });
+      // A submitted response always belongs in RSVP tracking.
+      if (!group.inRsvp) await prisma.guestGroup.update({ where: { id: group.id }, data: { inRsvp: true } });
       return NextResponse.json({ success: true, updated: false });
     }
   } catch (e: any) {

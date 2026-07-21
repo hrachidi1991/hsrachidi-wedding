@@ -13,7 +13,35 @@ async function resolveGroupCode(identifier: string): Promise<string | null> {
 }
 
 // GET ?g=<groupCode|token> — the group's chat thread (public, per link).
+// GET ?all=1 — every thread across all groups (admin only), for the Messages inbox.
 export async function GET(request: NextRequest) {
+  if (request.nextUrl.searchParams.get('all')) {
+    if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const all = await prisma.guestMessage.findMany({
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, groupCode: true, sender: true, body: true, createdAt: true },
+    });
+    const codes = [...new Set(all.map((m) => m.groupCode))];
+    const [guests, groups] = await Promise.all([
+      prisma.guest.findMany({ where: { groupCode: { in: codes } }, select: { name: true, groupCode: true, side: true, sortOrder: true } }),
+      prisma.guestGroup.findMany({ where: { groupCode: { in: codes } }, select: { groupCode: true, side: true } }),
+    ]);
+    const threads = codes.map((code) => {
+      const gs = guests.filter((x) => x.groupCode === code).sort((a, b) => a.sortOrder - b.sortOrder);
+      const grp = groups.find((x) => x.groupCode === code);
+      const msgs = all.filter((m) => m.groupCode === code);
+      return {
+        groupCode: code,
+        label: gs.map((x) => x.name).join(', ') || code,
+        side: grp?.side || gs[0]?.side || '',
+        messages: msgs.map((m) => ({ id: m.id, sender: m.sender, body: m.body, createdAt: m.createdAt })),
+        lastAt: msgs[msgs.length - 1]?.createdAt ?? null,
+      };
+    });
+    // most recently active thread first
+    threads.sort((a, b) => new Date(b.lastAt || 0).getTime() - new Date(a.lastAt || 0).getTime());
+    return NextResponse.json({ threads });
+  }
   const id = request.nextUrl.searchParams.get('g') || request.nextUrl.searchParams.get('token') || '';
   const groupCode = await resolveGroupCode(id);
   if (!groupCode) return NextResponse.json({ messages: [] });
