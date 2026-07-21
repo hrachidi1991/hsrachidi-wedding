@@ -1048,7 +1048,7 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
                 {/* Per-guest summary */}
                 <div className="space-y-3 mb-6">
                   {guestAttendance.map((g, i) => (
-                    <div key={i} className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                    <div key={i} className={`flex items-center justify-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                         g.attending ? 'bg-green-500/20' : 'bg-red-500/20'
                       }`}>
@@ -1108,7 +1108,7 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
                         g.attending === null ? 'border-black/10 bg-black/[0.02]' : 'border-black/15 bg-white/50'
                       }`}
                     >
-                      <span className={`text-xl font-semibold text-black/90 tracking-wide ${isRtl ? 'font-arabicDisplay text-right' : 'font-display'}`}>{g.displayName}</span>
+                      <span className={`w-full sm:w-auto text-center text-xl font-semibold text-black/90 tracking-wide ${isRtl ? 'font-arabicDisplay' : 'font-display'}`}>{g.displayName}</span>
                       <div className="flex gap-2">
                         <button
                           type="button"
