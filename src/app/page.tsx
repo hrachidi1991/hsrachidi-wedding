@@ -1,6 +1,7 @@
 import { getSettings } from '@/lib/settings';
 import prisma from '@/lib/db';
 import WeddingPage from '@/components/WeddingPage';
+import { decodeGroupCode } from '@/lib/linkCode';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,9 +18,15 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ g
   let rsvpData = null;
   if (groupCode || legacyToken) {
     try {
-      const group = groupCode
-        ? await prisma.guestGroup.findUnique({ where: { groupCode }, include: { rsvpResponse: true } })
-        : await prisma.guestGroup.findUnique({ where: { token: legacyToken! }, include: { rsvpResponse: true } });
+      // Resolve ?g= as an opaque short code first, then as a plaintext group code
+      // (legacy), then ?token= (legacy). decodeGroupCode returns null for anything
+      // that isn't a short code, so plaintext links keep working.
+      const decoded = groupCode ? decodeGroupCode(groupCode) : null;
+      let group = decoded
+        ? await prisma.guestGroup.findUnique({ where: { groupCode: decoded }, include: { rsvpResponse: true } })
+        : null;
+      if (!group && groupCode) group = await prisma.guestGroup.findUnique({ where: { groupCode }, include: { rsvpResponse: true } });
+      if (!group && legacyToken) group = await prisma.guestGroup.findUnique({ where: { token: legacyToken }, include: { rsvpResponse: true } });
       if (group) {
         // Editing an already-submitted response is only allowed via the couple's
         // update link (?edit=<group token>). The normal invite link is submit-once.

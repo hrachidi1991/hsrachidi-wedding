@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { SEAT_BY_CODE } from '@/lib/seatLayout';
 import { useIsMobile } from '@/lib/useIsMobile';
+import { encodeGroupCode } from '@/lib/linkCode';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface Guest {
@@ -39,7 +40,7 @@ const RSVP_OPTIONS = ['Pending', 'Coming', 'Not coming'];
 // Same invite-link format as the old section: a short link off the site root, keyed by group code.
 // An Arabic link carries ?lang=ar so the page opens directly in Arabic.
 const inviteLink = (groupCode: string, lang: 'en' | 'ar' = 'en') =>
-  `${typeof window !== 'undefined' ? window.location.origin : ''}/?g=${groupCode}${lang === 'ar' ? '&lang=ar' : ''}`;
+  `${typeof window !== 'undefined' ? window.location.origin : ''}/?g=${encodeGroupCode(groupCode)}${lang === 'ar' ? '&lang=ar' : ''}`;
 
 // Normalize a phone for wa.me (default Lebanon +961), then strip the leading + so wa.me gets pure digits.
 function formatPhoneForWhatsApp(phone: string): string {

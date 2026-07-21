@@ -1,5 +1,7 @@
 // Shared WhatsApp invite helpers (used by Guest List + RSVP admin pages).
 
+import { encodeGroupCode } from '@/lib/linkCode';
+
 export interface EventInfo {
   date: string; time: string; venue: string;
   dateAr: string; timeAr: string; venueAr: string;
@@ -39,7 +41,7 @@ export function formatPhoneForWhatsApp(phone: string): string {
 // that already responded.
 export function inviteLink(groupCode: string, lang: 'en' | 'ar' = 'en', editToken?: string): string {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  let url = `${origin}/?g=${groupCode}`;
+  let url = `${origin}/?g=${encodeGroupCode(groupCode)}`;
   if (editToken) url += `&edit=${editToken}`;
   if (lang === 'ar') url += '&lang=ar';
   return url;

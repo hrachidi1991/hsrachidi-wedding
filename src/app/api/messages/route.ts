@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
+import { decodeGroupCode } from '@/lib/linkCode';
 
 const MAX_LEN = 2000;
 
-// Resolve a group by groupCode OR legacy token; returns its groupCode or null.
+// Resolve a group by opaque short code, plaintext groupCode, OR legacy token.
 async function resolveGroupCode(identifier: string): Promise<string | null> {
   if (!identifier) return null;
+  const decoded = decodeGroupCode(identifier);
+  if (decoded) {
+    const g = await prisma.guestGroup.findUnique({ where: { groupCode: decoded }, select: { groupCode: true } });
+    if (g) return g.groupCode;
+  }
   let g = await prisma.guestGroup.findUnique({ where: { groupCode: identifier }, select: { groupCode: true } });
   if (!g) g = await prisma.guestGroup.findUnique({ where: { token: identifier }, select: { groupCode: true } });
   return g?.groupCode ?? null;

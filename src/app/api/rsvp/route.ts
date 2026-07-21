@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { decodeGroupCode } from '@/lib/linkCode';
 
 // GET: load RSVP data for a group
 export async function GET(request: NextRequest) {
@@ -8,11 +9,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Group code required' }, { status: 400 });
   }
   try {
-    // Try groupCode first, fall back to token for legacy links
-    let group = await prisma.guestGroup.findUnique({
-      where: { groupCode },
-      include: { rsvpResponse: true },
-    });
+    // Short code → plaintext group code (legacy) → token (legacy)
+    const decoded = decodeGroupCode(groupCode);
+    let group = decoded
+      ? await prisma.guestGroup.findUnique({ where: { groupCode: decoded }, include: { rsvpResponse: true } })
+      : null;
+    if (!group) {
+      group = await prisma.guestGroup.findUnique({
+        where: { groupCode },
+        include: { rsvpResponse: true },
+      });
+    }
     if (!group) {
       group = await prisma.guestGroup.findUnique({
         where: { token: groupCode },
@@ -59,11 +66,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Group code required' }, { status: 400 });
     }
 
-    // Try groupCode first, fall back to token for legacy
-    let group = await prisma.guestGroup.findUnique({
-      where: { groupCode: identifier },
-      include: { rsvpResponse: true },
-    });
+    // Short code → plaintext group code (legacy) → token (legacy)
+    const decoded = decodeGroupCode(identifier);
+    let group = decoded
+      ? await prisma.guestGroup.findUnique({ where: { groupCode: decoded }, include: { rsvpResponse: true } })
+      : null;
+    if (!group) {
+      group = await prisma.guestGroup.findUnique({
+        where: { groupCode: identifier },
+        include: { rsvpResponse: true },
+      });
+    }
     if (!group) {
       group = await prisma.guestGroup.findUnique({
         where: { token: identifier },
