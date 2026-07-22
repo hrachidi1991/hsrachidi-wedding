@@ -956,7 +956,12 @@ function DnIcon() {
 
 // Popup to set the name shown on the guest's invitation link (defaults to the real name).
 function DisplayNameModal({ guest, onClose, onSave }: { guest: Guest; onClose: () => void; onSave: (v: string) => void }) {
-  const [draft, setDraft] = useState(guest.displayName || '');
+  // Pre-fill with the current display name, or the real name so a title can just be added.
+  const [draft, setDraft] = useState(guest.displayName || guest.name);
+  // Strip a leading title (EN or AR) so tapping a title replaces rather than stacks.
+  const stripSal = (s: string) => s.replace(/^\s*(Mr|Mrs|Ms|Miss|Dr|السيّدة|السيدة|السيّد|السيد|الآنسة|الانسة)\.?\s+/i, '').trim();
+  const setSal = (sal: string) => setDraft(`${sal} ${stripSal(draft) || guest.name}`);
+  const commit = () => { const v = draft.trim(); onSave(v === guest.name ? '' : v); };
   return (
     <div className="gl-modal-scrim" onClick={onClose}>
       <div className="gl-modal" onClick={(e) => e.stopPropagation()}>
@@ -966,16 +971,22 @@ function DisplayNameModal({ guest, onClose, onSave }: { guest: Guest; onClose: (
           className="ad-input" value={draft} autoFocus
           placeholder={guest.name}
           onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') onSave(draft.trim()); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') commit(); }}
           style={{ marginTop: '0.4rem' }}
         />
+        <div style={{ display: 'flex', gap: '0.35rem', marginTop: '0.55rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.76rem', color: 'var(--ad-muted)', marginRight: '0.15rem' }}>Title:</span>
+          {['Mr', 'Mrs', 'Ms', 'السيّد', 'السيّدة', 'الآنسة'].map((s) => (
+            <button key={s} type="button" className="ad-btn ad-btn--outline" style={{ padding: '0.2rem 0.6rem', fontSize: '0.82rem' }} onClick={() => setSal(s)}>{s}</button>
+          ))}
+        </div>
         <p className="ad-page-desc" style={{ marginTop: '0.5rem', fontSize: '0.78rem' }}>
-          This is what the guest sees on their invitation link. Leave blank to use the real name (<strong>{guest.name}</strong>).
+          This is what the guest sees on their link and in the WhatsApp invite — the real name (<strong>{guest.name}</strong>) never changes. Tap a title to add it before the name.
         </p>
         <div className="gl-modal__actions">
           {guest.displayName && <button className="ad-btn ad-btn--outline gl-danger" style={{ marginRight: 'auto' }} onClick={() => onSave('')}>Reset to name</button>}
           <button className="ad-btn ad-btn--outline" onClick={onClose}>Cancel</button>
-          <button className="ad-btn ad-btn--primary" onClick={() => onSave(draft.trim())}>Save</button>
+          <button className="ad-btn ad-btn--primary" onClick={commit}>Save</button>
         </div>
       </div>
     </div>
