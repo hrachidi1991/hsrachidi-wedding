@@ -217,6 +217,24 @@ export default function GuestListPage() {
     } catch (e: any) { setGroups(prev); flash(e.message || 'Could not save', true); }
   };
 
+  // Move a guest up/down within their group (reorders sortOrder for the whole group).
+  const moveGuest = async (group: Group, guestId: string, dir: 'up' | 'down') => {
+    const ordered = [...group.guests].sort((a, b) => a.sortOrder - b.sortOrder);
+    const idx = ordered.findIndex((x) => x.id === guestId);
+    const swap = dir === 'up' ? idx - 1 : idx + 1;
+    if (idx < 0 || swap < 0 || swap >= ordered.length) return;
+    [ordered[idx], ordered[swap]] = [ordered[swap], ordered[idx]];
+    const reorder = ordered.map((x, i) => ({ id: x.id, sortOrder: i }));
+    const prev = groups;
+    setGroups((gs) => gs.map((gr) => gr.id === group.id
+      ? { ...gr, guests: gr.guests.map((gg) => { const r = reorder.find((y) => y.id === gg.id); return r ? { ...gg, sortOrder: r.sortOrder } : gg; }) }
+      : gr));
+    try {
+      const res = await fetch('/api/guests', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reorder }) });
+      if (!res.ok) throw new Error();
+    } catch { setGroups(prev); flash('Could not reorder — please try again.', true); }
+  };
+
   const setSeats = async (group: Group, seats: number) => {
     const s = Math.max(1, seats);
     const prev = groups;
@@ -548,6 +566,7 @@ export default function GuestListPage() {
                       <div key={gu.id} className={`gl-mguest${i >= g.maxGuests ? ' is-over' : ''}`}>
                         <div className="gl-mguest__info">
                           <div className="gl-name-cell">
+                            <MoveBtns canUp={i > 0} canDown={i < g.guests.length - 1} onUp={() => moveGuest(g, gu.id, 'up')} onDown={() => moveGuest(g, gu.id, 'down')} />
                             <EditText value={gu.name} onSave={(v) => saveGuest(gu.id, 'name', v)} placeholder="Name" strong />
                             <button type="button" className={`gl-dn-btn${gu.displayName && gu.displayName !== gu.name ? ' has-dn' : ''}`} onClick={() => setDnPopup(gu)} title="Set the name shown on the invitation link" aria-label={`Display name for ${gu.name}`}><DnIcon /></button>
                           </div>
@@ -593,6 +612,7 @@ export default function GuestListPage() {
                           <tr key={gu.id} className={rowCls} onContextMenu={(e) => { e.preventDefault(); setMenu({ group: g, x: e.clientX, y: e.clientY }); }}>
                             <td>
                               <div className="gl-name-cell">
+                                <MoveBtns canUp={i > 0} canDown={i < g.guests.length - 1} onUp={() => moveGuest(g, gu.id, 'up')} onDown={() => moveGuest(g, gu.id, 'down')} />
                                 <EditText value={gu.name} onSave={(v) => saveGuest(gu.id, 'name', v)} placeholder="Name" strong />
                                 <button type="button" className={`gl-dn-btn${gu.displayName && gu.displayName !== gu.name ? ' has-dn' : ''}`} onClick={() => setDnPopup(gu)} title={gu.displayName && gu.displayName !== gu.name ? `Shows on the link: ${gu.displayName}` : 'Set the name shown on the invitation link'} aria-label={`Display name for ${gu.name}`}>
                                   <DnIcon />
@@ -913,6 +933,19 @@ function NoteModal({ guest, onClose, onSave }: { guest: Guest; onClose: () => vo
   );
 }
 
+function MoveBtns({ canUp, canDown, onUp, onDown }: { canUp: boolean; canDown: boolean; onUp: () => void; onDown: () => void }) {
+  return (
+    <span className="gl-move">
+      <button type="button" className="gl-move-btn" disabled={!canUp} onClick={onUp} aria-label="Move up" title="Move up">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>
+      </button>
+      <button type="button" className="gl-move-btn" disabled={!canDown} onClick={onDown} aria-label="Move down" title="Move down">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+      </button>
+    </span>
+  );
+}
+
 function DnIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1092,6 +1125,10 @@ function GuestListStyles() {
     .gl-hd { width: 17px; height: 17px; accent-color: var(--ad-accent, #7a8b69); cursor: pointer; }
     .gl-mcard__hd { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; color: var(--ad-muted); margin-inline-start: 0.4rem; cursor: pointer; }
     .gl-name-cell { display: inline-flex; align-items: center; gap: 0.35rem; min-width: 0; }
+    .gl-move { display: inline-flex; flex-direction: column; gap: 1px; flex-shrink: 0; }
+    .gl-move-btn { display: flex; align-items: center; justify-content: center; width: 17px; height: 13px; padding: 0; border: none; background: transparent; color: var(--ad-muted); cursor: pointer; border-radius: 3px; }
+    .gl-move-btn:hover:not(:disabled) { background: var(--ad-raised); color: var(--ad-ink); }
+    .gl-move-btn:disabled { opacity: 0.22; cursor: default; }
     .gl-dn-btn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; border: none; background: transparent; color: var(--ad-muted); cursor: pointer; opacity: 0.5; transition: all 0.14s ease; flex-shrink: 0; }
     .gl-dn-btn:hover { opacity: 1; background: var(--ad-raised); color: var(--ad-ink); }
     .gl-dn-btn.has-dn { color: var(--ad-accent, #7a8b69); opacity: 1; }

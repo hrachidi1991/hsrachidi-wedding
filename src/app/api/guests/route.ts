@@ -79,6 +79,13 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ renamed: r.count });
     }
 
+    // Reorder guests within a group — array of { id, sortOrder } applied atomically.
+    if (Array.isArray(data.reorder)) {
+      const items = (data.reorder as any[]).filter((r) => r && typeof r.id === 'string' && Number.isInteger(r.sortOrder));
+      await prisma.$transaction(items.map((r) => prisma.guest.update({ where: { id: r.id }, data: { sortOrder: r.sortOrder } })));
+      return NextResponse.json({ ok: true, count: items.length });
+    }
+
     if (!data.id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
     // Mark a WhatsApp invite as sent — increments the per-guest counter.
