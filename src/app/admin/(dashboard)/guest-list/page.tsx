@@ -961,6 +961,26 @@ function DisplayNameModal({ guest, onClose, onSave }: { guest: Guest; onClose: (
   // Strip a leading title (EN or AR) so tapping a title replaces rather than stacks.
   const stripSal = (s: string) => s.replace(/^\s*(Mr|Mrs|Ms|Miss|Dr|السيّدة|السيدة|السيّد|السيد|الآنسة|الانسة)\.?\s+/i, '').trim();
   const setSal = (sal: string) => setDraft(`${sal} ${stripSal(draft) || guest.name}`);
+  const AR_TITLE: Record<string, string> = { mr: 'السيّد', mrs: 'السيّدة', ms: 'الآنسة', miss: 'الآنسة', dr: 'د.' };
+  const detectArTitle = (s: string) => {
+    const en = /^(Mr|Mrs|Ms|Miss|Dr)\.?\s+/i.exec(s.trim());
+    if (en) return AR_TITLE[en[1].toLowerCase()] || '';
+    const ar = /^(السيّدة|السيدة|السيّد|السيد|الآنسة|الانسة)\s+/.exec(s.trim());
+    return ar ? ar[1] : '';
+  };
+  const [translit, setTranslit] = useState(false);
+  const toArabic = async () => {
+    const title = detectArTitle(draft);
+    const base = stripSal(draft) || guest.name;
+    setTranslit(true);
+    try {
+      const r = await fetch(`/api/translit?text=${encodeURIComponent(base)}`);
+      const d = await r.json();
+      const ar = (d.arabic || '').trim();
+      if (ar) setDraft(title ? `${title} ${ar}` : ar);
+    } catch { /* ignore */ }
+    setTranslit(false);
+  };
   const commit = () => { const v = draft.trim(); onSave(v === guest.name ? '' : v); };
   return (
     <div className="gl-modal-scrim" onClick={onClose}>
@@ -980,6 +1000,9 @@ function DisplayNameModal({ guest, onClose, onSave }: { guest: Guest; onClose: (
             <button key={s} type="button" className="ad-btn ad-btn--outline" style={{ padding: '0.2rem 0.6rem', fontSize: '0.82rem' }} onClick={() => setSal(s)}>{s}</button>
           ))}
         </div>
+        <button type="button" className="ad-btn ad-btn--outline" style={{ marginTop: '0.55rem', width: '100%', fontSize: '0.85rem' }} onClick={toArabic} disabled={translit}>
+          {translit ? 'Converting…' : '✦ Write the name in Arabic'}
+        </button>
         <p className="ad-page-desc" style={{ marginTop: '0.5rem', fontSize: '0.78rem' }}>
           This is what the guest sees on their link and in the WhatsApp invite — the real name (<strong>{guest.name}</strong>) never changes. Tap a title to add it before the name.
         </p>
