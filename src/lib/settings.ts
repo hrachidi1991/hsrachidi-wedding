@@ -1,4 +1,5 @@
 import prisma from './db';
+import { unstable_cache, revalidateTag } from 'next/cache';
 
 export interface SiteContent {
   // Hero
@@ -172,23 +173,40 @@ export const defaultSettings: SiteContent = {
   primaryColor: '#7a8b69',
 };
 
-export async function getSettings(): Promise<SiteContent> {
-  try {
+// Settings only change from the admin panel, but getSettings() used to hit Neon
+// on EVERY page load. Cache the read across requests and bust it on write so the
+// homepage no longer pays a DB round-trip per visitor.
+const SETTINGS_TAG = 'site-settings';
+
+const readSettingsCached = unstable_cache(
+  async (): Promise<SiteContent> => {
     const record = await prisma.siteSettings.findUnique({ where: { id: 'main' } });
     if (!record) return defaultSettings;
     return { ...defaultSettings, ...(record.data as object) };
+  },
+  ['site-settings'],
+  { tags: [SETTINGS_TAG], revalidate: 60 },
+);
+
+export async function getSettings(): Promise<SiteContent> {
+  try {
+    return await readSettingsCached();
   } catch {
     return defaultSettings;
   }
 }
 
 export async function updateSettings(data: Partial<SiteContent>): Promise<SiteContent> {
-  const current = await getSettings();
+  // Read the live row straight from the DB (not the cache) so we never merge onto
+  // a stale snapshot, then invalidate the cache so the edit is visible immediately.
+  const record = await prisma.siteSettings.findUnique({ where: { id: 'main' } });
+  const current = record ? { ...defaultSettings, ...(record.data as object) } : defaultSettings;
   const merged = { ...current, ...data };
   await prisma.siteSettings.upsert({
     where: { id: 'main' },
     update: { data: merged as any },
     create: { id: 'main', data: merged as any },
   });
+  revalidateTag(SETTINGS_TAG);
   return merged;
 }

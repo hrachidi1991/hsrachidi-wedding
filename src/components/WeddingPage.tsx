@@ -70,14 +70,20 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
   //     so a slow connection waits here instead of popping in mid-scroll. ═══
   useEffect(() => {
     let cancelled = false;
+    // Only the FIRST-VIEW assets block the reveal: the §1 entrance backdrop + the
+    // tiny gift icon. Every other poster belongs to a scroll chapter (§4–§8), so —
+    // exactly like the videos below — we warm them AFTER the gate opens instead of
+    // waiting on ~2 MB of images the guest hasn't scrolled to yet.
     const images = [
-      '/images/grayscale/couple-dance-new.webp',
-      '/images/grayscale/entrance-poster.webp',
-      '/images/grayscale/scene-fireworks.webp',
-      '/images/grayscale/scene-garden.webp',
-      '/images/grayscale/scene-mountain.webp',
-      '/images/grayscale/scene-venue-walk.webp',
-      '/images/whish.png',
+      '/images/grayscale/entrance-poster.webp', // §1 entrance — first thing seen
+      '/images/whish.png',                      // gift icon (tiny)
+    ];
+    const deferredImages = [
+      '/images/grayscale/scene-mountain.webp',   // §4
+      '/images/grayscale/scene-fireworks.webp',  // §5
+      '/images/grayscale/scene-venue-walk.webp', // §6
+      '/images/grayscale/couple-dance-new.webp', // §8 (RSVP)
+      '/images/grayscale/scene-garden.webp',     // §7 (Gift — visually last)
     ];
     const videos = [
       '/video/entrance.mp4',
@@ -132,7 +138,10 @@ export default function WeddingPage({ settings, rsvpData, initialLocale }: Props
     Promise.all([Promise.race([critical, hardCap]), minShow]).then(() => {
       if (cancelled) return;
       setAssetsReady(true);
-      // Warm the videos + music AFTER reveal so they don't compete for bandwidth or delay it.
+      // Warm the deep-chapter posters + videos + music AFTER reveal so they don't
+      // compete for bandwidth or delay the gate. They finish well before the guest
+      // scrolls to §4+, and each MediaCard's poster is the on-demand fallback.
+      deferredImages.forEach((s) => { loadImage(s); });
       videos.forEach((v) => { loadVideo(v); });
       loadAudio(settings.musicFile);
     });

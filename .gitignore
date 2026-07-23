@@ -40,3 +40,9 @@ public/uploads/*
 # prisma
 prisma/*.db
 prisma/*.db-journal
+
+# local env + dev artifacts (never commit)
+.higgsfield.env
+dev.out.log
+dev.err.log
+PERF_SPEC.md
