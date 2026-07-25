@@ -35,6 +35,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         <link rel="icon" href="/favicon.ico" />
+        {/* Open the Google Fonts connections early — fonts are the first visible
+            text, and the @import in globals.css otherwise waits on cold DNS/TLS. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="bg-[#F7F7F5]">{children}</body>
     </html>
