@@ -22,7 +22,7 @@ interface Guest {
   groupCode: string;
   sortOrder: number;
 }
-interface Rsvp { attending: boolean; numberAttending: number }
+interface Rsvp { attending: boolean; numberAttending: number; guestNames?: any }
 interface Group {
   id: string;
   groupCode: string;
@@ -441,7 +441,7 @@ export default function GuestListPage() {
       g.guests.map((gu) => ({
         Name: gu.name, Phone: gu.phone || '', Side: g.side,
         Circle: gu.circle || '', Seats: g.maxGuests, 'Group ID': g.groupCode,
-        RSVP: gu.rsvpManual || autoRsvp(g), Seat: seatByGuestId[gu.id] ? seatLabel(gu.id) : '',
+        RSVP: gu.rsvpManual || autoRsvp(g, gu), Seat: seatByGuestId[gu.id] ? seatLabel(gu.id) : '',
         Sent: gu.waSentCount || '', 'H.Copy': hdGroups.has(g.groupCode) ? 'Y' : 'N', Notes: gu.notes || '',
       }))
     );
@@ -575,7 +575,7 @@ export default function GuestListPage() {
                             <EditSelect value={gu.circle || ''} options={circles} onSave={(v) => saveGuest(gu.id, 'circle', v)} placeholder="circle" allowBlank />
                           </div>
                           <div className="gl-mguest__line gl-mguest__meta">
-                            <RsvpCell guest={gu} auto={autoRsvp(g)} onSave={(v) => saveGuest(gu.id, 'rsvpManual', v)} />
+                            <RsvpCell guest={gu} auto={autoRsvp(g, gu)} onSave={(v) => saveGuest(gu.id, 'rsvpManual', v)} />
                             {seatByGuestId[gu.id] && <span className="gl-mguest__seat ad-nums">{seatLabel(gu.id)}</span>}
                             {gu.waSentCount > 0 && (
                               <span className="gl-sent ad-nums"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>{gu.waSentCount}</span>
@@ -643,7 +643,7 @@ export default function GuestListPage() {
                                 </button>
                               </td>
                             )}
-                            <td><RsvpCell guest={gu} auto={autoRsvp(g)} onSave={(v) => saveGuest(gu.id, 'rsvpManual', v)} /></td>
+                            <td><RsvpCell guest={gu} auto={autoRsvp(g, gu)} onSave={(v) => saveGuest(gu.id, 'rsvpManual', v)} /></td>
                             <td className="gl-c-center"><span className={`gl-seatlbl ad-nums${seatByGuestId[gu.id] ? '' : ' gl-seatlbl--empty'}`}>{seatLabel(gu.id)}</span></td>
                             <td className="gl-c-center">
                               {gu.waSentCount > 0 ? (
@@ -784,8 +784,16 @@ export default function GuestListPage() {
   );
 }
 
-function autoRsvp(g: Group) {
+function autoRsvp(g: Group, guest?: Guest) {
   if (!g.rsvpResponse) return 'Pending';
+  // Prefer the guest's own answer from the online submission (per-guest), so a
+  // group where some come and some don't shows each correctly (not all "Coming").
+  const gn = g.rsvpResponse.guestNames;
+  if (guest && Array.isArray(gn) && gn.length && typeof gn[0] === 'object' && gn[0] !== null && 'name' in gn[0]) {
+    const norm = (s: string) => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const hit = gn.find((x: any) => norm(x.name) === norm(guest.name));
+    if (hit) return hit.attending ? 'Coming' : 'Not coming';
+  }
   return g.rsvpResponse.attending ? 'Coming' : 'Not coming';
 }
 
