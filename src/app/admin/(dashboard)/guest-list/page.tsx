@@ -510,17 +510,22 @@ export default function GuestListPage() {
           onChange={(e) => setSearch(e.target.value)}
           style={{ maxWidth: 300, width: '100%', flex: '1 1 190px' }}
         />
-        <select className="ad-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} aria-label="Filter by RSVP status">
-          <option value="all">RSVP: All</option>
-          <option value="Coming">Coming</option>
-          <option value="Not coming">Not coming</option>
-          <option value="Pending">Pending</option>
-        </select>
-        <select className="ad-select" value={sentFilter} onChange={(e) => setSentFilter(e.target.value as typeof sentFilter)} aria-label="Filter by invite sent">
-          <option value="all">Invite: All</option>
-          <option value="sent">Invite sent</option>
-          <option value="notsent">Not sent yet</option>
-        </select>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span className="gl-flabel">RSVP</span>
+          <div className="gl-tabs gl-tabs--sm" role="group" aria-label="Filter by RSVP status">
+            {([['all', 'All'], ['Pending', 'Pending'], ['Coming', 'Coming'], ['Not coming', 'Not coming']] as const).map(([v, label]) => (
+              <button key={v} type="button" className={`gl-tab${statusFilter === v ? ' is-active' : ''}`} onClick={() => setStatusFilter(v)}>{label}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span className="gl-flabel">Invite</span>
+          <div className="gl-tabs gl-tabs--sm" role="group" aria-label="Filter by invite sent">
+            {([['all', 'All'], ['sent', 'Sent'], ['notsent', 'Not sent']] as const).map(([v, label]) => (
+              <button key={v} type="button" className={`gl-tab${sentFilter === v ? ' is-active' : ''}`} onClick={() => setSentFilter(v)}>{label}</button>
+            ))}
+          </div>
+        </div>
         {(search.trim() || statusFilter !== 'all' || sentFilter !== 'all') && (
           <>
             <span style={{ fontSize: '0.8rem', color: 'var(--ad-muted)' }}>
@@ -1140,6 +1145,9 @@ function GuestListStyles() {
     .gl-tab:hover { color: var(--ad-ink); }
     .gl-tab.is-active { background: var(--ad-surface); color: var(--ad-ink); box-shadow: var(--ad-shadow); }
     .gl-tab__count { font-size: 0.74rem; padding: 0.1rem 0.45rem; border-radius: 999px; background: var(--ad-accent-soft); color: var(--ad-accent-strong); font-variant-numeric: tabular-nums; }
+    .gl-tabs--sm { margin-bottom: 0; padding: 0.2rem; }
+    .gl-tabs--sm .gl-tab { padding: 0.3rem 0.72rem; font-size: 0.8rem; gap: 0.3rem; }
+    .gl-flabel { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ad-muted); font-weight: 700; }
 
     .gl-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
     .gl-stats { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--ad-body); font-size: 0.9rem; }
