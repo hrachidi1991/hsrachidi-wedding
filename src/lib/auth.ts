@@ -44,8 +44,11 @@ export interface CredCheck {
 }
 
 export async function verifyAdminCredentials(username: string, password: string): Promise<CredCheck> {
-  const uname = (username || '').trim();
-  const found = ADMIN_USERS.find((x) => x.u === uname);
+  // Username match is case-insensitive so "Suzy"/"SUZY"/"suzy" all work; also accept
+  // the common alternate spelling "suzi".
+  let uname = (username || '').trim().toLowerCase();
+  if (uname === 'suzi') uname = 'suzy';
+  const found = ADMIN_USERS.find((x) => x.u.toLowerCase() === uname);
   if (!found) return { ok: false };
   const ok = await bcrypt.compare(password || '', found.h);
   return { ok, user: ok ? found.u : undefined };
