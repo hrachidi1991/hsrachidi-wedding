@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import { SEAT_BY_CODE } from '@/lib/seatLayout';
 import { useIsMobile } from '@/lib/useIsMobile';
 import { encodeGroupCode } from '@/lib/linkCode';
+import { guestRsvpStatus } from '@/lib/rsvpStatus';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface Guest {
@@ -99,6 +100,17 @@ export default function GuestListPage() {
   const [hdGroups, setHdGroups] = useState<Set<string>>(new Set());
   const [showSettings, setShowSettings] = useState(false);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'Coming' | 'Not coming' | 'Pending'>('all');
+  const [sentFilter, setSentFilter] = useState<'all' | 'sent' | 'notsent'>('all');
+
+  // Read filters from the URL (the Dashboard links here with ?side=&status=&sent=).
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const side = sp.get('side'); if (side === 'bride' || side === 'groom') setTab(side);
+    const st = sp.get('status'); const stMap: Record<string, 'Coming' | 'Not coming' | 'Pending'> = { coming: 'Coming', notcoming: 'Not coming', pending: 'Pending' };
+    if (st && stMap[st]) setStatusFilter(stMap[st]);
+    const sent = sp.get('sent'); if (sent === 'sent' || sent === 'notsent') setSentFilter(sent);
+  }, []);
   const isMobile = useIsMobile();
   const fileRef = useRef<HTMLInputElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -167,12 +179,15 @@ export default function GuestListPage() {
   };
   useEffect(() => { load(); return () => { if (toastTimer.current) clearTimeout(toastTimer.current); }; }, []);
 
-  // groups for the active side, ordered by group code (b001, b002 …), filtered by search
+  // groups for the active side, ordered by group code, filtered by search + status + sent
   const sideGroups = useMemo(() => {
     const q = search.trim().toLowerCase();
     const digits = q.replace(/\D/g, '');
+    const groupSent = (g: Group) => g.guests.some((gu) => (gu.waSentCount || 0) > 0);
     return groups
       .filter((g) => g.side === tab && g.guests.length > 0)
+      // Invite-sent filter is per-group (the link is sent to the group's contact).
+      .filter((g) => sentFilter === 'all' || (sentFilter === 'sent' ? groupSent(g) : !groupSent(g)))
       .filter((g) => {
         if (!q) return true;
         if (g.groupCode.toLowerCase().includes(q)) return true;
@@ -182,9 +197,15 @@ export default function GuestListPage() {
           (!!digits && (gu.phone || '').replace(/\D/g, '').includes(digits))
         );
       })
-      .map((g) => ({ ...g, guests: [...g.guests].sort((a, b) => a.sortOrder - b.sortOrder) }))
+      .map((g) => {
+        let guests = [...g.guests].sort((a, b) => a.sortOrder - b.sortOrder);
+        // RSVP-status filter is per-guest (hides non-matching guests within the group).
+        if (statusFilter !== 'all') guests = guests.filter((gu) => guestRsvpStatus(gu, g) === statusFilter);
+        return { ...g, guests };
+      })
+      .filter((g) => g.guests.length > 0)
       .sort((a, b) => a.groupCode.localeCompare(b.groupCode, undefined, { numeric: true }));
-  }, [groups, tab, search]);
+  }, [groups, tab, search, statusFilter, sentFilter]);
 
   const totalGuests = sideGroups.reduce((s, g) => s + g.guests.length, 0);
   const overCount = sideGroups.reduce((s, g) => s + Math.max(0, g.guests.length - g.maxGuests), 0);
@@ -479,20 +500,34 @@ export default function GuestListPage() {
         </button>
       </div>
 
-      {/* Search: name, phone, or group code (within the active side) */}
-      <div style={{ margin: '0 0 0.9rem' }}>
+      {/* Search + filters (RSVP status per guest, invite-sent per group) */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem', margin: '0 0 0.9rem' }}>
         <input
           className="ad-input"
           type="search"
           placeholder="Search name, phone, or group…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ maxWidth: 360, width: '100%' }}
+          style={{ maxWidth: 300, width: '100%', flex: '1 1 190px' }}
         />
-        {search.trim() && (
-          <span style={{ marginLeft: '0.6rem', fontSize: '0.8rem', color: 'var(--ad-muted)' }}>
-            {sideGroups.length} group{sideGroups.length === 1 ? '' : 's'} on this side
-          </span>
+        <select className="ad-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} aria-label="Filter by RSVP status">
+          <option value="all">RSVP: All</option>
+          <option value="Coming">Coming</option>
+          <option value="Not coming">Not coming</option>
+          <option value="Pending">Pending</option>
+        </select>
+        <select className="ad-select" value={sentFilter} onChange={(e) => setSentFilter(e.target.value as typeof sentFilter)} aria-label="Filter by invite sent">
+          <option value="all">Invite: All</option>
+          <option value="sent">Invite sent</option>
+          <option value="notsent">Not sent yet</option>
+        </select>
+        {(search.trim() || statusFilter !== 'all' || sentFilter !== 'all') && (
+          <>
+            <span style={{ fontSize: '0.8rem', color: 'var(--ad-muted)' }}>
+              {totalGuests} guest{totalGuests === 1 ? '' : 's'} · {sideGroups.length} group{sideGroups.length === 1 ? '' : 's'}
+            </span>
+            <button type="button" className="ad-link-btn" onClick={() => { setSearch(''); setStatusFilter('all'); setSentFilter('all'); }}>Clear</button>
+          </>
         )}
       </div>
 

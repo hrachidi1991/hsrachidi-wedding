@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { guestRsvpStatus } from '@/lib/rsvpStatus';
 
 interface GroupData {
   id: string;
@@ -32,14 +34,18 @@ export default function AdminDashboard() {
   }, []);
 
   const totalGroups = groups.length;
-  const totalMaxGuests = groups.reduce((s, g) => s + g.maxGuests, 0);
   const responded = groups.filter((g) => g.rsvpResponse);
-  const attending = responded.filter((g) => g.rsvpResponse?.attending);
-  const notAttending = responded.filter((g) => !g.rsvpResponse?.attending);
-  const noResponse = groups.filter((g) => !g.rsvpResponse);
-  const totalAttending = attending.reduce((s, g) => s + (g.rsvpResponse?.numberAttending || 0), 0);
-  const brideGroups = groups.filter((g) => g.side === 'bride');
-  const groomGroups = groups.filter((g) => g.side === 'groom');
+  // Per-GUEST counts (not per-group), matching the Guest List.
+  const allGuests = groups.flatMap((g) => (g.guests || []).map((gu: any) => ({ gu, g })));
+  const statusOf = (x: { gu: any; g: GroupData }) => guestRsvpStatus(x.gu, x.g);
+  const totalGuests = allGuests.length;
+  const comingCount = allGuests.filter((x) => statusOf(x) === 'Coming').length;
+  const notComingCount = allGuests.filter((x) => statusOf(x) === 'Not coming').length;
+  const pendingCount = allGuests.filter((x) => statusOf(x) === 'Pending').length;
+  const brideG = allGuests.filter((x) => x.g.side === 'bride');
+  const groomG = allGuests.filter((x) => x.g.side === 'groom');
+  const brideComing = brideG.filter((x) => statusOf(x) === 'Coming').length;
+  const groomComing = groomG.filter((x) => statusOf(x) === 'Coming').length;
   // "Sent" = the invite link was actually sent to at least one guest in the group.
   const linksSent = groups.filter((g) => (g.guests || []).some((x: any) => (x.waSentCount || 0) > 0)).length;
   const linksNotSent = totalGroups - linksSent;
@@ -58,31 +64,27 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {/* Headline stats */}
+      <style>{`.ad-stat--link{cursor:pointer;transition:transform .12s ease, box-shadow .12s ease;text-decoration:none;}
+        .ad-stat--link:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.09);}`}</style>
+
+      {/* Guests by RSVP status (per guest) — click any card to open the filtered list */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-5">
-        <StatCard label="Total Groups" value={totalGroups} />
-        <StatCard label="Max Capacity" value={totalMaxGuests} />
-        <StatCard label="Confirmed Attending" value={totalAttending} tone="ok" />
-        <StatCard label="Response Rate" value={`${totalGroups > 0 ? Math.round((responded.length / totalGroups) * 100) : 0}%`} tone="accent" />
+        <StatCard label="Total Guests" value={totalGuests} href="/admin/guest-list" />
+        <StatCard label="Attending" value={comingCount} tone="ok" href="/admin/guest-list?status=coming" />
+        <StatCard label="Not Coming" value={notComingCount} numTone="bad" href="/admin/guest-list?status=notcoming" />
+        <StatCard label="Pending" value={pendingCount} numTone="warn" href="/admin/guest-list?status=pending" />
       </div>
 
-      {/* Invite links sent vs not sent */}
+      {/* Attending, by side (per guest) */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-5">
-        <StatCard label="Invites Sent" value={linksSent} sub={`/ ${totalGroups} groups`} tone="accent" />
-        <StatCard label="Not Sent Yet" value={linksNotSent} sub="groups" numTone={linksNotSent > 0 ? 'warn' : 'muted'} />
+        <StatCard label="Bride — Attending" value={brideComing} sub={`/ ${brideG.length} guests`} tone="accent" href="/admin/guest-list?side=bride&status=coming" />
+        <StatCard label="Groom — Attending" value={groomComing} sub={`/ ${groomG.length} guests`} tone="accent" href="/admin/guest-list?side=groom&status=coming" />
       </div>
 
-      {/* Response breakdown */}
-      <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-5">
-        <StatCard label="Attending" value={attending.length} sub="groups" numTone="ok" />
-        <StatCard label="Not Attending" value={notAttending.length} sub="groups" numTone="bad" />
-        <StatCard label="No Response" value={noResponse.length} sub="groups" numTone="muted" />
-      </div>
-
-      {/* Sides */}
+      {/* Invites sent vs not sent (per group) */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        <StatCard label="Bride Side" value={brideGroups.length} sub="groups" />
-        <StatCard label="Groom Side" value={groomGroups.length} sub="groups" />
+        <StatCard label="Invites Sent" value={linksSent} sub={`/ ${totalGroups} groups`} href="/admin/guest-list?sent=sent" />
+        <StatCard label="Not Sent Yet" value={linksNotSent} sub="groups" numTone={linksNotSent > 0 ? 'warn' : 'muted'} href="/admin/guest-list?sent=notsent" />
       </div>
 
       {/* Recent RSVPs */}
@@ -142,18 +144,20 @@ function StatCard({
   sub,
   tone,
   numTone,
+  href,
 }: {
   label: string;
   value: string | number;
   sub?: string;
   tone?: 'accent' | 'ok';
   numTone?: 'ok' | 'bad' | 'warn' | 'muted';
+  href?: string;
 }) {
   const cardTone = tone === 'accent' ? 'ad-stat--accent' : tone === 'ok' ? 'ad-stat--ok' : '';
   const valueClass = numTone ? numToneClass[numTone] : '';
   const mutedNum = numTone === 'muted';
-  return (
-    <div className={`ad-stat ${cardTone}`}>
+  const inner = (
+    <>
       <span className="ad-stat__label">{label}</span>
       <span
         className={`ad-stat__value ${valueClass}`}
@@ -162,8 +166,12 @@ function StatCard({
         {value}
         {sub && <span className="ad-stat__sub">{sub}</span>}
       </span>
-    </div>
+    </>
   );
+  if (href) {
+    return <Link href={href} className={`ad-stat ${cardTone} ad-stat--link`}>{inner}</Link>;
+  }
+  return <div className={`ad-stat ${cardTone}`}>{inner}</div>;
 }
 
 function DashboardSkeleton() {
