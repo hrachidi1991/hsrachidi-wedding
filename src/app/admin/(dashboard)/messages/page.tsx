@@ -230,7 +230,7 @@ function ThreadCard({ thread, unread, newCount, onMarkRead }: { thread: Thread; 
         ) : (
           messages.map((m, idx) => (
             <div key={m.id} style={{ padding: '0.55rem 0', borderTop: idx === 0 ? 'none' : '1px solid var(--ad-border)' }}>
-              <div style={{ fontSize: '0.88rem', lineHeight: 1.45, color: 'var(--ad-ink)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.body}</div>
+              <div dir="auto" style={{ fontSize: '0.88rem', lineHeight: 1.45, color: 'var(--ad-ink)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.body}</div>
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: 3, fontSize: '0.62rem', color: 'var(--ad-muted)' }}>
                 <span style={{ fontWeight: 600 }}>{m.sender === 'couple' ? 'You' : 'Guest'}</span>
                 <span>· {new Date(m.createdAt).toLocaleString()}</span>
@@ -247,6 +247,7 @@ function ThreadCard({ thread, unread, newCount, onMarkRead }: { thread: Thread; 
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
           rows={1}
+          dir="auto"
           placeholder="Write a message to this group…"
           className="ad-input"
           style={{ flex: 1, resize: 'none', maxHeight: 80 }}

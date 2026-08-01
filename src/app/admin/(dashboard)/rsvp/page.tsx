@@ -558,7 +558,7 @@ function AdminChat({ groupCode }: { groupCode: string }) {
             const mine = m.sender === 'couple';
             return (
               <div key={m.id} style={{ padding: '0.5rem 0', borderTop: idx === 0 ? 'none' : '1px solid var(--ad-border)' }}>
-                <div style={{ fontSize: '0.85rem', lineHeight: 1.45, whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: 'var(--ad-ink)' }}>{m.body}</div>
+                <div dir="auto" style={{ fontSize: '0.85rem', lineHeight: 1.45, whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: 'var(--ad-ink)' }}>{m.body}</div>
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: 3, fontSize: '0.62rem', color: 'var(--ad-muted)' }}>
                   <span style={{ fontWeight: 600 }}>{mine ? 'You' : 'Guest'}</span>
                   <span>· {new Date(m.createdAt).toLocaleDateString()}</span>
@@ -571,7 +571,7 @@ function AdminChat({ groupCode }: { groupCode: string }) {
         </div>
       )}
       <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'flex-end' }}>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} rows={1} placeholder="Reply to this group…" className="ad-input" style={{ flex: 1, resize: 'none', maxHeight: 80 }} />
+        <textarea value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} rows={1} dir="auto" placeholder="Reply to this group…" className="ad-input" style={{ flex: 1, resize: 'none', maxHeight: 80 }} />
         <button className="ad-btn ad-btn--primary" disabled={busy || !text.trim()} onClick={send} style={{ flexShrink: 0 }}>Send</button>
       </div>
     </div>

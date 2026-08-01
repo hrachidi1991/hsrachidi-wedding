@@ -1380,7 +1380,7 @@ function GuestChat({ groupCode, isRtl }: { groupCode: string; isRtl: boolean }) 
               }
               return (
                 <div key={m.id} className={`py-2 ${idx > 0 ? 'border-t border-black/5' : ''}`}>
-                  <p className={`text-sm leading-relaxed whitespace-pre-wrap break-words text-black/80 ${isRtl ? 'font-arabic text-right' : 'font-body'}`}>{m.body}</p>
+                  <p dir="auto" className={`text-sm leading-relaxed whitespace-pre-wrap break-words text-black/80 ${isRtl ? 'font-arabic' : 'font-body'}`}>{m.body}</p>
                   <div className={`flex items-center gap-2 mt-0.5 ${isRtl ? 'justify-end' : 'justify-start'}`}>
                     <span className="text-[0.6rem] text-black/30">{fmt(m.createdAt)}</span>
                     {/* Editable/deletable only for ~10 minutes after sending (no per-person
@@ -1402,6 +1402,7 @@ function GuestChat({ groupCode, isRtl }: { groupCode: string; isRtl: boolean }) 
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={2}
+            dir="auto"
             placeholder={isRtl ? 'خاصّ برابطكم — اكتبوا رسالتكم…' : 'Private to your link — type your message…'}
             className={`w-full text-sm rounded-xl border border-black/15 bg-white/70 px-3 py-2 resize-none min-h-[2.75rem] max-h-40 focus:outline-none focus:border-[#1F4A3A]/40 ${isRtl ? 'font-arabic text-right' : 'font-body'}`}
           />
