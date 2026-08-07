@@ -16,7 +16,7 @@ interface GroupWithRsvp {
   side: string;
   token: string;
   inRsvp: boolean;
-  guests: { name: string; displayName?: string | null; phone: string | null; rsvpManual?: string | null }[];
+  guests: { id: string; name: string; displayName?: string | null; phone: string | null; rsvpManual?: string | null }[];
   rsvpResponse: {
     attending: boolean;
     numberAttending: number;
@@ -105,6 +105,14 @@ export default function RsvpTracking() {
     }
     const link = inviteLink(g.groupCode, lang, g.token);
     window.open(whatsAppUrl(withPhone.phone, withPhone.displayName || withPhone.name, link, eventInfo, lang), '_blank', 'noopener,noreferrer');
+    // Mark the invite as sent (same as the Guest List) so the Guest List's
+    // sent / not-sent filter stays accurate no matter where you send from.
+    if (withPhone.id) {
+      fetch('/api/guests', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: withPhone.id, markWaSent: true }),
+      }).catch(() => {});
+    }
   };
 
   // Remove a group's submission so its link is no longer locked — resend it and the
