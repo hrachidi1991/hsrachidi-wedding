@@ -384,6 +384,23 @@ export default function GuestListPage() {
     } catch { /* non-critical; local count stays optimistic */ }
   };
 
+  // Manually flip the "invite sent" mark — e.g. when you invited them in person or
+  // by call, not through the WhatsApp button. Marking sent also adds the group to
+  // RSVP tracking (same as actually sending the link).
+  const toggleSent = async (guest: Guest) => {
+    if ((guest.waSentCount || 0) > 0) {
+      if (!window.confirm(`Mark ${guest.name} as NOT sent?\n\nThis clears the “sent” mark for this group.`)) return;
+      const prev = groups;
+      patchGuestLocal(guest.id, { waSentCount: 0 });
+      try {
+        const res = await fetch('/api/guests', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: guest.id, waSentCount: 0 }) });
+        if (!res.ok) throw new Error();
+      } catch { setGroups(prev); flash('Could not update', true); }
+    } else {
+      await markWaSent(guest);
+    }
+  };
+
   const addGuest = async (payload: any) => {
     setBusy(true);
     try {
@@ -617,8 +634,10 @@ export default function GuestListPage() {
                           <div className="gl-mguest__line gl-mguest__meta">
                             <RsvpCell guest={gu} auto={autoRsvp(g, gu)} onSave={(v) => saveGuest(gu.id, 'rsvpManual', v)} />
                             {seatByGuestId[gu.id] && <span className="gl-mguest__seat ad-nums">{seatLabel(gu.id)}</span>}
-                            {gu.waSentCount > 0 && (
-                              <span className="gl-sent ad-nums"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>{gu.waSentCount}</span>
+                            {gu.waSentCount > 0 ? (
+                              <button type="button" className="gl-sent ad-nums gl-sent--btn" onClick={() => toggleSent(gu)} title="Invite sent — tap to mark not sent"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>{gu.waSentCount}</button>
+                            ) : (
+                              <button type="button" className="gl-mark-sent" onClick={() => toggleSent(gu)} title="Mark invite as sent">Mark sent</button>
                             )}
                           </div>
                         </div>
@@ -687,11 +706,13 @@ export default function GuestListPage() {
                             <td className="gl-c-center"><span className={`gl-seatlbl ad-nums${seatByGuestId[gu.id] ? '' : ' gl-seatlbl--empty'}`}>{seatLabel(gu.id)}</span></td>
                             <td className="gl-c-center">
                               {gu.waSentCount > 0 ? (
-                                <span className="gl-sent ad-nums" title={`Invite link sent ${gu.waSentCount} time${gu.waSentCount === 1 ? '' : 's'}${gu.waSentAt ? ' · last on ' + new Date(gu.waSentAt).toLocaleDateString() : ''}`}>
+                                <button type="button" className="gl-sent ad-nums gl-sent--btn" onClick={() => toggleSent(gu)} title={`Invite sent ${gu.waSentCount} time${gu.waSentCount === 1 ? '' : 's'}${gu.waSentAt ? ' · last on ' + new Date(gu.waSentAt).toLocaleDateString() : ''} — click to mark not sent`}>
                                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                                   {gu.waSentCount}
-                                </span>
-                              ) : <span className="gl-sent-none">—</span>}
+                                </button>
+                              ) : (
+                                <button type="button" className="gl-mark-sent" onClick={() => toggleSent(gu)} title="Mark this group's invite as sent (without opening WhatsApp)">Mark sent</button>
+                              )}
                             </td>
                             {i === 0 && (
                               <td rowSpan={g.guests.length} className="gl-c-group gl-c-center">
@@ -1203,6 +1224,9 @@ function GuestListStyles() {
     .gl-seatlbl--empty { color: var(--ad-muted); }
     .gl-sent { display: inline-flex; align-items: center; gap: 0.22rem; padding: 0.14rem 0.5rem; border-radius: 999px; background: rgba(37,168,102,0.12); color: #1c8f54; font-size: 0.8rem; font-weight: 700; }
     .gl-sent-none { color: var(--ad-muted); }
+    .gl-sent--btn { border: none; cursor: pointer; font: inherit; }
+    .gl-mark-sent { border: 1px dashed var(--ad-border); background: transparent; color: var(--ad-muted); font-size: 0.72rem; padding: 0.14rem 0.55rem; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: all 0.12s ease; }
+    .gl-mark-sent:hover { border-style: solid; border-color: #1c8f54; color: #1c8f54; background: rgba(37,168,102,0.08); }
     .gl-track { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--ad-border-strong); background: var(--ad-surface); color: var(--ad-muted); cursor: pointer; transition: all 0.14s ease; }
     .gl-track:hover { border-color: var(--ad-ok); }
     .gl-track.is-on { background: var(--ad-ok, #1c8f54); border-color: var(--ad-ok, #1c8f54); color: #fff; }
