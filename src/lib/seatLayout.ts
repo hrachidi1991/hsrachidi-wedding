@@ -1,7 +1,7 @@
 // AUTO-GENERATED from the NEW Blossom venue plan (Hussein & Suzan fp.pdf, Aug 2026).
 // Floor-plan artwork rendered to /public/seating-plan.png in the SAME coordinate space.
-// Chairs extracted from the plan vector data (pdfminer) + groom benches from the render.
-// Tables 1-11 match the numbers printed on the plan; G1/G2 = the two "Groom & friends" benches.
+// Chairs extracted from the plan vector data (pdfminer, recursing the /Xop1 form).
+// Tables 1-11 match the numbers printed on the plan (== the plan's 282-guest capacity).
 // Refine grouping via the admin Seating "Edit tables" tool. Row: [x, y, rotation(deg), width, height].
 export interface SeatDef { code: string; table: string; seatNo: number; zone: string; num: number; x: number; y: number; rot: number; w: number; h: number; }
 export const VIEWBOX = { w: 1600, h: 1236 };
@@ -289,47 +289,6 @@ const RAW: [number, number, number, number, number][] = [
   [292.4,579.0,0,12,12],
   [292.5,607.9,0,12,12],
   [295.0,593.8,0,12,12],
-  [435.7,933.9,0,12,12],
-  [448.0,923.4,0,12,12],
-  [454.4,918.2,0,12,12],
-  [460.4,913.4,0,12,12],
-  [466.3,908.8,0,12,12],
-  [472.5,904.2,0,12,12],
-  [478.6,899.6,0,12,12],
-  [485.3,894.7,0,12,12],
-  [491.9,890.3,0,12,12],
-  [498.7,886.0,0,12,12],
-  [505.2,882.0,0,12,12],
-  [549.6,862.7,0,12,12],
-  [556.9,860.5,0,12,12],
-  [564.3,858.4,0,12,12],
-  [571.8,856.6,0,12,12],
-  [579.4,855.0,0,12,12],
-  [587.1,853.3,0,12,12],
-  [594.7,851.8,0,12,12],
-  [602.7,851.0,0,12,12],
-  [610.8,850.2,0,12,12],
-  [699.8,844.4,0,12,12],
-  [707.8,844.6,0,12,12],
-  [716.4,845.2,0,12,12],
-  [724.6,846.2,0,12,12],
-  [732.6,847.5,0,12,12],
-  [740.6,849.2,0,12,12],
-  [748.2,851.6,0,12,12],
-  [756.1,854.2,0,12,12],
-  [763.4,857.3,0,12,12],
-  [805.3,878.4,0,12,12],
-  [811.7,882.8,0,12,12],
-  [818.0,887.2,0,12,12],
-  [824.2,892.2,0,12,12],
-  [830.0,896.8,0,12,12],
-  [836.3,902.0,0,12,12],
-  [841.6,907.3,0,12,12],
-  [847.2,913.1,0,12,12],
-  [851.1,930.0,0,12,12],
-  [852.0,918.3,0,12,12],
-  [857.4,923.9,0,12,12],
-  [875.7,930.0,0,12,12],
 ];
 const TABLE_ORDER: Record<string, number[]> = {
   "1": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -343,8 +302,6 @@ const TABLE_ORDER: Record<string, number[]> = {
   "9": [242, 243, 244, 245, 246, 247, 248, 249, 250, 251],
   "10": [252, 253, 254, 255, 256, 257, 258, 259, 260, 261],
   "11": [262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281],
-  "G1": [282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301],
-  "G2": [302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321, 322],
 };
 const SEAT_TABLE: Record<number, { table: string; seatNo: number }> = {};
 for (const [t, idxs] of Object.entries(TABLE_ORDER)) idxs.forEach((rawIdx, k) => { SEAT_TABLE[rawIdx] = { table: t, seatNo: k + 1 }; });
