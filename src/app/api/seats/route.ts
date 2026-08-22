@@ -102,6 +102,54 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PUT — apply a batch of seat assignments atomically (swap / push-and-insert).
+// Body: { moves: [{ code, guestId }, ...] }. Every listed guest ends up on their
+// given code; any prior seat of those guests and any prior occupant of those
+// codes is cleared first, so the whole re-shuffle is one all-or-nothing step.
+export async function PUT(request: NextRequest) {
+  if (!requireAdmin(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  try {
+    const { moves } = await request.json();
+    if (!Array.isArray(moves) || moves.length === 0) {
+      return NextResponse.json({ error: 'A non-empty moves array is required.' }, { status: 400 });
+    }
+    const codes: string[] = [];
+    const guestIds: string[] = [];
+    for (const m of moves) {
+      if (!m || typeof m.code !== 'string' || !SEAT_BY_CODE[m.code]) {
+        return NextResponse.json({ error: `Unknown seat code "${m?.code}".` }, { status: 400 });
+      }
+      if (typeof m.guestId !== 'string' || !m.guestId) {
+        return NextResponse.json({ error: 'Each move needs a guestId.' }, { status: 400 });
+      }
+      if (codes.includes(m.code)) {
+        return NextResponse.json({ error: `Duplicate seat "${m.code}" in batch.` }, { status: 400 });
+      }
+      if (guestIds.includes(m.guestId)) {
+        return NextResponse.json({ error: 'A guest appears twice in the batch.' }, { status: 400 });
+      }
+      codes.push(m.code);
+      guestIds.push(m.guestId);
+    }
+
+    await prisma.$transaction([
+      prisma.seat.deleteMany({ where: { OR: [{ code: { in: codes } }, { guestId: { in: guestIds } }] } }),
+      ...moves.map((m: { code: string; guestId: string }) =>
+        prisma.seat.create({ data: { code: m.code, guestId: m.guestId } })
+      ),
+    ]);
+
+    return NextResponse.json({ success: true, count: moves.length });
+  } catch (e: any) {
+    if (isMissingTable(e)) {
+      return NextResponse.json(MISSING_TABLE_BODY, { status: 503 });
+    }
+    return NextResponse.json({ error: e?.message || 'Failed to update seats.' }, { status: 500 });
+  }
+}
+
 // DELETE — clear a seat
 export async function DELETE(request: NextRequest) {
   if (!requireAdmin(request)) {

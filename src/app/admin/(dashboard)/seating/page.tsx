@@ -68,12 +68,17 @@ export default function SeatingPage() {
   const [confirmedIds, setConfirmedIds] = useState<Set<string>>(new Set());
 
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
-  const [moveGuest, setMoveGuest] = useState<GuestLite | null>(null);
+  const [moveGuest, setMoveGuest] = useState<SeatGuest | null>(null);
   const [search, setSearch] = useState('');
+  const [pickerSide, setPickerSide] = useState<'all' | 'groom' | 'bride'>('all');
   const [zoom, setZoom] = useState(1);
   const [tip, setTip] = useState<{ code: string; left: number; top: number } | null>(null);
   const [focusedCode, setFocusedCode] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  // "Unseated groom / bride" stat cards open a list popup.
+  const [unseatedModal, setUnseatedModal] = useState<'groom' | 'bride' | null>(null);
+  // When a move lands on an already-taken seat: offer swap / push-right / push-left.
+  const [placeChoice, setPlaceChoice] = useState<{ targetCode: string; occupant: SeatGuest } | null>(null);
 
   // Edit-tables mode (draw your own table grouping)
   const [customTables, setCustomTables] = useState<TableDef[] | null>(null);
@@ -220,9 +225,18 @@ export default function SeatingPage() {
 
   // Only CONFIRMED (attending) guests can be seated, so the picker + "still need a seat" count use this.
   const unseated = useMemo(() => guests.filter((g) => !g.seatCode && confirmedIds.has(g.id)), [guests, confirmedIds]);
+  const unseatedGroom = useMemo(() => unseated.filter((g) => g.side === 'groom'), [unseated]);
+  const unseatedBride = useMemo(() => unseated.filter((g) => g.side === 'bride'), [unseated]);
   const seatedCount = guests.filter((g) => g.seatCode).length;
-  const seatedBride = guests.filter((g) => g.seatCode && g.side === 'bride').length;
-  const seatedGroom = guests.filter((g) => g.seatCode && g.side === 'groom').length;
+
+  // Ordered seat codes of the table a given seat belongs to (for push direction).
+  const tableCodesOf = (code: string): string[] | null => {
+    const name = codeName[code];
+    const t = liveTables.find((x) => x.name === name);
+    if (!t) return null;
+    // Canonical left→right / seat-number order so "push right" is consistent.
+    return [...t.codes].sort((a, b) => (SEAT_BY_CODE[a]?.seatNo ?? 0) - (SEAT_BY_CODE[b]?.seatNo ?? 0));
+  };
 
   // ── Mutations (optimistic) ────────────────────────────────────────────────
   const doAssign = async (code: string, guest: GuestLite) => {
@@ -264,18 +278,105 @@ export default function SeatingPage() {
     }
   };
 
+  // Apply several assignments at once (swap / push). Optimistic, then persisted atomically.
+  const doBatch = async (moves: { code: string; guestId: string }[]) => {
+    const moveMap = new Map(moves.map((m) => [m.guestId, m.code]));
+    const takenCodes = new Set(moves.map((m) => m.code));
+    setGuests((prev) =>
+      prev.map((g) => {
+        if (moveMap.has(g.id)) return { ...g, seatCode: moveMap.get(g.id)! };
+        if (g.seatCode && takenCodes.has(g.seatCode)) return { ...g, seatCode: null }; // displaced
+        return g;
+      })
+    );
+    try {
+      const res = await fetch('/api/seats', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ moves }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => null);
+        throw new Error(d?.error || 'update failed');
+      }
+    } catch (e: any) {
+      flash(e?.message ? `Could not update seats: ${e.message}` : 'Could not update seats — reloading.');
+      loadData();
+    }
+  };
+
+  // Swap the moving guest with the seat's current occupant.
+  // If the moving guest has no seat yet, this simply replaces (unseats) the occupant.
+  const doSwap = (targetCode: string, occupant: SeatGuest) => {
+    if (!moveGuest) return;
+    const moves: { code: string; guestId: string }[] = [{ code: targetCode, guestId: moveGuest.id }];
+    if (moveGuest.seatCode && moveGuest.seatCode !== targetCode) {
+      moves.push({ code: moveGuest.seatCode, guestId: occupant.id });
+    }
+    doBatch(moves);
+    finishPlacement(targetCode);
+  };
+
+  // Insert the moving guest at targetCode, pushing occupants one seat toward `dir`
+  // until an empty seat absorbs the shift. Warns if that direction is already full.
+  const doPush = (targetCode: string, dir: 'right' | 'left') => {
+    if (!moveGuest) return;
+    const codes = tableCodesOf(targetCode);
+    if (!codes) { flash('This seat is not part of a table row.'); return; }
+    const t = codes.indexOf(targetCode);
+    if (t < 0) return;
+    // Treat the moving guest's own seat (if in this row) as an empty gap, so the
+    // shift stops there and the guest never appears twice in the batch.
+    const occ = (c: string) => {
+      const g = assignments[c];
+      return g && g.id === moveGuest.id ? undefined : g;
+    };
+
+    const moves: { code: string; guestId: string }[] = [];
+    if (dir === 'right') {
+      let e = -1;
+      for (let i = t + 1; i < codes.length; i++) { if (!occ(codes[i])) { e = i; break; } }
+      if (e < 0) { flash('No empty seat to the right to push into — that end of the table is full.'); return; }
+      for (let i = e; i > t; i--) moves.push({ code: codes[i], guestId: occ(codes[i - 1])!.id });
+    } else {
+      let e = -1;
+      for (let i = t - 1; i >= 0; i--) { if (!occ(codes[i])) { e = i; break; } }
+      if (e < 0) { flash('No empty seat to the left to push into — that end of the table is full.'); return; }
+      for (let i = e; i < t; i++) moves.push({ code: codes[i], guestId: occ(codes[i + 1])!.id });
+    }
+    moves.push({ code: targetCode, guestId: moveGuest.id });
+    doBatch(moves);
+    finishPlacement(targetCode);
+  };
+
+  const finishPlacement = (code: string) => {
+    setPlaceChoice(null);
+    setMoveGuest(null);
+    setSelectedCode(code);
+    setSearch('');
+  };
+
   // ── Chair interaction ─────────────────────────────────────────────────────
   const onChairActivate = (code: string) => {
     if (editMode) { assignToActive(code); return; }
     if (moveGuest) {
+      const occ = assignments[code];
+      if (occ && occ.id === moveGuest.id) { finishPlacement(code); return; } // dropped on own seat
+      if (occ) { setPlaceChoice({ targetCode: code, occupant: occ }); return; } // taken → swap/push
       doAssign(code, moveGuest);
-      setMoveGuest(null);
-      setSelectedCode(code);
-      setSearch('');
+      finishPlacement(code);
       return;
     }
     setSelectedCode(code);
     setSearch('');
+  };
+
+  // Start placing a guest (from a stat-card popup or the panel) — user then clicks a chair.
+  const startPlacement = (g: SeatGuest) => {
+    setUnseatedModal(null);
+    setSelectedCode(null);
+    setPlaceChoice(null);
+    setMoveGuest(g);
   };
 
   const showTip = (code: string, el: SVGGElement | null) => {
@@ -296,7 +397,7 @@ export default function SeatingPage() {
     setSearch('');
   };
 
-  const startMove = (guest: GuestLite) => {
+  const startMove = (guest: SeatGuest) => {
     setMoveGuest(guest);
     setSelectedCode(null);
   };
@@ -358,8 +459,20 @@ export default function SeatingPage() {
       {/* Stats strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-5">
         <StatCard label="Seated" value={seatedCount} sub={`/ ${SEAT_COUNT}`} tone="accent" />
-        <StatCard label="Bride Seated" value={seatedBride} sub="guests" />
-        <StatCard label="Groom Seated" value={seatedGroom} sub="guests" />
+        <StatCard
+          label="Unseated Groom"
+          value={unseatedGroom.length}
+          sub="tap to view"
+          numTone={unseatedGroom.length > 0 ? 'warn' : 'muted'}
+          onClick={() => setUnseatedModal('groom')}
+        />
+        <StatCard
+          label="Unseated Bride"
+          value={unseatedBride.length}
+          sub="tap to view"
+          numTone={unseatedBride.length > 0 ? 'warn' : 'muted'}
+          onClick={() => setUnseatedModal('bride')}
+        />
         <StatCard label="Unseated" value={unseated.length} sub="guests" numTone={unseated.length > 0 ? 'warn' : 'muted'} />
       </div>
 
@@ -517,7 +630,9 @@ export default function SeatingPage() {
                   unseated={unseated}
                   search={search}
                   setSearch={setSearch}
-                  onPick={(g) => doAssign(selectedSeat.code, g)}
+                  pickerSide={pickerSide}
+                  setPickerSide={setPickerSide}
+                  onPick={(g) => { doAssign(selectedSeat.code, g); closePanel(); }}
                   onClose={closePanel}
                 />
               )
@@ -536,6 +651,30 @@ export default function SeatingPage() {
             )}
           </aside>
         </div>
+      )}
+
+      {/* Unseated groom / bride list popup */}
+      {unseatedModal && (
+        <UnseatedModal
+          side={unseatedModal}
+          guests={unseatedModal === 'groom' ? unseatedGroom : unseatedBride}
+          onPick={startPlacement}
+          onClose={() => setUnseatedModal(null)}
+        />
+      )}
+
+      {/* Swap / push choice when a move lands on a taken seat */}
+      {placeChoice && moveGuest && (
+        <PlaceChoiceModal
+          movingName={moveGuest.name}
+          movingHasSeat={!!moveGuest.seatCode}
+          occupant={placeChoice.occupant}
+          zone={zoneOf(placeChoice.targetCode)}
+          onSwap={() => doSwap(placeChoice.targetCode, placeChoice.occupant)}
+          onPushRight={() => doPush(placeChoice.targetCode, 'right')}
+          onPushLeft={() => doPush(placeChoice.targetCode, 'left')}
+          onClose={() => setPlaceChoice(null)}
+        />
       )}
 
       {toast && <div className="seat-toast ad-notice ad-notice--bad" role="alert">{toast}</div>}
@@ -713,20 +852,42 @@ function FilledPanel({ seat, zone, guest, onMove, onClear, onClose }: {
   );
 }
 
-function EmptyPanel({ seat, zone, unseated, search, setSearch, onPick, onClose }: {
+function EmptyPanel({ seat, zone, unseated, search, setSearch, pickerSide, setPickerSide, onPick, onClose }: {
   seat: SeatDef; zone: string; unseated: SeatGuest[]; search: string; setSearch: (v: string) => void;
+  pickerSide: 'all' | 'groom' | 'bride'; setPickerSide: (v: 'all' | 'groom' | 'bride') => void;
   onPick: (g: SeatGuest) => void; onClose: () => void;
 }) {
   const q = search.toLowerCase().trim();
+  const bySide = pickerSide === 'all' ? unseated : unseated.filter((g) => g.side === pickerSide);
   const list = q
-    ? unseated.filter((g) => g.name.toLowerCase().includes(q) || g.groupCode.toLowerCase().includes(q) || g.side.toLowerCase().includes(q))
-    : unseated;
+    ? bySide.filter((g) => g.name.toLowerCase().includes(q) || g.groupCode.toLowerCase().includes(q) || g.side.toLowerCase().includes(q))
+    : bySide;
+  const counts = {
+    all: unseated.length,
+    groom: unseated.filter((g) => g.side === 'groom').length,
+    bride: unseated.filter((g) => g.side === 'bride').length,
+  };
   return (
     <div className="seat-panel__body">
       <PanelHead title={zone} sub="Empty seat" onClose={onClose} />
       <p style={{ fontSize: '0.74rem', color: 'var(--ad-muted)', margin: '-0.25rem 0 0.65rem' }}>
         Only guests who confirmed attendance can be seated.
       </p>
+      <div className="seat-sidetabs" role="tablist" aria-label="Filter unseated guests by side">
+        {(['all', 'groom', 'bride'] as const).map((s) => (
+          <button
+            key={s}
+            type="button"
+            role="tab"
+            aria-selected={pickerSide === s}
+            className={`seat-sidetab${pickerSide === s ? ' is-active' : ''}`}
+            onClick={() => setPickerSide(s)}
+          >
+            {s === 'all' ? 'All' : cap(s)}
+            <span className="seat-sidetab__count">{counts[s]}</span>
+          </button>
+        ))}
+      </div>
       <div className="ad-search" style={{ marginBottom: '0.75rem' }}>
         <span className="ad-search__icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
@@ -745,6 +906,8 @@ function EmptyPanel({ seat, zone, unseated, search, setSearch, onPick, onClose }
 
       {unseated.length === 0 ? (
         <p className="ad-empty">No confirmed guests are waiting for a seat.</p>
+      ) : bySide.length === 0 ? (
+        <p className="ad-empty">No unseated {pickerSide} guests.</p>
       ) : list.length === 0 ? (
         <p className="ad-empty">No unseated guests match &ldquo;{search}&rdquo;.</p>
       ) : (
@@ -791,6 +954,114 @@ function MovePanel({ guest, onCancel }: { guest: GuestLite; onCancel: () => void
   );
 }
 
+// ── Modals ────────────────────────────────────────────────────────────────
+function UnseatedModal({ side, guests, onPick, onClose }: {
+  side: 'groom' | 'bride'; guests: SeatGuest[]; onPick: (g: SeatGuest) => void; onClose: () => void;
+}) {
+  const [q, setQ] = useState('');
+  const query = q.toLowerCase().trim();
+  const list = query
+    ? guests.filter((g) => g.name.toLowerCase().includes(query) || g.groupCode.toLowerCase().includes(query))
+    : guests;
+  return (
+    <div className="seat-modal-scrim" onClick={onClose} role="presentation">
+      <div className="seat-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={`Unseated ${side} guests`}>
+        <div className="seat-panel__head" style={{ marginBottom: '0.75rem' }}>
+          <div>
+            <div className="ad-eyebrow">{cap(side)} side</div>
+            <h3 className="ad-section-title" style={{ fontSize: '1.2rem' }}>Unseated &middot; {guests.length}</h3>
+          </div>
+          <button type="button" className="ad-icon-btn" onClick={onClose} aria-label="Close">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
+        </div>
+        {guests.length > 6 && (
+          <div className="ad-search" style={{ marginBottom: '0.7rem' }}>
+            <span className="ad-search__icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            </span>
+            <input type="text" className="ad-input ad-input--search" placeholder="Search by name or group…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search unseated guests" autoFocus />
+            {q && <button className="ad-search__clear" onClick={() => setQ('')} aria-label="Clear search">&times;</button>}
+          </div>
+        )}
+        {guests.length === 0 ? (
+          <p className="ad-empty">Every confirmed {side} guest has a seat. 🎉</p>
+        ) : list.length === 0 ? (
+          <p className="ad-empty">No {side} guests match &ldquo;{q}&rdquo;.</p>
+        ) : (
+          <ul className="seat-picker" aria-label={`Unseated ${side} guests`}>
+            {list.map((g) => (
+              <li key={g.id}>
+                <button type="button" className="seat-picker__item" onClick={() => onPick(g)}>
+                  <span className="seat-picker__avatar" aria-hidden="true">{initials(g.name)}</span>
+                  <span className="seat-picker__text">
+                    <span className="seat-picker__name">{g.name}</span>
+                    <span className="seat-picker__meta">{g.groupCode} &middot; {cap(g.side)}</span>
+                  </span>
+                  <span className="seat-picker__go" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p style={{ fontSize: '0.72rem', color: 'var(--ad-muted)', margin: '0.7rem 0 0' }}>
+          Tap a guest, then click a chair on the plan to seat them.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function PlaceChoiceModal({ movingName, movingHasSeat, occupant, zone, onSwap, onPushRight, onPushLeft, onClose }: {
+  movingName: string; movingHasSeat: boolean; occupant: SeatGuest; zone: string;
+  onSwap: () => void; onPushRight: () => void; onPushLeft: () => void; onClose: () => void;
+}) {
+  return (
+    <div className="seat-modal-scrim" onClick={onClose} role="presentation">
+      <div className="seat-modal seat-modal--choice" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Seat already taken">
+        <div className="seat-panel__head" style={{ marginBottom: '0.6rem' }}>
+          <div>
+            <div className="ad-eyebrow">{zone}</div>
+            <h3 className="ad-section-title" style={{ fontSize: '1.15rem' }}>Seat taken by {occupant.name}</h3>
+          </div>
+          <button type="button" className="ad-icon-btn" onClick={onClose} aria-label="Cancel">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
+        </div>
+        <p style={{ fontSize: '0.82rem', color: 'var(--ad-body)', margin: '0 0 0.9rem' }}>
+          Where should <strong>{movingName}</strong> go?
+        </p>
+        <div className="seat-choice-grid">
+          <button type="button" className="seat-choice" onClick={onSwap}>
+            <span className="seat-choice__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></svg>
+            </span>
+            <span className="seat-choice__title">{movingHasSeat ? 'Swap seats' : `Take seat`}</span>
+            <span className="seat-choice__desc">{movingHasSeat ? `${movingName} ⇄ ${occupant.name}` : `Move ${occupant.name} out`}</span>
+          </button>
+          <button type="button" className="seat-choice" onClick={onPushLeft}>
+            <span className="seat-choice__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
+            </span>
+            <span className="seat-choice__title">Push left</span>
+            <span className="seat-choice__desc">Shift this seat &amp; those left ←</span>
+          </button>
+          <button type="button" className="seat-choice" onClick={onPushRight}>
+            <span className="seat-choice__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
+            </span>
+            <span className="seat-choice__title">Push right</span>
+            <span className="seat-choice__desc">Shift this seat &amp; those right →</span>
+          </button>
+        </div>
+        <button type="button" className="ad-btn ad-btn--outline" style={{ width: '100%', marginTop: '0.9rem' }} onClick={onClose}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 // ── Shared bits ───────────────────────────────────────────────────────────
 function PageHeader() {
   return (
@@ -805,21 +1076,30 @@ function PageHeader() {
 }
 
 const numToneClass: Record<string, string> = { ok: 'ad-stat--ok', bad: 'ad-stat--bad', warn: 'ad-stat--warn', muted: '' };
-function StatCard({ label, value, sub, tone, numTone }: {
+function StatCard({ label, value, sub, tone, numTone, onClick }: {
   label: string; value: string | number; sub?: string; tone?: 'accent' | 'ok'; numTone?: 'ok' | 'bad' | 'warn' | 'muted';
+  onClick?: () => void;
 }) {
   const cardTone = tone === 'accent' ? 'ad-stat--accent' : tone === 'ok' ? 'ad-stat--ok' : '';
   const valueClass = numTone ? numToneClass[numTone] : '';
   const mutedNum = numTone === 'muted';
-  return (
-    <div className={`ad-stat ${cardTone}`}>
+  const inner = (
+    <>
       <span className="ad-stat__label">{label}</span>
       <span className={`ad-stat__value ${valueClass}`} style={mutedNum ? { color: 'var(--ad-muted)' } : undefined}>
         {value}
         {sub && <span className="ad-stat__sub">{sub}</span>}
       </span>
-    </div>
+    </>
   );
+  if (onClick) {
+    return (
+      <button type="button" className={`ad-stat seat-stat-btn ${cardTone}`} onClick={onClick} aria-label={`${label}: ${value}. Tap to view the list.`}>
+        {inner}
+      </button>
+    );
+  }
+  return <div className={`ad-stat ${cardTone}`}>{inner}</div>;
 }
 
 function SeatingSkeleton() {
@@ -975,6 +1255,33 @@ function SeatingStyles() {
     .seat-sheet-scrim { display: none; }
 
     .seat-toast { position: fixed; left: 50%; bottom: 1.25rem; transform: translateX(-50%); z-index: 70; box-shadow: var(--ad-shadow); max-width: min(92vw, 460px); }
+
+    /* clickable stat cards (unseated groom / bride) */
+    .seat-stat-btn { cursor: pointer; text-align: left; font: inherit; width: 100%; transition: border-color 0.14s ease, box-shadow 0.14s ease, background-color 0.14s ease; }
+    .seat-stat-btn:hover { border-color: var(--ad-accent); box-shadow: var(--ad-shadow); }
+    .seat-stat-btn:focus-visible { outline: 2px solid var(--ad-accent); outline-offset: 2px; }
+    .seat-stat-btn .ad-stat__sub { text-transform: uppercase; letter-spacing: 0.03em; }
+
+    /* side-filter tabs in the picker */
+    .seat-sidetabs { display: inline-flex; gap: 0.25rem; padding: 0.2rem; background: var(--ad-raised); border: 1px solid var(--ad-border); border-radius: 999px; margin-bottom: 0.7rem; }
+    .seat-sidetab { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.32rem 0.7rem; border: none; background: transparent; border-radius: 999px; font-size: 0.78rem; font-weight: 600; color: var(--ad-muted); cursor: pointer; transition: background-color 0.14s ease, color 0.14s ease; }
+    .seat-sidetab:hover { color: var(--ad-ink); }
+    .seat-sidetab.is-active { background: var(--ad-surface); color: var(--ad-ink); box-shadow: var(--ad-shadow); }
+    .seat-sidetab__count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--ad-border); color: var(--ad-body); font-size: 0.68rem; }
+    .seat-sidetab.is-active .seat-sidetab__count { background: var(--ad-accent-soft); color: var(--ad-accent-strong); }
+
+    /* centred modals (unseated list + swap/push choice) */
+    .seat-modal-scrim { position: fixed; inset: 0; z-index: 80; background: rgba(20, 18, 15, 0.5); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .seat-modal { width: 100%; max-width: 420px; max-height: 84vh; overflow-y: auto; background: var(--ad-surface); border: 1px solid var(--ad-border); border-radius: var(--ad-r-card); box-shadow: var(--ad-shadow); padding: 1.15rem 1.2rem 1.25rem; }
+    .seat-modal--choice { max-width: 460px; }
+    .seat-choice-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+    @media (max-width: 480px) { .seat-choice-grid { grid-template-columns: 1fr; } }
+    .seat-choice { display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; text-align: left; padding: 0.7rem 0.75rem; background: var(--ad-surface); border: 1px solid var(--ad-border); border-radius: var(--ad-r-ctrl); cursor: pointer; transition: background-color 0.14s ease, border-color 0.14s ease, transform 0.08s ease; }
+    .seat-choice:hover { background: var(--ad-accent-soft); border-color: var(--ad-accent); }
+    .seat-choice:active { transform: translateY(1px); }
+    .seat-choice__icon { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: var(--ad-accent-soft); color: var(--ad-accent-strong); margin-bottom: 0.15rem; }
+    .seat-choice__title { font-size: 0.86rem; font-weight: 700; color: var(--ad-ink); }
+    .seat-choice__desc { font-size: 0.7rem; color: var(--ad-muted); line-height: 1.25; }
 
     /* mobile: panel becomes a bottom sheet */
     @media (max-width: 1023px) {
