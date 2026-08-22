@@ -79,6 +79,8 @@ export default function SeatingPage() {
   const [unseatedModal, setUnseatedModal] = useState<'groom' | 'bride' | null>(null);
   // When a move lands on an already-taken seat: offer swap / push-right / push-left.
   const [placeChoice, setPlaceChoice] = useState<{ targetCode: string; occupant: SeatGuest } | null>(null);
+  // Right-click context menu on a chair (push right/left, move, clear, assign).
+  const [menu, setMenu] = useState<{ code: string; x: number; y: number } | null>(null);
 
   // Edit-tables mode (draw your own table grouping)
   const [customTables, setCustomTables] = useState<TableDef[] | null>(null);
@@ -159,6 +161,23 @@ export default function SeatingPage() {
       if (toastTimer.current) clearTimeout(toastTimer.current);
     };
   }, []);
+
+  // Dismiss the right-click menu on any outside click, scroll, resize, or Escape.
+  useEffect(() => {
+    if (!menu) return;
+    const close = () => setMenu(null);
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenu(null); };
+    window.addEventListener('click', close);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('click', close);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [menu]);
 
   const flash = (msg: string) => {
     setToast(msg);
@@ -379,6 +398,53 @@ export default function SeatingPage() {
     setMoveGuest(g);
   };
 
+  // Open the assign picker for a seat (used by the context menu + after a push).
+  const openAssignPicker = (code: string) => {
+    setMenu(null);
+    setMoveGuest(null);
+    setSelectedCode(code);
+    setSearch('');
+  };
+
+  // Right-click → "push right / left": shift the clicked seat's occupant and every
+  // consecutive occupied seat toward `dir` until the first empty seat absorbs them,
+  // freeing the clicked seat. Then open the picker so a guest can be inserted there.
+  const pushInsert = (code: string, dir: 'right' | 'left') => {
+    setMenu(null);
+    const codes = tableCodesOf(code);
+    if (!codes) { flash('This seat is not part of a table row.'); return; }
+    const t = codes.indexOf(code);
+    if (t < 0) return;
+    if (!assignments[code]) { openAssignPicker(code); return; } // already empty → just assign
+
+    const moves: { code: string; guestId: string }[] = [];
+    if (dir === 'right') {
+      let e = -1;
+      for (let i = t + 1; i < codes.length; i++) { if (!assignments[codes[i]]) { e = i; break; } }
+      if (e < 0) { flash('No empty seat to the right to push into — that end of the table is full.'); return; }
+      for (let i = e; i > t; i--) moves.push({ code: codes[i], guestId: assignments[codes[i - 1]].id });
+    } else {
+      let e = -1;
+      for (let i = t - 1; i >= 0; i--) { if (!assignments[codes[i]]) { e = i; break; } }
+      if (e < 0) { flash('No empty seat to the left to push into — that end of the table is full.'); return; }
+      for (let i = e; i < t; i++) moves.push({ code: codes[i], guestId: assignments[codes[i + 1]].id });
+    }
+    doBatch(moves);
+    // clicked seat is now free — open the picker to seat someone there
+    setMoveGuest(null);
+    setSelectedCode(code);
+    setSearch('');
+  };
+
+  const openMenu = (code: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    if (editMode) return;
+    setMoveGuest(null);
+    setSelectedCode(null);
+    setPlaceChoice(null);
+    setMenu({ code, x: e.clientX, y: e.clientY });
+  };
+
   const showTip = (code: string, el: SVGGElement | null) => {
     const wrap = stageRef.current;
     if (!wrap || !el) return;
@@ -568,6 +634,7 @@ export default function SeatingPage() {
                     tableNames={tableNames}
                     tables={liveTables}
                     onActivate={onChairActivate}
+                    onContext={openMenu}
                     onHover={(code, el) => { setFocusedCode(code); showTip(code, el); }}
                     onLeave={() => { setTip(null); }}
                     onFocusChair={(code, el) => { setFocusedCode(code); showTip(code, el); }}
@@ -677,7 +744,69 @@ export default function SeatingPage() {
         />
       )}
 
+      {/* Right-click chair context menu */}
+      {menu && (
+        <ChairMenu
+          x={menu.x}
+          y={menu.y}
+          zone={zoneOf(menu.code)}
+          occupant={assignments[menu.code] || null}
+          onAssign={() => openAssignPicker(menu.code)}
+          onMove={() => { const o = assignments[menu.code]; setMenu(null); if (o) startMove(o); }}
+          onPushRight={() => pushInsert(menu.code, 'right')}
+          onPushLeft={() => pushInsert(menu.code, 'left')}
+          onClear={() => { setMenu(null); doClear(menu.code); }}
+        />
+      )}
+
       {toast && <div className="seat-toast ad-notice ad-notice--bad" role="alert">{toast}</div>}
+    </div>
+  );
+}
+
+// Right-click chair menu. Positioned at the cursor, clamped to the viewport.
+function ChairMenu({ x, y, zone, occupant, onAssign, onMove, onPushRight, onPushLeft, onClear }: {
+  x: number; y: number; zone: string; occupant: SeatGuest | null;
+  onAssign: () => void; onMove: () => void; onPushRight: () => void; onPushLeft: () => void; onClear: () => void;
+}) {
+  const W = 236, H = occupant ? 232 : 96;
+  const left = typeof window !== 'undefined' ? Math.min(x, window.innerWidth - W - 8) : x;
+  const top = typeof window !== 'undefined' ? Math.min(y, window.innerHeight - H - 8) : y;
+  return (
+    <div
+      className="seat-menu"
+      style={{ left, top }}
+      role="menu"
+      onClick={(e) => e.stopPropagation()}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <div className="seat-menu__head">{zone}{occupant ? ` · ${occupant.name}` : ' · Empty'}</div>
+      {occupant ? (
+        <>
+          <button type="button" role="menuitem" className="seat-menu__item" onClick={onPushRight}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
+            <span>Push right<em>insert here, shift others right →</em></span>
+          </button>
+          <button type="button" role="menuitem" className="seat-menu__item" onClick={onPushLeft}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
+            <span>Push left<em>insert here, shift others left ←</em></span>
+          </button>
+          <div className="seat-menu__sep" />
+          <button type="button" role="menuitem" className="seat-menu__item" onClick={onMove}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></svg>
+            <span>Move / swap guest…</span>
+          </button>
+          <button type="button" role="menuitem" className="seat-menu__item seat-menu__item--danger" onClick={onClear}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></svg>
+            <span>Clear seat</span>
+          </button>
+        </>
+      ) : (
+        <button type="button" role="menuitem" className="seat-menu__item" onClick={onAssign}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>
+          <span>Assign a guest here</span>
+        </button>
+      )}
     </div>
   );
 }
@@ -693,6 +822,7 @@ function FloorPlan({
   tableNames,
   tables,
   onActivate,
+  onContext,
   onHover,
   onLeave,
   onFocusChair,
@@ -707,6 +837,7 @@ function FloorPlan({
   tableNames: string[];
   tables: { name: string; cx: number; cy: number }[];
   onActivate: (code: string) => void;
+  onContext: (code: string, e: React.MouseEvent) => void;
   onHover: (code: string, el: SVGGElement | null) => void;
   onLeave: () => void;
   onFocusChair: (code: string, el: SVGGElement | null) => void;
@@ -747,6 +878,7 @@ function FloorPlan({
             aria-label={label}
             aria-pressed={selectedCode === s.code}
             onClick={(e) => { onActivate(s.code); (e.currentTarget as SVGGElement).blur?.(); }}
+            onContextMenu={(e) => onContext(s.code, e)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onActivate(s.code); }
             }}
@@ -1282,6 +1414,19 @@ function SeatingStyles() {
     .seat-choice__icon { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: var(--ad-accent-soft); color: var(--ad-accent-strong); margin-bottom: 0.15rem; }
     .seat-choice__title { font-size: 0.86rem; font-weight: 700; color: var(--ad-ink); }
     .seat-choice__desc { font-size: 0.7rem; color: var(--ad-muted); line-height: 1.25; }
+
+    /* right-click chair context menu */
+    .seat-menu { position: fixed; z-index: 90; width: 236px; background: var(--ad-surface); border: 1px solid var(--ad-border); border-radius: 12px; box-shadow: var(--ad-shadow); padding: 0.3rem; }
+    .seat-menu__head { font-size: 0.7rem; font-weight: 600; color: var(--ad-muted); padding: 0.4rem 0.5rem 0.35rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .seat-menu__sep { height: 1px; background: var(--ad-border); margin: 0.25rem 0.3rem; }
+    .seat-menu__item { width: 100%; display: flex; align-items: center; gap: 0.55rem; text-align: left; padding: 0.5rem 0.55rem; background: transparent; border: none; border-radius: 8px; cursor: pointer; color: var(--ad-ink); transition: background-color 0.12s ease; }
+    .seat-menu__item:hover { background: var(--ad-accent-soft); }
+    .seat-menu__item svg { flex: 0 0 auto; color: var(--ad-accent-strong); }
+    .seat-menu__item span { display: flex; flex-direction: column; font-size: 0.84rem; font-weight: 600; line-height: 1.25; min-width: 0; }
+    .seat-menu__item span em { font-style: normal; font-size: 0.68rem; font-weight: 400; color: var(--ad-muted); }
+    .seat-menu__item--danger { color: var(--ad-bad); }
+    .seat-menu__item--danger svg { color: var(--ad-bad); }
+    .seat-menu__item--danger:hover { background: var(--ad-bad-soft); }
 
     /* mobile: panel becomes a bottom sheet */
     @media (max-width: 1023px) {
