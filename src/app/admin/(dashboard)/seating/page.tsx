@@ -9,6 +9,7 @@ import {
   SEAT_BY_CODE,
   type SeatDef,
 } from '@/lib/seatLayout';
+import { SNAIL_OF_CODE } from '@/lib/snails';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface GuestLite {
@@ -162,10 +163,11 @@ export default function SeatingPage() {
     };
   }, []);
 
-  // Dismiss the right-click menu on any outside click, scroll, resize, or Escape.
+  // Dismiss the right-click / long-press menu on outside click, scroll, resize, or Escape.
   useEffect(() => {
     if (!menu) return;
-    const close = () => setMenu(null);
+    const t0 = Date.now();
+    const close = () => { if (Date.now() - t0 < 350) return; setMenu(null); }; // ignore the opening tap
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenu(null); };
     window.addEventListener('click', close);
     window.addEventListener('scroll', close, true);
@@ -257,6 +259,10 @@ export default function SeatingPage() {
     return [...t.codes].sort((a, b) => (SEAT_BY_CODE[a]?.seatNo ?? 0) - (SEAT_BY_CODE[b]?.seatNo ?? 0));
   };
 
+  // The row a push should traverse: a whole "snail" (spiral serpentine spanning
+  // several tables) is treated as ONE continuous row; anything else uses its table.
+  const pushRowOf = (code: string): string[] | null => SNAIL_OF_CODE[code] || tableCodesOf(code);
+
   // ── Mutations (optimistic) ────────────────────────────────────────────────
   const doAssign = async (code: string, guest: GuestLite) => {
     setGuests((prev) =>
@@ -340,7 +346,7 @@ export default function SeatingPage() {
   // until an empty seat absorbs the shift. Warns if that direction is already full.
   const doPush = (targetCode: string, dir: 'right' | 'left') => {
     if (!moveGuest) return;
-    const codes = tableCodesOf(targetCode);
+    const codes = pushRowOf(targetCode);
     if (!codes) { flash('This seat is not part of a table row.'); return; }
     const t = codes.indexOf(targetCode);
     if (t < 0) return;
@@ -411,7 +417,7 @@ export default function SeatingPage() {
   // freeing the clicked seat. Then open the picker so a guest can be inserted there.
   const pushInsert = (code: string, dir: 'right' | 'left') => {
     setMenu(null);
-    const codes = tableCodesOf(code);
+    const codes = pushRowOf(code);
     if (!codes) { flash('This seat is not part of a table row.'); return; }
     const t = codes.indexOf(code);
     if (t < 0) return;
@@ -565,7 +571,7 @@ export default function SeatingPage() {
               <div className="seat-legend" aria-hidden="true">
                 <span className="seat-legend__item"><span className="seat-swatch seat-swatch--empty" />Empty seat</span>
                 <span className="seat-legend__item"><span className="seat-swatch seat-swatch--filled" />Seated guest</span>
-                <span className="seat-legend__hint">Hover a seat for the name · pinch / scroll to zoom</span>
+                <span className="seat-legend__hint">Tap a seat to assign · right-click or long-press for push / swap · pinch to zoom</span>
               </div>
               <div className="seat-zoom" role="group" aria-label="Zoom the floor plan">
                 <button type="button" className="ad-icon-btn" onClick={() => setZoom((z) => Math.max(1, +(z - 0.25).toFixed(2)))} disabled={zoom <= 1} aria-label="Zoom out">
@@ -635,6 +641,7 @@ export default function SeatingPage() {
                     tables={liveTables}
                     onActivate={onChairActivate}
                     onContext={openMenu}
+                    onLongPress={(code, x, y) => { if (editMode) return; setMoveGuest(null); setSelectedCode(null); setPlaceChoice(null); setMenu({ code, x, y }); }}
                     onHover={(code, el) => { setFocusedCode(code); showTip(code, el); }}
                     onLeave={() => { setTip(null); }}
                     onFocusChair={(code, el) => { setFocusedCode(code); showTip(code, el); }}
@@ -823,6 +830,7 @@ function FloorPlan({
   tables,
   onActivate,
   onContext,
+  onLongPress,
   onHover,
   onLeave,
   onFocusChair,
@@ -838,11 +846,14 @@ function FloorPlan({
   tables: { name: string; cx: number; cy: number }[];
   onActivate: (code: string) => void;
   onContext: (code: string, e: React.MouseEvent) => void;
+  onLongPress: (code: string, x: number, y: number) => void;
   onHover: (code: string, el: SVGGElement | null) => void;
   onLeave: () => void;
   onFocusChair: (code: string, el: SVGGElement | null) => void;
   onBlurChair: () => void;
 }) {
+  const lpTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lpFired = useRef(false);
   return (
     <svg
       className="seat-svg"
@@ -877,8 +888,23 @@ function FloorPlan({
             tabIndex={0}
             aria-label={label}
             aria-pressed={selectedCode === s.code}
-            onClick={(e) => { onActivate(s.code); (e.currentTarget as SVGGElement).blur?.(); }}
+            onClick={(e) => {
+              if (lpFired.current) { lpFired.current = false; return; } // long-press already handled it
+              onActivate(s.code); (e.currentTarget as SVGGElement).blur?.();
+            }}
             onContextMenu={(e) => onContext(s.code, e)}
+            onTouchStart={(e) => {
+              lpFired.current = false;
+              const tch = e.touches[0];
+              const cx = tch?.clientX ?? 0, cy = tch?.clientY ?? 0;
+              if (lpTimer.current) clearTimeout(lpTimer.current);
+              lpTimer.current = setTimeout(() => { lpFired.current = true; onLongPress(s.code, cx, cy); }, 500);
+            }}
+            onTouchMove={() => { if (lpTimer.current) clearTimeout(lpTimer.current); }}
+            onTouchEnd={(e) => {
+              if (lpTimer.current) clearTimeout(lpTimer.current);
+              if (lpFired.current) e.preventDefault(); // swallow the emulated click after a long-press
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onActivate(s.code); }
             }}
