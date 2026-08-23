@@ -9,7 +9,7 @@ import {
   SEAT_BY_CODE,
   type SeatDef,
 } from '@/lib/seatLayout';
-import { SNAIL_OF_CODE } from '@/lib/snails';
+import { SNAIL_ROW_OF_CODE } from '@/lib/snails';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface GuestLite {
@@ -259,9 +259,19 @@ export default function SeatingPage() {
     return [...t.codes].sort((a, b) => (SEAT_BY_CODE[a]?.seatNo ?? 0) - (SEAT_BY_CODE[b]?.seatNo ?? 0));
   };
 
-  // The row a push should traverse: a whole "snail" (spiral serpentine spanning
-  // several tables) is treated as ONE continuous row; anything else uses its table.
-  const pushRowOf = (code: string): string[] | null => SNAIL_OF_CODE[code] || tableCodesOf(code);
+  // The row a push should traverse: a snail seat pushes along its whole bench row
+  // (outer or inner arc, across every sub-table); anything else uses its table.
+  const pushRowOf = (code: string): string[] | null => SNAIL_ROW_OF_CODE[code] || tableCodesOf(code);
+
+  // Map "right"/"left" to a chain step (+1/-1) using the seats' actual x-positions,
+  // so pushing always shifts toward the spatial side the user picked.
+  const spatialStep = (codes: string[], t: number, dir: 'right' | 'left'): 1 | -1 => {
+    const lo = SEAT_BY_CODE[codes[Math.max(0, t - 1)]]?.x ?? 0;
+    const hi = SEAT_BY_CODE[codes[Math.min(codes.length - 1, t + 1)]]?.x ?? 0;
+    const higherIndexIsRight = hi >= lo; // does moving to a higher chain index go rightward?
+    const rightStep: 1 | -1 = higherIndexIsRight ? 1 : -1;
+    return dir === 'right' ? rightStep : (-rightStep as 1 | -1);
+  };
 
   // ── Mutations (optimistic) ────────────────────────────────────────────────
   const doAssign = async (code: string, guest: GuestLite) => {
@@ -356,17 +366,17 @@ export default function SeatingPage() {
       const g = assignments[c];
       return g && g.id === moveGuest.id ? undefined : g;
     };
-
+    const step = spatialStep(codes, t, dir);
     const moves: { code: string; guestId: string }[] = [];
-    if (dir === 'right') {
+    if (step > 0) {
       let e = -1;
       for (let i = t + 1; i < codes.length; i++) { if (!occ(codes[i])) { e = i; break; } }
-      if (e < 0) { flash('No empty seat to the right to push into — that end of the table is full.'); return; }
+      if (e < 0) { flash(`No empty seat to the ${dir} to push into — that end of the bench is full.`); return; }
       for (let i = e; i > t; i--) moves.push({ code: codes[i], guestId: occ(codes[i - 1])!.id });
     } else {
       let e = -1;
       for (let i = t - 1; i >= 0; i--) { if (!occ(codes[i])) { e = i; break; } }
-      if (e < 0) { flash('No empty seat to the left to push into — that end of the table is full.'); return; }
+      if (e < 0) { flash(`No empty seat to the ${dir} to push into — that end of the bench is full.`); return; }
       for (let i = e; i < t; i++) moves.push({ code: codes[i], guestId: occ(codes[i + 1])!.id });
     }
     moves.push({ code: targetCode, guestId: moveGuest.id });
@@ -422,17 +432,17 @@ export default function SeatingPage() {
     const t = codes.indexOf(code);
     if (t < 0) return;
     if (!assignments[code]) { openAssignPicker(code); return; } // already empty → just assign
-
+    const step = spatialStep(codes, t, dir);
     const moves: { code: string; guestId: string }[] = [];
-    if (dir === 'right') {
+    if (step > 0) {
       let e = -1;
       for (let i = t + 1; i < codes.length; i++) { if (!assignments[codes[i]]) { e = i; break; } }
-      if (e < 0) { flash('No empty seat to the right to push into — that end of the table is full.'); return; }
+      if (e < 0) { flash(`No empty seat to the ${dir} to push into — that end of the bench is full.`); return; }
       for (let i = e; i > t; i--) moves.push({ code: codes[i], guestId: assignments[codes[i - 1]].id });
     } else {
       let e = -1;
       for (let i = t - 1; i >= 0; i--) { if (!assignments[codes[i]]) { e = i; break; } }
-      if (e < 0) { flash('No empty seat to the left to push into — that end of the table is full.'); return; }
+      if (e < 0) { flash(`No empty seat to the ${dir} to push into — that end of the bench is full.`); return; }
       for (let i = e; i < t; i++) moves.push({ code: codes[i], guestId: assignments[codes[i + 1]].id });
     }
     doBatch(moves);
