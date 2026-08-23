@@ -204,7 +204,7 @@ export default function SeatingPage() {
     if (name) {
       const t = liveTables.find((x) => x.name === name);
       const idx = t ? t.codes.indexOf(code) + 1 : 0;
-      return `Table ${name} · Seat ${String(idx).padStart(2, '0')}`;
+      return `${name}${String(idx).padStart(2, '0')}`;
     }
     return SEAT_BY_CODE[code]?.zone || code;
   };

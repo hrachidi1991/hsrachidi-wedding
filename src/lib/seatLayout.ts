@@ -1,8 +1,8 @@
 // AUTO-GENERATED from the NEW Blossom venue plan (Hussein & Suzan fp.pdf, Aug 2026).
 // Floor-plan artwork rendered to /public/seating-plan.png in the SAME coordinate space.
-// Chairs extracted from the plan vector data (pdfminer, recursing the /Xop1 form).
-// Tables 1-11 match the numbers printed on the plan (== the plan's 282-guest capacity).
-// Refine grouping via the admin Seating "Edit tables" tool. Row: [x, y, rotation(deg), width, height].
+// Grouping = the map's table numbers 1-11 with lettered sub-tables of 7 seats along each
+// snail (big snails 4/8 = 7 subtables; small snails 5/7 = 6 subtables). Seat label = e.g. "4D05".
+// RAW positions + seat codes S001..S282 are STABLE (never change) so DB assignments are preserved.
 export interface SeatDef { code: string; table: string; seatNo: number; zone: string; num: number; x: number; y: number; rot: number; w: number; h: number; }
 export const VIEWBOX = { w: 1600, h: 1236 };
 export const PLAN_IMAGE = '/seating-plan.png';
@@ -291,24 +291,46 @@ const RAW: [number, number, number, number, number][] = [
   [295.0,593.8,0,12,12],
 ];
 const TABLE_ORDER: Record<string, number[]> = {
-  "1": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-  "2": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
-  "3": [20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39],
-  "4": [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84],
-  "5": [85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130],
-  "6": [131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150],
-  "7": [151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196],
-  "8": [197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241],
-  "9": [242, 243, 244, 245, 246, 247, 248, 249, 250, 251],
-  "10": [252, 253, 254, 255, 256, 257, 258, 259, 260, 261],
-  "11": [262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281],
+  "1A": [3, 4, 5, 6, 7, 8, 9, 0, 1, 2],
+  "2B": [13, 14, 15, 16, 17, 18, 19, 10, 11, 12],
+  "3C": [30, 28, 25, 23, 22, 20, 21, 24, 26, 27, 29, 31, 33, 35, 37, 39, 38, 36, 34, 32],
+  "4D": [87, 86, 85, 84, 83, 82, 81],
+  "4E": [80, 79, 78, 77, 76, 75, 74],
+  "4F": [73, 72, 71, 70, 69, 68, 67],
+  "4G": [66, 65, 64, 63, 62, 61, 60],
+  "4H": [59, 58, 57, 56, 55, 54, 53],
+  "4I": [52, 51, 50, 49, 48, 47, 46],
+  "4J": [45, 44, 43, 42, 41, 40, 88],
+  "5K": [130, 129, 128, 127, 126, 125, 124],
+  "5L": [123, 122, 121, 120, 119, 118, 117],
+  "5M": [116, 115, 114, 113, 112, 111, 110],
+  "5N": [109, 108, 107, 106, 105, 104, 103],
+  "5O": [102, 101, 100, 99, 98, 97, 96],
+  "5P": [95, 94, 93, 92, 91, 90, 89],
+  "6Q": [139, 136, 134, 132, 131, 133, 135, 137, 138, 140, 142, 144, 146, 148, 150, 149, 147, 145, 143, 141],
+  "7R": [196, 195, 194, 193, 192, 191, 190],
+  "7S": [189, 188, 187, 186, 185, 184, 183],
+  "7T": [182, 181, 180, 179, 178, 177, 176],
+  "7U": [175, 174, 173, 172, 171, 170, 169],
+  "7V": [168, 167, 166, 165, 164, 163, 162],
+  "7W": [161, 160, 159, 158, 157, 156, 155],
+  "8X": [153, 152, 151, 241, 240, 239, 238],
+  "8Y": [237, 236, 235, 234, 233, 232, 231],
+  "8Z": [230, 229, 228, 227, 226, 225, 224],
+  "8AA": [223, 222, 221, 220, 219, 218, 217],
+  "8AB": [216, 215, 214, 213, 212, 211, 210],
+  "8AC": [209, 208, 207, 206, 205, 204, 203],
+  "8AD": [202, 201, 200, 199, 198, 197, 154],
+  "9AE": [245, 246, 247, 248, 249, 250, 251, 242, 243, 244],
+  "10AF": [255, 256, 257, 258, 259, 260, 261, 252, 253, 254],
+  "11AG": [270, 267, 265, 263, 262, 264, 266, 268, 269, 271, 273, 275, 277, 279, 281, 280, 278, 276, 274, 272],
 };
 const SEAT_TABLE: Record<number, { table: string; seatNo: number }> = {};
 for (const [t, idxs] of Object.entries(TABLE_ORDER)) idxs.forEach((rawIdx, k) => { SEAT_TABLE[rawIdx] = { table: t, seatNo: k + 1 }; });
 const pad2 = (n: number) => String(n).padStart(2, '0');
 export const SEATS: SeatDef[] = RAW.map((r, i) => {
   const t = SEAT_TABLE[i] || { table: '?', seatNo: 0 };
-  return { code: 'S' + String(i + 1).padStart(3, '0'), table: t.table, seatNo: t.seatNo, zone: `Table ${t.table} · Seat ${pad2(t.seatNo)}`, num: i + 1, x: r[0], y: r[1], rot: r[2], w: r[3], h: r[4] };
+  return { code: 'S' + String(i + 1).padStart(3, '0'), table: t.table, seatNo: t.seatNo, zone: `${t.table}${pad2(t.seatNo)}`, num: i + 1, x: r[0], y: r[1], rot: r[2], w: r[3], h: r[4] };
 });
 export const SEAT_COUNT = SEATS.length;
 export const TABLE_LETTERS = Object.keys(TABLE_ORDER);
