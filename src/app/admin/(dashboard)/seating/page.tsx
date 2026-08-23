@@ -263,13 +263,25 @@ export default function SeatingPage() {
   // (outer or inner arc, across every sub-table); anything else uses its table.
   const pushRowOf = (code: string): string[] | null => SNAIL_ROW_OF_CODE[code] || tableCodesOf(code);
 
-  // Map "right"/"left" to a chain step (+1/-1) using the seats' actual x-positions,
-  // so pushing always shifts toward the spatial side the user picked.
+  // Map "right"/"left" to a chain step (+1/-1) using the seats' actual x-positions.
+  // Looks several seats ahead in each chain direction (not just the immediate
+  // neighbours) so the direction is robust even at a row's end or where the bench
+  // runs vertically — pushing always shifts toward the spatial side the user picked.
   const spatialStep = (codes: string[], t: number, dir: 'right' | 'left'): 1 | -1 => {
-    const lo = SEAT_BY_CODE[codes[Math.max(0, t - 1)]]?.x ?? 0;
-    const hi = SEAT_BY_CODE[codes[Math.min(codes.length - 1, t + 1)]]?.x ?? 0;
-    const higherIndexIsRight = hi >= lo; // does moving to a higher chain index go rightward?
-    const rightStep: 1 | -1 = higherIndexIsRight ? 1 : -1;
+    const xAt = (i: number) => SEAT_BY_CODE[codes[i]]?.x ?? 0;
+    const aheadX = (step: number): number | null => {
+      let j = t;
+      for (let k = 1; k <= 5; k++) { const jj = t + step * k; if (jj < 0 || jj >= codes.length) break; j = jj; }
+      return j === t ? null : xAt(j);
+    };
+    const here = xAt(t);
+    const fX = aheadX(1);   // x looking toward higher indices
+    const bX = aheadX(-1);  // x looking toward lower indices
+    let rightStep: 1 | -1;
+    if (fX !== null && bX !== null) rightStep = fX > bX ? 1 : -1;
+    else if (fX !== null) rightStep = fX >= here ? 1 : -1;
+    else if (bX !== null) rightStep = bX >= here ? -1 : 1;
+    else rightStep = 1;
     return dir === 'right' ? rightStep : (-rightStep as 1 | -1);
   };
 
