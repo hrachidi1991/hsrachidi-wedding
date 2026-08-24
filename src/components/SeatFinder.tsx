@@ -301,7 +301,11 @@ function CheckinList({ guests, loading, onToggle, onHighlight }: {
                   lpFired.current = false;
                   const t = e.touches[0]; const x = t?.clientX ?? 0, y = t?.clientY ?? 0;
                   if (lpTimer.current) clearTimeout(lpTimer.current);
-                  lpTimer.current = setTimeout(() => { lpFired.current = true; openMenu(m, x, y); }, 500);
+                  lpTimer.current = setTimeout(() => {
+                    lpFired.current = true;
+                    try { window.getSelection()?.removeAllRanges(); } catch { /* ignore */ }
+                    openMenu(m, x, y);
+                  }, 500);
                 }}
                 onTouchMove={() => { if (lpTimer.current) clearTimeout(lpTimer.current); }}
                 onTouchEnd={(e) => { if (lpTimer.current) clearTimeout(lpTimer.current); if (lpFired.current) e.preventDefault(); }}
@@ -478,7 +482,9 @@ function FindSeatStyles() {
     .fs-listtab--arrived.is-active { border-color: #2f9e57; color: #1f7a41; background: #e7f8ee; }
     .fs-listtab--arrived.is-active .fs-listtab__count { background: #2f9e57; color: #fff; }
     .fs-listhint { font-size: 0.78rem; color: var(--ad-muted); margin: 0 0 0.7rem; }
-    .fs-member--ctx { cursor: context-menu; -webkit-touch-callout: none; user-select: none; }
+    /* stop the browser selecting the name text on long-press */
+    .fs-member--ctx, .fs-member--ctx * { -webkit-touch-callout: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+    .fs-member--ctx { cursor: context-menu; }
 
     /* long-press / right-click menu */
     .fs-ctx { position: fixed; z-index: 90; width: 240px; background: var(--ad-surface); border: 1px solid var(--ad-border); border-radius: 12px; box-shadow: var(--ad-shadow); padding: 0.3rem; }
