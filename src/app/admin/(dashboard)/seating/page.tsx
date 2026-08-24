@@ -20,6 +20,7 @@ interface GuestLite {
 }
 interface SeatGuest extends GuestLite {
   seatCode: string | null;
+  present?: boolean;
 }
 
 // ── Table grouping helpers (Edit-tables mode) ────────────────────────────────
@@ -311,7 +312,7 @@ export default function SeatingPage() {
   };
 
   const doClear = async (code: string) => {
-    setGuests((prev) => prev.map((g) => (g.seatCode === code ? { ...g, seatCode: null } : g)));
+    setGuests((prev) => prev.map((g) => (g.seatCode === code ? { ...g, seatCode: null, present: false } : g)));
     try {
       const res = await fetch('/api/seats', {
         method: 'DELETE',
@@ -322,6 +323,22 @@ export default function SeatingPage() {
     } catch {
       flash('Could not clear seat — reloading.');
       loadData();
+    }
+  };
+
+  // Mark the seat's guest present / not present (green on the map). Optimistic.
+  const doPresent = async (code: string, present: boolean) => {
+    setGuests((prev) => prev.map((g) => (g.seatCode === code ? { ...g, present } : g)));
+    try {
+      const res = await fetch('/api/seat-finder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, present }),
+      });
+      if (!res.ok) throw new Error('present failed');
+    } catch {
+      setGuests((prev) => prev.map((g) => (g.seatCode === code ? { ...g, present: !present } : g)));
+      flash('Could not update — please try again.');
     }
   };
 
@@ -591,8 +608,9 @@ export default function SeatingPage() {
             {/* Legend + zoom controls */}
             <div className="seat-toolbar">
               <div className="seat-legend" aria-hidden="true">
-                <span className="seat-legend__item"><span className="seat-swatch seat-swatch--empty" />Empty seat</span>
-                <span className="seat-legend__item"><span className="seat-swatch seat-swatch--filled" />Seated guest</span>
+                <span className="seat-legend__item"><span className="seat-swatch seat-swatch--empty" />Empty</span>
+                <span className="seat-legend__item"><span className="seat-swatch seat-swatch--filled" />Seated</span>
+                <span className="seat-legend__item"><span className="seat-swatch seat-swatch--present" />Present</span>
                 <span className="seat-legend__hint">Tap a seat to assign · right-click or long-press for push / swap · pinch to zoom</span>
               </div>
               <div className="seat-zoom" role="group" aria-label="Zoom the floor plan">
@@ -715,6 +733,7 @@ export default function SeatingPage() {
                   seat={selectedSeat}
                   zone={zoneOf(selectedSeat.code)}
                   guest={selectedOccupant}
+                  onPresent={(p) => doPresent(selectedSeat.code, p)}
                   onMove={() => startMove(selectedOccupant)}
                   onClear={() => { doClear(selectedSeat.code); }}
                   onClose={closePanel}
@@ -893,7 +912,7 @@ function FloorPlan({
         const filled = !!occ;
         const cls = [
           'seat-chair',
-          filled ? 'is-filled' : 'is-empty',
+          filled ? (occ.present ? 'is-present' : 'is-filled') : 'is-empty',
           selectedCode === s.code ? 'is-selected' : '',
           moveActive && !filled ? 'is-target' : '',
         ].filter(Boolean).join(' ');
@@ -1002,9 +1021,10 @@ function SidePill({ side }: { side: string }) {
   return <span className={`ad-pill ${side === 'bride' ? 'ad-pill--accent' : 'ad-pill--neutral'}`}>{cap(side)}</span>;
 }
 
-function FilledPanel({ seat, zone, guest, onMove, onClear, onClose }: {
-  seat: SeatDef; zone: string; guest: SeatGuest; onMove: () => void; onClear: () => void; onClose: () => void;
+function FilledPanel({ seat, zone, guest, onPresent, onMove, onClear, onClose }: {
+  seat: SeatDef; zone: string; guest: SeatGuest; onPresent: (present: boolean) => void; onMove: () => void; onClear: () => void; onClose: () => void;
 }) {
+  const present = !!guest.present;
   return (
     <div className="seat-panel__body">
       <PanelHead title={zone} sub="Seated guest" onClose={onClose} />
@@ -1015,10 +1035,15 @@ function FilledPanel({ seat, zone, guest, onMove, onClear, onClose }: {
           <div className="seat-guestcard__meta">
             <SidePill side={guest.side} />
             <span className="ad-count">{guest.groupCode}</span>
+            {present && <span className="ad-pill seat-present-pill">Present</span>}
           </div>
         </div>
       </div>
       <div className="seat-panel__actions">
+        <button type="button" className={`ad-btn ${present ? 'ad-btn--outline' : 'ad-btn--primary'} seat-present-btn`} onClick={() => onPresent(!present)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+          {present ? 'Mark not arrived' : 'Mark present (arrived)'}
+        </button>
         <button type="button" className="ad-btn ad-btn--outline" onClick={onMove}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="5 9 2 12 5 15" /><polyline points="9 5 12 2 15 5" /><polyline points="15 19 12 22 9 19" /><polyline points="19 9 22 12 19 15" /><line x1="2" y1="12" x2="22" y2="12" /><line x1="12" y1="2" x2="12" y2="22" /></svg>
           Move to another seat
@@ -1325,6 +1350,10 @@ function SeatingStyles() {
     .seat-swatch { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto; display: inline-block; }
     .seat-swatch--empty { background: #efece6; border: 1px solid #b3a89a; }
     .seat-swatch--filled { background: #e5484d; }
+    .seat-swatch--present { background: #2fa860; }
+    .seat-present-pill { background: #e7f8ee; color: #1f7a41; border: 1px solid #2fa860; }
+    .seat-present-btn.ad-btn--primary { background: #2fa860; border-color: #2fa860; color: #fff; }
+    .seat-present-btn.ad-btn--primary:hover:not(:disabled) { background: #268a4f; border-color: #268a4f; }
     .seat-legend__hint { color: var(--ad-muted); font-size: 0.72rem; }
     @media (max-width: 560px) { .seat-legend__hint { display: none; } }
 
@@ -1364,6 +1393,8 @@ function SeatingStyles() {
     .seat-chair-hit { fill: transparent; }
     .seat-chair-body { fill: transparent; stroke: transparent; stroke-width: 0.8; transition: fill 0.14s ease, stroke 0.14s ease; }
     .seat-chair.is-filled .seat-chair-body { fill: #e5484d; stroke: #b42318; }
+    .seat-chair.is-present .seat-chair-body { fill: #2fa860; stroke: #1c7a43; }
+    .seat-chair.is-present:hover .seat-chair-body { fill: #268a4f; stroke: #145c32; }
     .seat-chair.is-empty:hover .seat-chair-body { fill: var(--ad-accent-soft); stroke: var(--ad-accent); }
     .seat-chair.is-filled:hover .seat-chair-body { fill: #c0362f; stroke: #8a1c14; }
     .seat-chair.is-target .seat-chair-body { fill: var(--ad-accent-soft); stroke: var(--ad-accent); stroke-width: 1; stroke-dasharray: 2.4 1.8; animation: seat-pulse 1.4s ease-in-out infinite; }

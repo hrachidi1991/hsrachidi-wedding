@@ -21,7 +21,8 @@ export default function AdminLogin() {
         body: JSON.stringify({ username, password }),
       });
       if (res.ok) {
-        router.push('/admin');
+        const data = await res.json().catch(() => ({}));
+        router.push(data?.role && data.role !== 'admin' ? '/admin/find-seat' : '/admin');
         router.refresh();
       } else {
         setError('Invalid credentials');

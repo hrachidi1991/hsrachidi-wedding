@@ -57,6 +57,7 @@ model Seat {
   code      String   @unique          // matches a chair code from lib/seatLayout, e.g. "A1-05"
   guestId   String?  @unique          // one guest per seat
   guest     Guest?   @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  present   Boolean  @default(false)  // guest has arrived / been checked in (green on the map)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

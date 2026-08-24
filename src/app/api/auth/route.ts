@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   verifyAdminCredentials,
   createAdminToken,
-  verifyAdminToken,
+  decodeToken,
   getTokenFromRequest,
   SESSION_MAX_AGE_SECONDS,
 } from '@/lib/auth';
@@ -43,14 +43,14 @@ export async function POST(request: NextRequest) {
   }
   try {
     const { username, password } = await request.json();
-    const { ok, user } = await verifyAdminCredentials(username, password);
+    const { ok, user, role } = await verifyAdminCredentials(username, password);
     if (!ok) {
       recordFailure(ip);
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
     fails.delete(ip); // clear the throttle on a successful login
-    const token = createAdminToken(user);
-    const response = NextResponse.json({ success: true });
+    const token = createAdminToken(user, role);
+    const response = NextResponse.json({ success: true, role });
     response.cookies.set('admin_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -66,10 +66,11 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   const token = getTokenFromRequest(request);
-  if (!token || !verifyAdminToken(token)) {
+  const decoded = token ? decodeToken(token) : null;
+  if (!decoded) {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
-  return NextResponse.json({ authenticated: true });
+  return NextResponse.json({ authenticated: true, role: decoded.role });
 }
 
 export async function DELETE() {

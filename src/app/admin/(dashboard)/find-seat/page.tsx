@@ -15,6 +15,7 @@ interface Guest {
   seatLabel: string | null;
   tableName: string | null;
   tableNum: string | null; // leading number of the table, e.g. "6" from "6A"
+  present: boolean;
 }
 interface GroupResult {
   groupCode: string;
@@ -30,63 +31,44 @@ export default function FindSeatPage() {
   const [tableCodes, setTableCodes] = useState<Record<string, string[]>>({});
   const [search, setSearch] = useState('');
   const [highlight, setHighlight] = useState<Guest | null>(null);
+  const [role, setRole] = useState<'admin' | 'hostess' | 'viewer'>('viewer');
+  const canMark = role === 'admin' || role === 'hostess';
 
-  // ── Load everything the finder needs (guests + seats + grouping) ──────────
+  // ── Load everything the finder needs from one minimal, role-safe endpoint ──
   const load = async () => {
     setLoading(true); setError(null);
     try {
-      const [gr, sr, cr] = await Promise.all([
-        fetch('/api/groups'),
-        fetch('/api/seats'),
-        fetch('/api/settings'),
-      ]);
-      if (!gr.ok || !sr.ok) throw new Error('load failed');
-      const groups = await gr.json();
-      const seatData = await sr.json();
-      const settings = cr.ok ? await cr.json().catch(() => null) : null;
-
-      // seat code -> label ("4D05") + table name ("4D"), from the live grouping
-      const st = (settings?.settings || settings || {})?.seatTables;
-      const codeLabel: Record<string, string> = {};
-      const codeTable: Record<string, string> = {};
+      const r = await fetch('/api/seat-finder');
+      if (!r.ok) throw new Error('load failed');
+      const data = await r.json();
+      setRole(data.role || 'viewer');
       const tblCodes: Record<string, string[]> = {};
-      if (Array.isArray(st) && st.length) {
-        for (const t of st) {
-          tblCodes[t.name] = t.codes;
-          (t.codes || []).forEach((c: string, i: number) => {
-            codeLabel[c] = `${t.name}${String(i + 1).padStart(2, '0')}`;
-            codeTable[c] = t.name;
-          });
-        }
-      }
+      for (const t of (data.tables || [])) tblCodes[t.name] = t.codes;
       setTableCodes(tblCodes);
-
-      // guest id -> seat code
-      const seatByGuest: Record<string, string> = {};
-      for (const g of (seatData.guests || [])) if (g.seatCode) seatByGuest[g.id] = g.seatCode;
-
-      const list: Guest[] = [];
-      for (const grp of (Array.isArray(groups) ? groups : [])) {
-        for (const gu of (grp.guests || [])) {
-          const code = seatByGuest[gu.id] || null;
-          const tName = code ? (codeTable[code] || SEAT_BY_CODE[code]?.table || null) : null;
-          list.push({
-            id: gu.id, name: gu.name, displayName: gu.displayName, phone: gu.phone,
-            side: gu.side || grp.side || 'groom', groupCode: gu.groupCode,
-            seatCode: code,
-            seatLabel: code ? (codeLabel[code] || SEAT_BY_CODE[code]?.zone || code) : null,
-            tableName: tName,
-            tableNum: tName ? (tName.match(/^\d+/) || [null])[0] : null,
-          });
-        }
-      }
-      setGuests(list);
+      setGuests(Array.isArray(data.guests) ? data.guests : []);
     } catch {
       setError('Could not load seating data. Please try again.');
     }
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
+
+  // Mark a guest present / not present (hostess + admin). Optimistic.
+  const togglePresent = async (g: Guest) => {
+    if (!canMark || !g.seatCode) return;
+    const next = !g.present;
+    setGuests((prev) => prev.map((x) => (x.id === g.id ? { ...x, present: next } : x)));
+    if (highlight?.id === g.id) setHighlight({ ...g, present: next });
+    try {
+      const res = await fetch('/api/seat-finder', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: g.seatCode, present: next }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setGuests((prev) => prev.map((x) => (x.id === g.id ? { ...x, present: !next } : x))); // revert
+    }
+  };
 
   // ── Search: match name / display name / phone / group, then show the WHOLE group(s) ──
   const results = useMemo<GroupResult[]>(() => {
@@ -117,7 +99,7 @@ export default function FindSeatPage() {
         <div>
           <div className="ad-eyebrow" style={{ marginBottom: '0.4rem' }}>Hostess</div>
           <h1 className="ad-title">Find a Guest&rsquo;s Seat</h1>
-          <p className="ad-page-desc">Search a guest by name to see their whole group and where each person is seated. Tap a seat to see it on the plan.</p>
+          <p className="ad-page-desc">Search a guest by name to see their whole group and seats. Tap a seat for the plan.{canMark ? ' As guests arrive, tap “Present?” to check them in — their seat turns green.' : ''}</p>
         </div>
       </header>
 
@@ -190,14 +172,25 @@ export default function FindSeatPage() {
                             <span className="fs-member__display">{m.displayName || m.name}</span>
                             {m.displayName && m.displayName !== m.name && <span className="fs-member__name">{m.name}</span>}
                           </span>
-                          {m.seatCode ? (
-                            <button type="button" className={`fs-seat${off ? ' fs-seat--other' : ''}`} onClick={() => setHighlight(m)} title={off ? `Seated at table ${m.tableNum}, apart from the rest of the group (table ${mainTable})` : undefined}>
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z" /><circle cx="12" cy="10" r="3" /></svg>
-                              <span className="fs-seat__label">{m.seatLabel}</span>
-                            </button>
-                          ) : (
-                            <span className="fs-seat fs-seat--none">No seat yet</span>
-                          )}
+                          <span className="fs-actions">
+                            {m.seatCode && canMark && (
+                              <button type="button" className={`fs-present-btn${m.present ? ' is-on' : ''}`} onClick={() => togglePresent(m)} title={m.present ? 'Arrived — tap to undo' : 'Mark as arrived'}>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                {m.present ? 'Present' : 'Present?'}
+                              </button>
+                            )}
+                            {m.seatCode && !canMark && m.present && (
+                              <span className="fs-present-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>Present</span>
+                            )}
+                            {m.seatCode ? (
+                              <button type="button" className={`fs-seat${m.present ? ' fs-seat--present' : off ? ' fs-seat--other' : ''}`} onClick={() => setHighlight(m)} title={off && !m.present ? `Seated at table ${m.tableNum}, apart from the rest of the group (table ${mainTable})` : undefined}>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z" /><circle cx="12" cy="10" r="3" /></svg>
+                                <span className="fs-seat__label">{m.seatLabel}</span>
+                              </button>
+                            ) : (
+                              <span className="fs-seat fs-seat--none">No seat yet</span>
+                            )}
+                          </span>
                         </li>
                       );
                     })}
@@ -343,6 +336,18 @@ function FindSeatStyles() {
     .fs-seat--other { border-color: #7c5cd6; background: rgba(124,92,214,0.12); color: #6641c2; }
     .fs-seat--other:hover { background: #7c5cd6; color: #fff; }
     .fs-split { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.15rem 0.5rem; border-radius: 999px; background: rgba(124,92,214,0.12); color: #6641c2; font-size: 0.7rem; font-weight: 700; }
+
+    /* present / check-in */
+    .fs-actions { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 0.4rem; }
+    .fs-present-btn { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.45rem 0.65rem; border-radius: 999px; border: 1px solid var(--ad-border); background: var(--ad-surface); color: var(--ad-muted); font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease; }
+    .fs-present-btn svg { opacity: 0.45; }
+    .fs-present-btn:hover { border-color: #2f9e57; color: #2f9e57; }
+    .fs-present-btn.is-on { background: #e7f8ee; border-color: #2f9e57; color: #1f7a41; }
+    .fs-present-btn.is-on svg { opacity: 1; }
+    .fs-present-chip { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.32rem 0.55rem; border-radius: 999px; background: #e7f8ee; color: #1f7a41; font-size: 0.74rem; font-weight: 700; }
+    .fs-seat--present { border-color: #2f9e57; background: #e7f8ee; color: #1f7a41; }
+    .fs-seat--present:hover { background: #2f9e57; color: #fff; }
+    @media (max-width: 520px) { .fs-present-btn { font-size: 0; padding: 0.45rem; } .fs-present-btn svg { opacity: 0.7; } .fs-present-btn.is-on svg { opacity: 1; } }
 
     /* modal */
     .fs-modal-scrim { position: fixed; inset: 0; z-index: 80; background: rgba(20,18,15,0.55); display: flex; align-items: center; justify-content: center; padding: 1rem; }

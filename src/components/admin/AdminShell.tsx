@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -113,10 +113,20 @@ const navItems = [
   { href: '/admin/messages', label: 'Messages', Icon: MessagesIcon },
 ];
 
-export default function AdminShell({ children }: { children: React.ReactNode }) {
+// Restricted roles only ever see the Find Seat tool.
+const FIND_SEAT = '/admin/find-seat';
+export default function AdminShell({ children, role = 'admin' }: { children: React.ReactNode; role?: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const isAdmin = role === 'admin';
+  const items = isAdmin ? navItems : navItems.filter((n) => n.href === FIND_SEAT);
+
+  // Keep restricted roles on the Find Seat page even if they type another URL.
+  useEffect(() => {
+    if (!isAdmin && pathname !== FIND_SEAT) router.replace(FIND_SEAT);
+  }, [isAdmin, pathname, router]);
 
   const handleLogout = async () => {
     await fetch('/api/auth', { method: 'DELETE' });
@@ -156,7 +166,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         </div>
 
         <nav className="ad-nav">
-          {navItems.map(({ href, label, Icon }) => {
+          {items.map(({ href, label, Icon }) => {
             const active = pathname === href;
             return (
               <Link

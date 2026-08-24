@@ -30,17 +30,20 @@ export async function GET(request: NextRequest) {
         where: { guestId: { not: null } },
         select: {
           code: true,
+          present: true,
           guest: { select: { id: true, name: true, side: true, groupCode: true } },
         },
       }),
     ]);
 
     const seatByGuestId = new Map<string, string>();
-    const assignments: { code: string; guest: { id: string; name: string; side: string; groupCode: string } }[] = [];
+    const presentByGuestId = new Map<string, boolean>();
+    const assignments: { code: string; present: boolean; guest: { id: string; name: string; side: string; groupCode: string } }[] = [];
     for (const s of seats) {
       if (s.guest) {
         seatByGuestId.set(s.guest.id, s.code);
-        assignments.push({ code: s.code, guest: s.guest });
+        presentByGuestId.set(s.guest.id, s.present);
+        assignments.push({ code: s.code, present: s.present, guest: s.guest });
       }
     }
 
@@ -50,6 +53,7 @@ export async function GET(request: NextRequest) {
       side: g.side,
       groupCode: g.groupCode,
       seatCode: seatByGuestId.get(g.id) ?? null,
+      present: presentByGuestId.get(g.id) ?? false,
     }));
 
     return NextResponse.json({ assignments, guests: guestsOut });
