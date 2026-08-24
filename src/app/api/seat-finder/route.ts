@@ -34,10 +34,9 @@ async function labelMaps() {
 // GET — minimal seating lookup for the seat finder (any signed-in role).
 // Returns ONLY name/display/group/side/seat + present; no phone/notes/RSVP.
 export async function GET(request: NextRequest) {
+  // Public read: guests can look up their seat with no login (the /seats page).
+  // Signed-in staff also get their role back (drives the check-in toggle).
   const role = requireRole(request, ['admin', 'hostess', 'viewer']);
-  if (!role) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
   try {
     const settings: any = await getSettings();
     const tables = (settings?.settings || settings || {})?.seatTables;
