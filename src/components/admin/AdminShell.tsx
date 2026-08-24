@@ -56,6 +56,16 @@ function SeatingIcon({ className }: IconProps) {
   );
 }
 
+function FindSeatIcon({ className }: IconProps) {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" className={className} {...stroke}>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="M21 21l-4.7-4.7" />
+      <path d="M10.5 7.5v6M7.5 10.5h6" />
+    </svg>
+  );
+}
+
 function RsvpIcon({ className }: IconProps) {
   return (
     <svg width="19" height="19" viewBox="0 0 24 24" className={className} {...stroke}>
@@ -98,6 +108,7 @@ const navItems = [
   { href: '/admin/content', label: 'Content & Settings', Icon: ContentIcon },
   { href: '/admin/guest-list', label: 'Guest List', Icon: GuestListIcon },
   { href: '/admin/seating', label: 'Seating Map', Icon: SeatingIcon },
+  { href: '/admin/find-seat', label: 'Find Seat', Icon: FindSeatIcon },
   { href: '/admin/rsvp', label: 'RSVP Tracking', Icon: RsvpIcon },
   { href: '/admin/messages', label: 'Messages', Icon: MessagesIcon },
 ];
