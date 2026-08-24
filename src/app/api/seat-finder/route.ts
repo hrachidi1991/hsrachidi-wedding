@@ -3,6 +3,7 @@ import { requireRole } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { getSettings } from '@/lib/settings';
 import { SEAT_BY_CODE } from '@/lib/seatLayout';
+import { guestRsvpStatus } from '@/lib/rsvpStatus';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,31 +41,39 @@ export async function GET(request: NextRequest) {
   try {
     const settings: any = await getSettings();
     const tables = (settings?.settings || settings || {})?.seatTables;
-    const [guests, seats, maps] = await Promise.all([
-      prisma.guest.findMany({ select: { id: true, name: true, displayName: true, groupCode: true, side: true } }),
+    const [guests, seats, groups, maps] = await Promise.all([
+      prisma.guest.findMany({ select: { id: true, name: true, displayName: true, groupCode: true, side: true, rsvpManual: true } }),
       prisma.seat.findMany({ where: { guestId: { not: null } }, select: { code: true, guestId: true, present: true } }),
+      prisma.guestGroup.findMany({ select: { groupCode: true, rsvpResponse: { select: { attending: true, guestNames: true } } } }),
       labelMaps(),
     ]);
     const seatByGuest: Record<string, { code: string; present: boolean }> = {};
     for (const s of seats) if (s.guestId) seatByGuest[s.guestId] = { code: s.code, present: s.present };
+    const groupByCode = new Map(groups.map((g) => [g.groupCode, g]));
 
-    const out = guests.map((g) => {
-      const sc = seatByGuest[g.id];
-      const code = sc?.code || null;
-      const tableName = code ? (maps.codeTable[code] || SEAT_BY_CODE[code]?.table || null) : null;
-      return {
-        id: g.id,
-        name: g.name,
-        displayName: g.displayName,
-        groupCode: g.groupCode,
-        side: g.side,
-        seatCode: code,
-        seatLabel: code ? (maps.codeLabel[code] || SEAT_BY_CODE[code]?.zone || code) : null,
-        tableName,
-        tableNum: tableName ? (tableName.match(/^\d+/) || [null])[0] : null,
-        present: sc?.present || false,
-      };
-    });
+    const out = guests
+      .map((g) => {
+        const grp = groupByCode.get(g.groupCode);
+        const rsvp = guestRsvpStatus({ name: g.name, rsvpManual: g.rsvpManual }, { rsvpResponse: grp?.rsvpResponse ?? null });
+        const sc = seatByGuest[g.id];
+        const code = sc?.code || null;
+        const tableName = code ? (maps.codeTable[code] || SEAT_BY_CODE[code]?.table || null) : null;
+        return {
+          id: g.id,
+          name: g.name,
+          displayName: g.displayName,
+          groupCode: g.groupCode,
+          side: g.side,
+          rsvp,
+          seatCode: code,
+          seatLabel: code ? (maps.codeLabel[code] || SEAT_BY_CODE[code]?.zone || code) : null,
+          tableName,
+          tableNum: tableName ? (tableName.match(/^\d+/) || [null])[0] : null,
+          present: sc?.present || false,
+        };
+      })
+      // Hide guests who declined; keep "Coming" and not-yet-answered ("Pending").
+      .filter((g) => g.rsvp !== 'Not coming');
     return NextResponse.json({ guests: out, tables: Array.isArray(tables) ? tables : [], role });
   } catch (e: any) {
     if (isMissingTable(e)) return NextResponse.json({ guests: [] });

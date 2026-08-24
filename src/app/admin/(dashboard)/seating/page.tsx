@@ -10,6 +10,7 @@ import {
   type SeatDef,
 } from '@/lib/seatLayout';
 import { SNAIL_ROW_OF_CODE } from '@/lib/snails';
+import { guestRsvpStatus } from '@/lib/rsvpStatus';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface GuestLite {
@@ -122,21 +123,11 @@ export default function SeatingPage() {
         if (gr.ok) {
           const groups = await gr.json();
           const conf = new Set<string>();
+          // Same precedence as the Guest List / Dashboard: a manual "Not coming"
+          // override wins over the group's online RSVP, so seating agrees with them.
           for (const grp of (Array.isArray(groups) ? groups : [])) {
-            const gn = grp.rsvpResponse?.guestNames;
-            const nameMap = new Map<string, boolean>();
-            if (Array.isArray(gn) && gn.length && typeof gn[0] === 'object' && gn[0] && 'name' in gn[0]) {
-              for (const x of gn) nameMap.set(String(x.name).toLowerCase(), !!x.attending);
-            }
             for (const gu of (grp.guests || [])) {
-              const online = nameMap.get(String(gu.name).toLowerCase());
-              const attending =
-                online !== undefined ? online
-                : gu.rsvpManual === 'Coming' ? true
-                : gu.rsvpManual === 'Not coming' ? false
-                : grp.rsvpResponse ? !!grp.rsvpResponse.attending
-                : false;
-              if (attending) conf.add(gu.id);
+              if (guestRsvpStatus(gu, grp) === 'Coming') conf.add(gu.id);
             }
           }
           setConfirmedIds(conf);
