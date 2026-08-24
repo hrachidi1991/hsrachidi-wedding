@@ -14,6 +14,7 @@ interface Guest {
   seatCode: string | null;
   seatLabel: string | null;
   tableName: string | null;
+  tableNum: string | null; // leading number of the table, e.g. "6" from "6A"
 }
 interface GroupResult {
   groupCode: string;
@@ -68,12 +69,14 @@ export default function FindSeatPage() {
       for (const grp of (Array.isArray(groups) ? groups : [])) {
         for (const gu of (grp.guests || [])) {
           const code = seatByGuest[gu.id] || null;
+          const tName = code ? (codeTable[code] || SEAT_BY_CODE[code]?.table || null) : null;
           list.push({
             id: gu.id, name: gu.name, displayName: gu.displayName, phone: gu.phone,
             side: gu.side || grp.side || 'groom', groupCode: gu.groupCode,
             seatCode: code,
             seatLabel: code ? (codeLabel[code] || SEAT_BY_CODE[code]?.zone || code) : null,
-            tableName: code ? (codeTable[code] || SEAT_BY_CODE[code]?.table || null) : null,
+            tableName: tName,
+            tableNum: tName ? (tName.match(/^\d+/) || [null])[0] : null,
           });
         }
       }
@@ -155,34 +158,53 @@ export default function FindSeatPage() {
         <>
           <div className="fs-count">{results.length} group{results.length > 1 ? 's' : ''} · {totalMatched} guest{totalMatched > 1 ? 's' : ''}</div>
           <div className="fs-results">
-            {results.map((grp) => (
-              <div key={grp.groupCode} className="fs-group">
-                <div className="fs-group__head">
-                  <span className={`ad-pill ${grp.side === 'bride' ? 'ad-pill--accent' : 'ad-pill--neutral'}`}>{cap(grp.side)}</span>
-                  <span className="fs-group__code">Group {grp.groupCode}</span>
-                  <span className="fs-group__count">{grp.members.length} {grp.members.length > 1 ? 'guests' : 'guest'}</span>
-                </div>
-                <ul className="fs-members">
-                  {grp.members.map((m) => (
-                    <li key={m.id} className="fs-member">
-                      <span className="fs-avatar" aria-hidden="true">{initials(m.displayName || m.name)}</span>
-                      <span className="fs-member__text">
-                        <span className="fs-member__display">{m.displayName || m.name}</span>
-                        {m.displayName && m.displayName !== m.name && <span className="fs-member__name">{m.name}</span>}
+            {results.map((grp) => {
+              // main (majority) table of the group; anyone seated elsewhere is flagged.
+              const counts: Record<string, number> = {};
+              for (const m of grp.members) if (m.tableNum) counts[m.tableNum] = (counts[m.tableNum] || 0) + 1;
+              const distinct = Object.keys(counts);
+              const mainTable = distinct.length
+                ? distinct.sort((a, b) => (counts[b] - counts[a]) || (parseInt(a) - parseInt(b)))[0]
+                : null;
+              const split = distinct.length > 1;
+              return (
+                <div key={grp.groupCode} className="fs-group">
+                  <div className="fs-group__head">
+                    <span className={`ad-pill ${grp.side === 'bride' ? 'ad-pill--accent' : 'ad-pill--neutral'}`}>{cap(grp.side)}</span>
+                    <span className="fs-group__code">Group {grp.groupCode}</span>
+                    {split && (
+                      <span className="fs-split" title="This group is seated across more than one table">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /></svg>
+                        split tables
                       </span>
-                      {m.seatCode ? (
-                        <button type="button" className="fs-seat" onClick={() => setHighlight(m)}>
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z" /><circle cx="12" cy="10" r="3" /></svg>
-                          <span className="fs-seat__label">{m.seatLabel}</span>
-                        </button>
-                      ) : (
-                        <span className="fs-seat fs-seat--none">No seat yet</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+                    )}
+                    <span className="fs-group__count">{grp.members.length} {grp.members.length > 1 ? 'guests' : 'guest'}</span>
+                  </div>
+                  <ul className="fs-members">
+                    {grp.members.map((m) => {
+                      const off = !!(m.seatCode && m.tableNum && mainTable && m.tableNum !== mainTable);
+                      return (
+                        <li key={m.id} className="fs-member">
+                          <span className="fs-avatar" aria-hidden="true">{initials(m.displayName || m.name)}</span>
+                          <span className="fs-member__text">
+                            <span className="fs-member__display">{m.displayName || m.name}</span>
+                            {m.displayName && m.displayName !== m.name && <span className="fs-member__name">{m.name}</span>}
+                          </span>
+                          {m.seatCode ? (
+                            <button type="button" className={`fs-seat${off ? ' fs-seat--other' : ''}`} onClick={() => setHighlight(m)} title={off ? `Seated at table ${m.tableNum}, apart from the rest of the group (table ${mainTable})` : undefined}>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z" /><circle cx="12" cy="10" r="3" /></svg>
+                              <span className="fs-seat__label">{m.seatLabel}</span>
+                            </button>
+                          ) : (
+                            <span className="fs-seat fs-seat--none">No seat yet</span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })}
           </div>
         </>
       )}
@@ -317,6 +339,10 @@ function FindSeatStyles() {
     .fs-seat:active { transform: translateY(1px); }
     .fs-seat__label { font-family: var(--ad-font-serif, Georgia, serif); letter-spacing: 0.02em; }
     .fs-seat--none { border-color: var(--ad-border); background: var(--ad-raised); color: var(--ad-muted); font-weight: 500; cursor: default; }
+    /* member seated at a different table from the rest of the group */
+    .fs-seat--other { border-color: #7c5cd6; background: rgba(124,92,214,0.12); color: #6641c2; }
+    .fs-seat--other:hover { background: #7c5cd6; color: #fff; }
+    .fs-split { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.15rem 0.5rem; border-radius: 999px; background: rgba(124,92,214,0.12); color: #6641c2; font-size: 0.7rem; font-weight: 700; }
 
     /* modal */
     .fs-modal-scrim { position: fixed; inset: 0; z-index: 80; background: rgba(20,18,15,0.55); display: flex; align-items: center; justify-content: center; padding: 1rem; }
