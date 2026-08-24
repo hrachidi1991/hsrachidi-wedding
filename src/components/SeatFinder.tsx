@@ -233,10 +233,34 @@ export default function SeatFinder({ variant = 'admin' }: { variant?: 'admin' | 
 }
 
 // ── Check-in list (Awaiting / Arrived) — staff only ──────────────────────────
+// Long-press (touch) or right-click a name to set / unset "arrived" via a menu.
 function CheckinList({ guests, loading, onToggle, onHighlight }: {
   guests: Guest[]; loading: boolean; onToggle: (g: Guest) => void; onHighlight: (g: Guest) => void;
 }) {
   const [tab, setTab] = useState<'awaiting' | 'arrived'>('awaiting');
+  const [menu, setMenu] = useState<{ guest: Guest; x: number; y: number } | null>(null);
+  const lpTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lpFired = useRef(false);
+
+  useEffect(() => {
+    if (!menu) return;
+    const t0 = Date.now();
+    const close = () => { if (Date.now() - t0 < 350) return; setMenu(null); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenu(null); };
+    window.addEventListener('click', close);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('click', close);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [menu]);
+
+  const openMenu = (g: Guest, x: number, y: number) => setMenu({ guest: g, x, y });
+
   const seated = useMemo(
     () => guests.filter((g) => g.seatCode).sort((a, b) => (a.displayName || a.name).localeCompare(b.displayName || b.name)),
     [guests]
@@ -244,6 +268,10 @@ function CheckinList({ guests, loading, onToggle, onHighlight }: {
   const arrived = seated.filter((g) => g.present);
   const awaiting = seated.filter((g) => !g.present);
   const shown = tab === 'arrived' ? arrived : awaiting;
+
+  const MW = 240, MH = 92;
+  const mLeft = menu && typeof window !== 'undefined' ? Math.min(menu.x, window.innerWidth - MW - 8) : 0;
+  const mTop = menu && typeof window !== 'undefined' ? Math.min(menu.y, window.innerHeight - MH - 8) : 0;
 
   return (
     <div>
@@ -255,6 +283,7 @@ function CheckinList({ guests, loading, onToggle, onHighlight }: {
           Arrived <span className="fs-listtab__count">{arrived.length}</span>
         </button>
       </div>
+      <p className="fs-listhint">{tab === 'arrived' ? 'Long-press (or right-click) a name to move it back to Awaiting.' : 'Long-press (or right-click) a name to mark it Arrived.'}</p>
 
       {loading ? (
         <div className="fs-hint">Loading…</div>
@@ -264,17 +293,28 @@ function CheckinList({ guests, loading, onToggle, onHighlight }: {
         <div className="fs-group">
           <ul className="fs-members">
             {shown.map((m) => (
-              <li key={m.id} className="fs-member">
+              <li
+                key={m.id}
+                className="fs-member fs-member--ctx"
+                onContextMenu={(e) => { e.preventDefault(); openMenu(m, e.clientX, e.clientY); }}
+                onTouchStart={(e) => {
+                  lpFired.current = false;
+                  const t = e.touches[0]; const x = t?.clientX ?? 0, y = t?.clientY ?? 0;
+                  if (lpTimer.current) clearTimeout(lpTimer.current);
+                  lpTimer.current = setTimeout(() => { lpFired.current = true; openMenu(m, x, y); }, 500);
+                }}
+                onTouchMove={() => { if (lpTimer.current) clearTimeout(lpTimer.current); }}
+                onTouchEnd={(e) => { if (lpTimer.current) clearTimeout(lpTimer.current); if (lpFired.current) e.preventDefault(); }}
+              >
                 <span className="fs-avatar" aria-hidden="true">{initials(m.displayName || m.name)}</span>
                 <span className="fs-member__text">
                   <span className="fs-member__display">{m.displayName || m.name}</span>
                   {m.displayName && m.displayName !== m.name && <span className="fs-member__name">{m.name}</span>}
                 </span>
                 <span className="fs-actions">
-                  <button type="button" className={`fs-present-btn${m.present ? ' is-on' : ''}`} onClick={() => onToggle(m)} title={m.present ? 'Arrived — tap to undo' : 'Mark as arrived'}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                    {m.present ? 'Arrived' : 'Arrived?'}
-                  </button>
+                  {m.present && (
+                    <span className="fs-present-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>Arrived</span>
+                  )}
                   <button type="button" className={`fs-seat${m.present ? ' fs-seat--present' : ''}`} onClick={() => onHighlight(m)}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z" /><circle cx="12" cy="10" r="3" /></svg>
                     <span className="fs-seat__label">{m.seatLabel}</span>
@@ -283,6 +323,19 @@ function CheckinList({ guests, loading, onToggle, onHighlight }: {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {menu && (
+        <div className="fs-ctx" style={{ left: mLeft, top: mTop }} role="menu" onClick={(e) => e.stopPropagation()} onContextMenu={(e) => e.preventDefault()}>
+          <div className="fs-ctx__head">{menu.guest.displayName || menu.guest.name} · {menu.guest.seatLabel}</div>
+          <button type="button" role="menuitem" className={`fs-ctx__item${menu.guest.present ? ' fs-ctx__item--undo' : ' fs-ctx__item--set'}`} onClick={() => { onToggle(menu.guest); setMenu(null); }}>
+            {menu.guest.present ? (
+              <><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4" /><path d="M20 20v-7a4 4 0 0 0-4-4H4" /></svg>Set as not arrived</>
+            ) : (
+              <><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>Set arrived</>
+            )}
+          </button>
         </div>
       )}
     </div>
@@ -424,6 +477,17 @@ function FindSeatStyles() {
     .fs-listtab--awaiting.is-active .fs-listtab__count { background: var(--ad-accent); color: #fff; }
     .fs-listtab--arrived.is-active { border-color: #2f9e57; color: #1f7a41; background: #e7f8ee; }
     .fs-listtab--arrived.is-active .fs-listtab__count { background: #2f9e57; color: #fff; }
+    .fs-listhint { font-size: 0.78rem; color: var(--ad-muted); margin: 0 0 0.7rem; }
+    .fs-member--ctx { cursor: context-menu; -webkit-touch-callout: none; user-select: none; }
+
+    /* long-press / right-click menu */
+    .fs-ctx { position: fixed; z-index: 90; width: 240px; background: var(--ad-surface); border: 1px solid var(--ad-border); border-radius: 12px; box-shadow: var(--ad-shadow); padding: 0.3rem; }
+    .fs-ctx__head { font-size: 0.72rem; font-weight: 600; color: var(--ad-muted); padding: 0.4rem 0.5rem 0.35rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fs-ctx__item { width: 100%; display: flex; align-items: center; gap: 0.55rem; text-align: left; padding: 0.55rem 0.55rem; background: transparent; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+    .fs-ctx__item--set { color: #1f7a41; }
+    .fs-ctx__item--set:hover { background: #e7f8ee; }
+    .fs-ctx__item--undo { color: var(--ad-body); }
+    .fs-ctx__item--undo:hover { background: var(--ad-raised); }
 
     .fs-actions { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 0.4rem; }
     .fs-present-btn { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.45rem 0.65rem; border-radius: 999px; border: 1px solid var(--ad-border); background: var(--ad-surface); color: var(--ad-muted); font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease; }
