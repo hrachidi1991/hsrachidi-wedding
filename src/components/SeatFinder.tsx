@@ -35,6 +35,7 @@ export default function SeatFinder({ variant = 'admin' }: { variant?: 'admin' | 
   const [search, setSearch] = useState('');
   const [highlight, setHighlight] = useState<Guest | null>(null);
   const [role, setRole] = useState<Role>(null);
+  const [view, setView] = useState<'search' | 'list'>('search');
   const canMark = variant === 'admin' && (role === 'admin' || role === 'hostess');
   const showPresent = variant === 'admin';
 
@@ -113,6 +114,17 @@ export default function SeatFinder({ variant = 'admin' }: { variant?: 'admin' | 
         </div>
       </header>
 
+      {canMark && (
+        <div className="fs-viewtabs" role="tablist" aria-label="View">
+          <button type="button" role="tab" aria-selected={view === 'search'} className={view === 'search' ? 'is-active' : ''} onClick={() => setView('search')}>Find a guest</button>
+          <button type="button" role="tab" aria-selected={view === 'list'} className={view === 'list' ? 'is-active' : ''} onClick={() => setView('list')}>Guest list</button>
+        </div>
+      )}
+
+      {view === 'list' && canMark ? (
+        <CheckinList guests={guests} loading={loading} onToggle={togglePresent} onHighlight={setHighlight} />
+      ) : (
+      <>
       <div className="fs-searchwrap">
         <span className="fs-search-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
@@ -210,9 +222,68 @@ export default function SeatFinder({ variant = 'admin' }: { variant?: 'admin' | 
           </div>
         </>
       )}
+      </>
+      )}
 
       {highlight && highlight.seatCode && (
         <SeatMapModal guest={highlight} tableCodes={tableCodes} onClose={() => setHighlight(null)} />
+      )}
+    </div>
+  );
+}
+
+// ── Check-in list (Awaiting / Arrived) — staff only ──────────────────────────
+function CheckinList({ guests, loading, onToggle, onHighlight }: {
+  guests: Guest[]; loading: boolean; onToggle: (g: Guest) => void; onHighlight: (g: Guest) => void;
+}) {
+  const [tab, setTab] = useState<'awaiting' | 'arrived'>('awaiting');
+  const seated = useMemo(
+    () => guests.filter((g) => g.seatCode).sort((a, b) => (a.displayName || a.name).localeCompare(b.displayName || b.name)),
+    [guests]
+  );
+  const arrived = seated.filter((g) => g.present);
+  const awaiting = seated.filter((g) => !g.present);
+  const shown = tab === 'arrived' ? arrived : awaiting;
+
+  return (
+    <div>
+      <div className="fs-listtabs" role="tablist" aria-label="Check-in status">
+        <button type="button" role="tab" aria-selected={tab === 'awaiting'} className={`fs-listtab fs-listtab--awaiting${tab === 'awaiting' ? ' is-active' : ''}`} onClick={() => setTab('awaiting')}>
+          Awaiting <span className="fs-listtab__count">{awaiting.length}</span>
+        </button>
+        <button type="button" role="tab" aria-selected={tab === 'arrived'} className={`fs-listtab fs-listtab--arrived${tab === 'arrived' ? ' is-active' : ''}`} onClick={() => setTab('arrived')}>
+          Arrived <span className="fs-listtab__count">{arrived.length}</span>
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="fs-hint">Loading…</div>
+      ) : shown.length === 0 ? (
+        <p className="ad-empty">{tab === 'arrived' ? 'No one has been checked in yet.' : 'Everyone has arrived. 🎉'}</p>
+      ) : (
+        <div className="fs-group">
+          <ul className="fs-members">
+            {shown.map((m) => (
+              <li key={m.id} className="fs-member">
+                <span className="fs-avatar" aria-hidden="true">{initials(m.displayName || m.name)}</span>
+                <span className="fs-member__text">
+                  <span className="fs-member__display">{m.displayName || m.name}</span>
+                  {m.displayName && m.displayName !== m.name && <span className="fs-member__name">{m.name}</span>}
+                </span>
+                <span className="fs-actions">
+                  <button type="button" className={`fs-present-btn${m.present ? ' is-on' : ''}`} onClick={() => onToggle(m)} title={m.present ? 'Arrived — tap to undo' : 'Mark as arrived'}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    {m.present ? 'Arrived' : 'Arrived?'}
+                  </button>
+                  <button type="button" className={`fs-seat${m.present ? ' fs-seat--present' : ''}`} onClick={() => onHighlight(m)}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z" /><circle cx="12" cy="10" r="3" /></svg>
+                    <span className="fs-seat__label">{m.seatLabel}</span>
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );
@@ -338,6 +409,21 @@ function FindSeatStyles() {
     .fs-seat--other { border-color: #7c5cd6; background: rgba(124,92,214,0.12); color: #6641c2; }
     .fs-seat--other:hover { background: #7c5cd6; color: #fff; }
     .fs-split { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.15rem 0.5rem; border-radius: 999px; background: rgba(124,92,214,0.12); color: #6641c2; font-size: 0.7rem; font-weight: 700; }
+
+    /* view switch (Find a guest / Guest list) */
+    .fs-viewtabs { display: inline-flex; gap: 0.25rem; padding: 0.25rem; background: var(--ad-raised); border: 1px solid var(--ad-border); border-radius: 999px; margin-bottom: 1.1rem; }
+    .fs-viewtabs button { padding: 0.42rem 0.95rem; border: none; background: transparent; border-radius: 999px; font-weight: 600; font-size: 0.85rem; color: var(--ad-muted); cursor: pointer; transition: background-color 0.14s ease, color 0.14s ease; }
+    .fs-viewtabs button:hover { color: var(--ad-ink); }
+    .fs-viewtabs button.is-active { background: var(--ad-surface); color: var(--ad-ink); box-shadow: var(--ad-shadow); }
+
+    /* Awaiting / Arrived tabs */
+    .fs-listtabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .fs-listtab { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; padding: 0.6rem 0.9rem; border-radius: 12px; border: 1px solid var(--ad-border); background: var(--ad-surface); font-weight: 700; font-size: 0.92rem; color: var(--ad-muted); cursor: pointer; transition: border-color 0.14s ease, color 0.14s ease, background-color 0.14s ease; }
+    .fs-listtab__count { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--ad-raised); color: var(--ad-body); font-size: 0.78rem; }
+    .fs-listtab--awaiting.is-active { border-color: var(--ad-accent); color: var(--ad-accent-strong); background: var(--ad-accent-soft); }
+    .fs-listtab--awaiting.is-active .fs-listtab__count { background: var(--ad-accent); color: #fff; }
+    .fs-listtab--arrived.is-active { border-color: #2f9e57; color: #1f7a41; background: #e7f8ee; }
+    .fs-listtab--arrived.is-active .fs-listtab__count { background: #2f9e57; color: #fff; }
 
     .fs-actions { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 0.4rem; }
     .fs-present-btn { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.45rem 0.65rem; border-radius: 999px; border: 1px solid var(--ad-border); background: var(--ad-surface); color: var(--ad-muted); font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease; }
