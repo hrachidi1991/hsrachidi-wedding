@@ -207,6 +207,7 @@ export default function SeatFinder({ variant = 'admin' }: { variant?: 'admin' | 
                               <button type="button" className={`fs-seat${isPresent ? ' fs-seat--present' : off ? ' fs-seat--other' : ''}`} onClick={() => setHighlight(m)} title={off && !isPresent ? `Seated at table ${m.tableNum}, apart from the rest of the group (table ${mainTable})` : undefined}>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z" /><circle cx="12" cy="10" r="3" /></svg>
                                 <span className="fs-seat__label">{m.seatLabel}</span>
+                                <span className="fs-seat__cta">View map</span>
                               </button>
                             ) : (
                               <span className="fs-seat fs-seat--none">No seat yet</span>
@@ -458,13 +459,14 @@ function FindSeatStyles() {
     .fs-member__display { font-weight: 600; color: var(--ad-ink); font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .fs-member__name { font-size: 0.78rem; color: var(--ad-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .fs-seat { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.7rem; border-radius: 999px; border: 1px solid var(--ad-accent); background: var(--ad-accent-soft); color: var(--ad-accent-strong); font-weight: 700; cursor: pointer; transition: background-color 0.14s ease, transform 0.08s ease; }
-    .fs-seat:hover { background: var(--ad-accent); color: #fff; }
-    .fs-seat:active { transform: translateY(1px); }
+    .fs-seat { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.75rem; border-radius: 999px; border: 1px solid var(--ad-accent-strong); background: var(--ad-accent); color: #fff; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.22); transition: background-color 0.14s ease, transform 0.08s ease, box-shadow 0.14s ease; }
+    .fs-seat:hover { background: var(--ad-accent-strong); }
+    .fs-seat:active { transform: translateY(1px); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
     .fs-seat__label { font-family: var(--ad-font-serif, Georgia, serif); letter-spacing: 0.02em; }
-    .fs-seat--none { border-color: var(--ad-border); background: var(--ad-raised); color: var(--ad-muted); font-weight: 500; cursor: default; }
-    .fs-seat--other { border-color: #7c5cd6; background: rgba(124,92,214,0.12); color: #6641c2; }
-    .fs-seat--other:hover { background: #7c5cd6; color: #fff; }
+    .fs-seat__cta { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em; opacity: 0.95; border-left: 1px solid rgba(255,255,255,0.5); padding-left: 0.45rem; margin-left: 0.1rem; white-space: nowrap; }
+    .fs-seat--none { border-color: var(--ad-border); background: var(--ad-raised); color: var(--ad-muted); font-weight: 500; cursor: default; box-shadow: none; }
+    .fs-seat--other { border-color: #6641c2; background: #7c5cd6; color: #fff; }
+    .fs-seat--other:hover { background: #6641c2; }
     .fs-split { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.15rem 0.5rem; border-radius: 999px; background: rgba(124,92,214,0.12); color: #6641c2; font-size: 0.7rem; font-weight: 700; }
 
     /* view switch (Find a guest / Guest list) */
@@ -502,8 +504,8 @@ function FindSeatStyles() {
     .fs-present-btn.is-on { background: #e7f8ee; border-color: #2f9e57; color: #1f7a41; }
     .fs-present-btn.is-on svg { opacity: 1; }
     .fs-present-chip { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.32rem 0.55rem; border-radius: 999px; background: #e7f8ee; color: #1f7a41; font-size: 0.74rem; font-weight: 700; }
-    .fs-seat--present { border-color: #2f9e57; background: #e7f8ee; color: #1f7a41; }
-    .fs-seat--present:hover { background: #2f9e57; color: #fff; }
+    .fs-seat--present { border-color: #1f7a41; background: #2f9e57; color: #fff; }
+    .fs-seat--present:hover { background: #1f7a41; }
     @media (max-width: 520px) { .fs-present-btn { font-size: 0; padding: 0.45rem; } .fs-present-btn svg { opacity: 0.7; } .fs-present-btn.is-on svg { opacity: 1; } }
 
     .fs-modal-scrim { position: fixed; inset: 0; z-index: 80; background: rgba(20,18,15,0.55); display: flex; align-items: center; justify-content: center; padding: 1rem; }
