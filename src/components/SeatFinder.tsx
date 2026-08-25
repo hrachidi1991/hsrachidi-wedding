@@ -323,6 +323,7 @@ function CheckinList({ guests, loading, onToggle, onHighlight }: {
                   <button type="button" className={`fs-seat${m.present ? ' fs-seat--present' : ''}`} onClick={() => onHighlight(m)}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z" /><circle cx="12" cy="10" r="3" /></svg>
                     <span className="fs-seat__label">{m.seatLabel}</span>
+                    <span className="fs-seat__cta">View map</span>
                   </button>
                 </span>
               </li>
